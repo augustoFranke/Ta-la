@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "temp_init",
-    "slug": "temp_init",
+    "name": "Tá lá!",
+    "slug": "ta-la-app",
+    "scheme": "tala",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -13,7 +14,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tala.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Precisamos da sua localização para mostrar bares e locais próximos a você."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,8 +26,20 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Precisamos da sua localização para mostrar bares e locais próximos a você."
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     }

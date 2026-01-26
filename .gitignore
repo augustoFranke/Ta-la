@@ -1,41 +1,122 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# ======================================
+# SENSITIVE FILES - NEVER COMMIT
+# ======================================
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.p12
+*.key
+*.jks
+*.keystore
+*.mobileprovision
+
+# Firebase/Google Services (contains API keys)
+GoogleService-Info.plist
+google-services.json
+
+# ======================================
+# DEPENDENCIES
+# ======================================
 node_modules/
 
-# Expo
+# ======================================
+# EXPO
+# ======================================
 .expo/
 dist/
 web-build/
 expo-env.d.ts
+.easignore
 
-# Native
+# ======================================
+# NATIVE BUILD FOLDERS
+# ======================================
+# Uncomment if using CNG (Continuous Native Generation)
+# /ios
+# /android
+
+# iOS specific
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+ios/DerivedData/
+*.ipa
+*.xcuserstate
+*.xccheckout
+xcuserdata/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.moved-aside
+*.hmap
+.xcode.env.local
+
+# Android specific
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.apk
+*.aab
+
+# ======================================
+# KOTLIN/JAVA
+# ======================================
 .kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+*.class
+*.jar
 
-# Metro
+# ======================================
+# METRO BUNDLER
+# ======================================
 .metro-health-check*
 
-# debug
+# ======================================
+# DEBUG
+# ======================================
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
+# ======================================
+# MACOS
+# ======================================
 .DS_Store
-*.pem
+*.orig.*
 
-# local env files
-.env*.local
-
-# typescript
+# ======================================
+# TYPESCRIPT
+# ======================================
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
+# ======================================
+# IDE / EDITORS
+# ======================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ======================================
+# TESTING
+# ======================================
+coverage/
+.jest/
+
+# ======================================
+# MISC
+# ======================================
+*.log
+*.tmp
+*.temp
+.cache/
