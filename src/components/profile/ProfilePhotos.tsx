@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 import type { Photo } from '../../types/database';
 
@@ -91,9 +92,11 @@ export function ProfilePhotos({
         { backgroundColor: colors.card, borderColor: colors.border },
       ]}
     >
-      <Text style={[styles.placeholderText, { color: colors.textSecondary }]}>
-        {size === 'main' ? '📷' : '+'}
-      </Text>
+      <Ionicons
+        name={size === 'main' ? 'camera' : 'add'}
+        size={size === 'main' ? 28 : 24}
+        color={colors.textSecondary}
+      />
     </View>
   );
 
@@ -347,9 +350,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderStyle: 'dashed',
     borderRadius: 8,
-  },
-  placeholderText: {
-    fontSize: 24,
   },
   morePhotos: {
     fontSize: 12,

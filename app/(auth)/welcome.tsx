@@ -7,6 +7,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
 import { Button } from '../../src/components/ui/Button';
 
@@ -15,57 +16,51 @@ export default function WelcomeScreen() {
   const { colors, spacing, typography, isDark } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}> 
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      {/* Logo e branding */}
       <View style={styles.brandingContainer}>
         <Text style={[styles.logo, { color: colors.primary }]}>Tá lá!</Text>
-        <Text style={[styles.tagline, { color: colors.text }]}>
-          Conexões reais em lugares reais
+        <Text style={[styles.tagline, { color: colors.text }]}>Conexões reais em lugares reais</Text>
+      </View>
+
+      <View style={[styles.descriptionContainer, { paddingHorizontal: spacing.lg }]}> 
+        <Text style={[styles.description, { color: colors.textSecondary }]}> 
+          Encontre pessoas interessantes nos mesmos lugares que você. Faça check-in
+          e descubra quem está por perto.
         </Text>
       </View>
 
-      {/* Descrição */}
-      <View style={[styles.descriptionContainer, { paddingHorizontal: spacing.lg }]}>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>
-          Encontre pessoas interessantes nos mesmos lugares que você. Faça check-in,
-          veja quem está por perto e comece uma conversa.
-        </Text>
-      </View>
-
-      {/* Features */}
-      <View style={[styles.featuresContainer, { paddingHorizontal: spacing.lg }]}>
+      <View style={[styles.featuresContainer, { paddingHorizontal: spacing.lg }]}> 
         <FeatureItem
-          emoji="📍"
+          iconName="location"
           title="Check-in em locais"
           description="Bares, baladas e eventos"
           colors={colors}
           typography={typography}
         />
         <FeatureItem
-          emoji="🍹"
+          iconName="wine"
           title="Pague um drink"
           description="Demonstre interesse de forma divertida"
           colors={colors}
           typography={typography}
         />
         <FeatureItem
-          emoji="💬"
-          title="Converse e encontre"
-          description="Conexões que acontecem de verdade"
+          iconName="people"
+          title="Descubra pessoas"
+          description="Veja quem está no mesmo lugar"
           colors={colors}
           typography={typography}
         />
       </View>
 
-      {/* Botão de ação */}
-      <View style={[styles.ctaContainer, { padding: spacing.lg }]}>
+      <View style={[styles.ctaContainer, { padding: spacing.lg }]}> 
         <Button
           title="Começar"
           onPress={() => router.push('/(auth)/login')}
         />
-        <Text style={[styles.terms, { color: colors.textSecondary, marginTop: spacing.md }]}>
+        <Text style={[styles.terms, { color: colors.textSecondary, marginTop: spacing.md }]}> 
           Ao continuar, você concorda com nossos Termos de Uso e Política de Privacidade
         </Text>
       </View>
@@ -74,22 +69,22 @@ export default function WelcomeScreen() {
 }
 
 interface FeatureItemProps {
-  emoji: string;
+  iconName: string;
   title: string;
   description: string;
   colors: any;
   typography: any;
 }
 
-function FeatureItem({ emoji, title, description, colors, typography }: FeatureItemProps) {
+function FeatureItem({ iconName, title, description, colors, typography }: FeatureItemProps) {
   return (
     <View style={styles.featureItem}>
-      <Text style={styles.featureEmoji}>{emoji}</Text>
+      <Ionicons name={iconName} size={32} color={colors.primary} style={styles.featureIcon} />
       <View style={styles.featureTextContainer}>
-        <Text style={[styles.featureTitle, { color: colors.text, fontSize: typography.sizes.md }]}>
+        <Text style={[styles.featureTitle, { color: colors.text, fontSize: typography.sizes.md }]}> 
           {title}
         </Text>
-        <Text style={[styles.featureDescription, { color: colors.textSecondary, fontSize: typography.sizes.sm }]}>
+        <Text style={[styles.featureDescription, { color: colors.textSecondary, fontSize: typography.sizes.sm }]}> 
           {description}
         </Text>
       </View>
@@ -132,8 +127,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  featureEmoji: {
-    fontSize: 32,
+  featureIcon: {
     marginRight: 16,
   },
   featureTextContainer: {

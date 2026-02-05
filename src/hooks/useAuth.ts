@@ -14,6 +14,24 @@ import { supabase } from '../services/supabase';
 import { useAuthStore } from '../stores/authStore';
 import type { User } from '../types/database';
 
+const DEV_SKIP_AUTH = __DEV__ && process.env.EXPO_PUBLIC_DEV_SKIP_AUTH === 'true';
+
+const MOCK_USER: User = {
+  id: '00000000-0000-4000-8000-000000000001',
+  email: 'dev@example.com',
+  name: 'Dev User',
+  birth_date: '1995-01-15',
+  bio: 'Desenvolvedor testando o app',
+  occupation: 'Developer',
+  gender: 'masculino',
+  gender_preference: 'todos',
+  is_verified: true,
+  location: null,
+  push_token: null,
+  last_active: new Date().toISOString(),
+  created_at: new Date().toISOString(),
+};
+
 export function useAuth() {
   const {
     session,
@@ -31,7 +49,6 @@ export function useAuth() {
     reset,
   } = useAuthStore();
 
-  // Busca dados do perfil do usuário no Supabase usando o Auth UID
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -41,7 +58,6 @@ export function useAuth() {
         .single();
 
       if (error) {
-        // Usuário ainda não tem perfil (novo usuário)
         if (error.code === 'PGRST116') {
           setUser(null);
           return null;
@@ -58,13 +74,20 @@ export function useAuth() {
     }
   }, [setUser]);
 
-  // Inicializa listener de auth state do Supabase
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(async (session) => {
-      setSession(session);
+    if (DEV_SKIP_AUTH) {
+      setUser(MOCK_USER);
+      setSession({ user: { id: MOCK_USER.id, email: MOCK_USER.email } } as any);
+      setLoading(false);
+      setInitialized(true);
+      return;
+    }
 
-      if (session?.user) {
-        await fetchUserProfile(session.user.id);
+    const unsubscribe = onAuthStateChanged(async (authSession) => {
+      setSession(authSession);
+
+      if (authSession?.user) {
+        await fetchUserProfile(authSession.user.id);
       } else {
         setUser(null);
       }
@@ -76,7 +99,6 @@ export function useAuth() {
     return () => unsubscribe();
   }, [setSession, setUser, setLoading, setInitialized, fetchUserProfile]);
 
-  // Envia código OTP para o email usando Supabase
   const sendOTP = useCallback(async (email: string) => {
     setLoading(true);
     try {
@@ -88,7 +110,6 @@ export function useAuth() {
         return { success: false, error: result.error || 'Erro ao enviar código' };
       }
 
-      // Armazena o email para usar na verificação
       setPendingEmail(normalizedEmail);
 
       return { success: true, email: normalizedEmail };
@@ -100,11 +121,9 @@ export function useAuth() {
     }
   }, [setLoading, setPendingEmail]);
 
-  // Verifica código OTP usando Supabase
   const verifyOTP = useCallback(async (email: string, token: string) => {
     setLoading(true);
     try {
-      // Usa o email pendente ou o fornecido
       const emailToVerify = pendingEmail || email;
 
       if (!emailToVerify) {
@@ -125,7 +144,6 @@ export function useAuth() {
 
       setPendingEmail(null);
 
-      // Busca perfil do usuário no Supabase
       if (result.user) {
         await fetchUserProfile(result.user.id);
       }
@@ -139,7 +157,6 @@ export function useAuth() {
     }
   }, [setLoading, pendingEmail, setPendingEmail, fetchUserProfile]);
 
-  // Completa onboarding - salva perfil no Supabase usando Auth UID
   const completeOnboarding = useCallback(async () => {
     if (!session?.user?.id) {
       return { success: false, error: 'Usuário não autenticado' };
@@ -149,12 +166,10 @@ export function useAuth() {
     try {
       const { name, birth_date, bio, occupation, gender, gender_preference, interests, photos } = onboardingData;
 
-      // Validação básica
       if (!name || !birth_date || !gender || !gender_preference) {
         throw new Error('Dados obrigatórios não preenchidos');
       }
 
-      // 1. Cria/atualiza usuário no Supabase usando Auth UID como ID
       const { error: userError } = await supabase
         .from('users')
         .upsert({
@@ -171,7 +186,6 @@ export function useAuth() {
 
       if (userError) throw userError;
 
-      // 2. Salva interesses
       if (interests && interests.length > 0) {
         const interestsData = interests.map((tag) => ({
           user_id: session.user.id,
@@ -185,7 +199,6 @@ export function useAuth() {
         if (interestsError) throw interestsError;
       }
 
-      // 3. Salva fotos (já devem estar no Storage)
       if (photos && photos.length > 0) {
         const photosData = photos.map((url, index) => ({
           user_id: session.user.id,
@@ -193,7 +206,6 @@ export function useAuth() {
           order: index + 1,
         }));
 
-        // Remove fotos antigas primeiro
         await supabase
           .from('photos')
           .delete()
@@ -206,10 +218,7 @@ export function useAuth() {
         if (photosError) throw photosError;
       }
 
-      // 4. Atualiza user no store
       await fetchUserProfile(session.user.id);
-
-      // 5. Limpa dados de onboarding
       clearOnboarding();
 
       return { success: true };
@@ -221,7 +230,6 @@ export function useAuth() {
     }
   }, [session, onboardingData, setLoading, fetchUserProfile, clearOnboarding]);
 
-  // Logout
   const signOut = useCallback(async () => {
     setLoading(true);
     try {
@@ -236,16 +244,10 @@ export function useAuth() {
     }
   }, [setLoading, reset]);
 
-  // Verifica se usuário precisa completar onboarding
-  // (tem sessão mas não tem perfil no Supabase)
   const needsOnboarding = session !== null && user === null;
-
-  // Verifica se está autenticado completamente
-  // (tem sessão E tem perfil verificado no Supabase)
   const isAuthenticated = session !== null && user !== null && user.is_verified;
 
   return {
-    // Estado
     session,
     user,
     isLoading,
@@ -254,8 +256,6 @@ export function useAuth() {
     needsOnboarding,
     onboardingData,
     pendingEmail,
-
-    // Ações
     sendOTP,
     verifyOTP,
     completeOnboarding,

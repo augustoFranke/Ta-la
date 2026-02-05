@@ -8,9 +8,8 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuth } from '../src/hooks/useAuth';
-import { useTheme } from '../src/theme';
+import { ThemeProvider, useTheme } from '../src/theme';
 
-// Componente de loading durante inicialização
 function LoadingScreen() {
   const { colors } = useTheme();
 
@@ -22,7 +21,6 @@ function LoadingScreen() {
   );
 }
 
-// Hook para redirect automático
 function useProtectedRoute() {
   const { isInitialized, isAuthenticated, needsOnboarding, session } = useAuth();
   const segments = useSegments();
@@ -34,42 +32,40 @@ function useProtectedRoute() {
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboarding = (segments as string[]).length > 1 && (segments as string[])[1] === 'onboarding';
 
-    // Usuário não autenticado (sem sessão)
     if (!session) {
-      // Se não está na área de auth, redireciona para welcome
       if (!inAuthGroup) {
         router.replace('/(auth)/welcome');
       }
       return;
     }
 
-    // Usuário autenticado mas precisa completar onboarding
     if (needsOnboarding) {
-      // Se não está no onboarding, redireciona
       if (!inOnboarding) {
         router.replace('/(auth)/onboarding/photos');
       }
       return;
     }
 
-    // Usuário autenticado com perfil completo
-    if (isAuthenticated) {
-      // Se está na área de auth, redireciona para tabs
-      if (inAuthGroup) {
-        router.replace('/(tabs)');
-      }
+    if (isAuthenticated && inAuthGroup) {
+      router.replace('/(tabs)');
     }
   }, [isInitialized, isAuthenticated, needsOnboarding, session, segments, router]);
 }
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutContent />
+    </ThemeProvider>
+  );
+}
+
+function RootLayoutContent() {
   const { isInitialized } = useAuth();
   const { colors } = useTheme();
 
-  // Usa o hook de redirect
   useProtectedRoute();
 
-  // Mostra loading enquanto inicializa
   if (!isInitialized) {
     return (
       <SafeAreaProvider>
@@ -88,6 +84,20 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="venue/[id]"
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="user/[id]"
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
       </Stack>
     </SafeAreaProvider>
   );

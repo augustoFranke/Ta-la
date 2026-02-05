@@ -7,22 +7,19 @@ export default function TabsLayout() {
 
   return (
     <NativeTabs tintColor={colors.primary}>
-      {/* Tab Início (Home) */}
       <NativeTabs.Trigger name="index">
         <Label>Início</Label>
         <Icon sf="house.fill" drawable="home" />
       </NativeTabs.Trigger>
 
-      {/* Tab Perfil (Profile) */}
+      <NativeTabs.Trigger name="discover">
+        <Label>Descobrir</Label>
+        <Icon sf="location.fill" drawable="location" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="profile">
         <Label>Perfil</Label>
         <Icon sf="person.fill" drawable="person" />
-      </NativeTabs.Trigger>
-
-      {/* Tab Configurações (Settings) */}
-      <NativeTabs.Trigger name="configuracoes">
-        <Label>Configurações</Label>
-        <Icon sf="gearshape" drawable="settings" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

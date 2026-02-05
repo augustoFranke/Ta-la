@@ -1,66 +1,215 @@
 /**
  * Tela Descobrir
- * Lista de usuários no local atual
+ * Busca por pessoas + sugestões no mesmo local
  */
 
-import { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
-import { useLocationStore } from '../../src/stores/locationStore';
-import { getCurrentLocation } from '../../src/services/location';
+import { Input } from '../../src/components/ui/Input';
+import { Card } from '../../src/components/ui/Card';
+import { Button } from '../../src/components/ui/Button';
+import { Avatar } from '../../src/components/ui/Avatar';
+import { useAuth } from '../../src/hooks/useAuth';
+import { supabase } from '../../src/services/supabase';
+import { useCheckIn } from '../../src/hooks/useCheckIn';
+import { useRouter } from 'expo-router';
+
+type VenueUser = {
+  id: string;
+  name: string;
+  bio: string | null;
+  occupation: string | null;
+  age: number;
+};
+
+type BasicUser = {
+  id: string;
+  name: string;
+  bio: string | null;
+  occupation: string | null;
+  birth_date?: string;
+};
 
 export default function DiscoverScreen() {
   const { colors, spacing, typography, isDark } = useTheme();
-  const { latitude, longitude, errorMsg } = useLocationStore();
+  const { user } = useAuth();
+  const router = useRouter();
+  const { activeCheckIn, fetchActiveCheckIn } = useCheckIn();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [venueUsers, setVenueUsers] = useState<VenueUser[]>([]);
+  const [searchResults, setSearchResults] = useState<BasicUser[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const userId = user?.id;
+
+  const loadVenueUsers = useCallback(async () => {
+    if (!userId || !activeCheckIn?.venue_id) {
+      setVenueUsers([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('get_users_at_venue', {
+        p_venue_id: activeCheckIn.venue_id,
+        p_user_id: userId,
+      });
+
+      if (error) throw error;
+      setVenueUsers((data ?? []) as VenueUser[]);
+    } catch (err: any) {
+      console.error('Erro ao buscar usuários no local:', err);
+      Alert.alert('Erro', 'Não foi possível buscar pessoas no local.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, activeCheckIn?.venue_id]);
+
+  const performSearch = useCallback(async () => {
+    if (!userId || searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, bio, occupation, birth_date')
+        .ilike('name', `%${searchQuery.trim()}%`)
+        .eq('is_verified', true)
+        .neq('id', userId)
+        .limit(20);
+
+      if (error) throw error;
+      setSearchResults((data ?? []) as BasicUser[]);
+    } catch (err: any) {
+      console.error('Erro ao buscar usuários:', err);
+      Alert.alert('Erro', 'Não foi possível buscar usuários.');
+    } finally {
+      setIsSearching(false);
+    }
+  }, [userId, searchQuery]);
 
   useEffect(() => {
-    // Tenta obter localização ao entrar na tela se ainda não tiver
-    if (!latitude || !longitude) {
-      getCurrentLocation();
-    }
-  }, [latitude, longitude]);
+    fetchActiveCheckIn();
+  }, [fetchActiveCheckIn]);
+
+  useEffect(() => {
+    loadVenueUsers();
+  }, [loadVenueUsers]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      performSearch();
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [performSearch]);
+
+  const renderUserCard = (profile: BasicUser, ageOverride?: number) => {
+    const age = typeof ageOverride === 'number'
+      ? ageOverride
+      : profile.birth_date
+      ? Math.floor((Date.now() - new Date(profile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+      : null;
+
+    return (
+      <Card key={profile.id} style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Avatar name={profile.name} size={56} />
+          <View style={styles.cardInfo}>
+            <Text style={[styles.cardName, { color: colors.text }]}>
+              {profile.name}{age ? `, ${age}` : ''}
+            </Text>
+            {profile.bio ? (
+              <Text style={[styles.cardBio, { color: colors.textSecondary }]} numberOfLines={2}>
+                {profile.bio}
+              </Text>
+            ) : (
+              <Text style={[styles.cardBio, { color: colors.textSecondary }]}>Sem bio</Text>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.cardActions}>
+          <Button
+            title="Ver perfil"
+            variant="outline"
+            onPress={() => router.push(`/user/${profile.id}`)}
+            style={styles.cardButton}
+          />
+        </View>
+      </Card>
+    );
+  };
+
+  const venueUsersList = useMemo(() => venueUsers, [venueUsers]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      {/* Header */}
       <View style={[styles.header, { padding: spacing.lg }]}>
-        <Text style={[styles.title, { color: colors.text, fontSize: typography.sizes.xl }]}>
-          Descobrir
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary, fontSize: typography.sizes.md }]}>
-          Veja quem está por perto
-        </Text>
+        <Text style={[styles.title, { color: colors.text, fontSize: typography.sizes.xl }]}>Descobrir</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary, fontSize: typography.sizes.md }]}>Encontre pessoas no mesmo local</Text>
       </View>
 
-      {/* Conteúdo placeholder */}
-      <View style={[styles.content, { padding: spacing.lg }]}>
-        <View style={[styles.placeholder, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.placeholderEmoji]}>📍</Text>
-          
-          {latitude && longitude ? (
-             <View>
-                 <Text style={[styles.placeholderText, { color: colors.text, textAlign: 'center' }]}>
-                   Sua localização:
-                 </Text>
-                 <Text style={[styles.placeholderSubtext, { color: colors.textSecondary, textAlign: 'center' }]}>
-                   Lat: {latitude.toFixed(4)}, Long: {longitude.toFixed(4)}
-                 </Text>
-             </View>
+      <ScrollView contentContainerStyle={[styles.content, { padding: spacing.lg }]}>
+        <Input
+          label="Buscar pessoas"
+          placeholder="Digite um nome"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+
+        {searchQuery.trim().length >= 2 ? (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Resultados</Text>
+            {isSearching ? (
+              <Text style={[styles.helperText, { color: colors.textSecondary }]}>Buscando usuários...</Text>
+            ) : searchResults.length === 0 ? (
+              <Text style={[styles.helperText, { color: colors.textSecondary }]}>Nenhum usuário encontrado.</Text>
+            ) : (
+              searchResults.map((profile) => renderUserCard(profile))
+            )}
+          </View>
+        ) : null}
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Pessoas no mesmo local</Text>
+          {!activeCheckIn ? (
+            <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
+              <Ionicons name="location" size={28} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Faça check-in para ver quem está no local.</Text>
+            </View>
+          ) : isLoading ? (
+            <Text style={[styles.helperText, { color: colors.textSecondary }]}>Buscando pessoas no local...</Text>
+          ) : venueUsersList.length === 0 ? (
+            <Text style={[styles.helperText, { color: colors.textSecondary }]}>Ninguém disponível no momento.</Text>
           ) : (
-             <Text style={[styles.placeholderText, { color: colors.textSecondary, textAlign: 'center' }]}>
-               {errorMsg ? `Erro: ${errorMsg}` : "Obtendo localização..."}
-             </Text>
+            venueUsersList.map((profile) =>
+              renderUserCard(
+                {
+                  id: profile.id,
+                  name: profile.name,
+                  bio: profile.bio,
+                  occupation: profile.occupation,
+                },
+                profile.age
+              )
+            )
           )}
-
-          <Text style={[styles.placeholderText, { color: colors.textSecondary, marginTop: 16, textAlign: 'center' }]}>
-            Em breve: Bares e pessoas próximas.
-          </Text>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -69,36 +218,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {},
+  header: {
+    paddingBottom: 8,
+  },
   title: {
     fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {},
   content: {
-    flex: 1,
+    paddingBottom: 48,
+    gap: 24,
   },
-  placeholder: {
-    flex: 1,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
+  section: {
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  helperText: {
+    fontSize: 14,
+  },
+  emptyState: {
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    padding: 24,
+    gap: 8,
   },
-  placeholderEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 14,
   },
-  placeholderText: {
+  card: {
+    gap: 12,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  cardInfo: {
+    flex: 1,
+  },
+  cardName: {
     fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 8,
+    fontWeight: '700',
   },
-  placeholderSubtext: {
-    fontSize: 12,
-    textAlign: 'center',
-    fontStyle: 'italic',
+  cardBio: {
+    fontSize: 13,
+    marginTop: 4,
+  },
+  cardActions: {
+    flexDirection: 'row',
+  },
+  cardButton: {
+    flex: 1,
   },
 });

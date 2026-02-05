@@ -33,181 +33,141 @@ export function ProfileBioSection({
 }: ProfileBioSectionProps) {
   const { colors } = useTheme();
 
-  const [isEditingBio, setIsEditingBio] = useState(false);
-  const [isEditingOccupation, setIsEditingOccupation] = useState(false);
-  const [editedBio, setEditedBio] = useState(bio || '');
-  const [editedOccupation, setEditedOccupation] = useState(occupation || '');
+  return (
+    <View style={styles.container}>
+      <EditableField
+        label="Sobre"
+        value={bio}
+        placeholder="Conte um pouco sobre você..."
+        isEditable={isEditable}
+        isLoading={isLoading}
+        onSave={onBioChange}
+        multiline
+        colors={colors}
+      />
+
+      <EditableField
+        label="Ocupação"
+        value={occupation}
+        placeholder="Sua ocupação..."
+        isEditable={isEditable}
+        isLoading={isLoading}
+        onSave={onOccupationChange}
+        colors={colors}
+      />
+    </View>
+  );
+}
+
+interface EditableFieldProps {
+  label: string;
+  value: string | null;
+  placeholder: string;
+  isEditable: boolean;
+  isLoading: boolean;
+  onSave?: (newValue: string) => Promise<{ success: boolean; error?: string }>;
+  multiline?: boolean;
+  colors: any;
+}
+
+function EditableField({
+  label,
+  value,
+  placeholder,
+  isEditable,
+  isLoading,
+  onSave,
+  multiline = false,
+  colors,
+}: EditableFieldProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedValue, setEditedValue] = useState(value || '');
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSaveBio = async () => {
-    if (!onBioChange) return;
+  const handleSave = async () => {
+    if (!onSave) return;
 
     setIsSaving(true);
-    const result = await onBioChange(editedBio);
+    const result = await onSave(editedValue);
     setIsSaving(false);
 
     if (result.success) {
-      setIsEditingBio(false);
+      setIsEditing(false);
     } else {
       Alert.alert('Erro', result.error || 'Não foi possível salvar');
     }
   };
 
-  const handleSaveOccupation = async () => {
-    if (!onOccupationChange) return;
-
-    setIsSaving(true);
-    const result = await onOccupationChange(editedOccupation);
-    setIsSaving(false);
-
-    if (result.success) {
-      setIsEditingOccupation(false);
-    } else {
-      Alert.alert('Erro', result.error || 'Não foi possível salvar');
-    }
-  };
-
-  const handleCancelBio = () => {
-    setEditedBio(bio || '');
-    setIsEditingBio(false);
-  };
-
-  const handleCancelOccupation = () => {
-    setEditedOccupation(occupation || '');
-    setIsEditingOccupation(false);
+  const handleCancel = () => {
+    setEditedValue(value || '');
+    setIsEditing(false);
   };
 
   return (
-    <View style={styles.container}>
-      {/* Bio Section */}
-      <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-            Sobre
-          </Text>
-          {isEditable && !isEditingBio && (
-            <TouchableOpacity
-              onPress={() => setIsEditingBio(true)}
-              disabled={isLoading}
-            >
-              <Text style={[styles.editButton, { color: colors.primary }]}>
-                Editar
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {isEditingBio ? (
-          <View>
-            <TextInput
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: colors.background,
-                  color: colors.text,
-                  borderColor: colors.border,
-                },
-              ]}
-              value={editedBio}
-              onChangeText={setEditedBio}
-              placeholder="Conte um pouco sobre você..."
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              numberOfLines={4}
-              maxLength={500}
-              textAlignVertical="top"
-            />
-            <View style={styles.editActions}>
-              <TouchableOpacity
-                style={[styles.cancelButton, { borderColor: colors.border }]}
-                onPress={handleCancelBio}
-                disabled={isSaving}
-              >
-                <Text style={[styles.cancelButtonText, { color: colors.text }]}>
-                  Cancelar
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: colors.primary }]}
-                onPress={handleSaveBio}
-                disabled={isSaving}
-              >
-                <Text style={[styles.saveButtonText, { color: colors.onPrimary }]}>
-                  {isSaving ? 'Salvando...' : 'Salvar'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <Text style={[styles.bioText, { color: colors.text }]}>
-            {bio || 'Nenhuma bio adicionada'}
-          </Text>
+    <View style={[styles.section, { backgroundColor: colors.card }]}>
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+          {label}
+        </Text>
+        {isEditable && !isEditing && (
+          <TouchableOpacity
+            onPress={() => setIsEditing(true)}
+            disabled={isLoading}
+          >
+            <Text style={[styles.editButton, { color: colors.primary }]}>
+              Editar
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
 
-      {/* Occupation Section */}
-      <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-            Ocupação
-          </Text>
-          {isEditable && !isEditingOccupation && (
+      {isEditing ? (
+        <View>
+          <TextInput
+            style={[
+              styles.textInput,
+              !multiline && styles.singleLineInput,
+              {
+                backgroundColor: colors.background,
+                color: colors.text,
+                borderColor: colors.border,
+              },
+            ]}
+            value={editedValue}
+            onChangeText={setEditedValue}
+            placeholder={placeholder}
+            placeholderTextColor={colors.textSecondary}
+            multiline={multiline}
+            numberOfLines={multiline ? 4 : 1}
+            maxLength={multiline ? 500 : 100}
+            textAlignVertical={multiline ? "top" : "center"}
+          />
+          <View style={styles.editActions}>
             <TouchableOpacity
-              onPress={() => setIsEditingOccupation(true)}
-              disabled={isLoading}
+              style={[styles.cancelButton, { borderColor: colors.border }]}
+              onPress={handleCancel}
+              disabled={isSaving}
             >
-              <Text style={[styles.editButton, { color: colors.primary }]}>
-                Editar
+              <Text style={[styles.cancelButtonText, { color: colors.text }]}>
+                Cancelar
               </Text>
             </TouchableOpacity>
-          )}
-        </View>
-
-        {isEditingOccupation ? (
-          <View>
-            <TextInput
-              style={[
-                styles.textInput,
-                styles.singleLineInput,
-                {
-                  backgroundColor: colors.background,
-                  color: colors.text,
-                  borderColor: colors.border,
-                },
-              ]}
-              value={editedOccupation}
-              onChangeText={setEditedOccupation}
-              placeholder="Sua ocupação..."
-              placeholderTextColor={colors.textSecondary}
-              maxLength={100}
-            />
-            <View style={styles.editActions}>
-              <TouchableOpacity
-                style={[styles.cancelButton, { borderColor: colors.border }]}
-                onPress={handleCancelOccupation}
-                disabled={isSaving}
-              >
-                <Text style={[styles.cancelButtonText, { color: colors.text }]}>
-                  Cancelar
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: colors.primary }]}
-                onPress={handleSaveOccupation}
-                disabled={isSaving}
-              >
-                <Text style={[styles.saveButtonText, { color: colors.onPrimary }]}>
-                  {isSaving ? 'Salvando...' : 'Salvar'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: colors.primary }]}
+              onPress={handleSave}
+              disabled={isSaving}
+            >
+              <Text style={[styles.saveButtonText, { color: colors.onPrimary }]}>
+                {isSaving ? 'Salvando...' : 'Salvar'}
+              </Text>
+            </TouchableOpacity>
           </View>
-        ) : (
-          <Text style={[styles.bioText, { color: colors.text }]}>
-            {occupation || 'Nenhuma ocupação adicionada'}
-          </Text>
-        )}
-      </View>
+        </View>
+      ) : (
+        <Text style={[styles.bioText, { color: colors.text }]}>
+          {value || `Nenhuma ${label.toLowerCase()} adicionada`}
+        </Text>
+      )}
     </View>
   );
 }

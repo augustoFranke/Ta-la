@@ -14,6 +14,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 import { VenueCard } from './VenueCard';
 import { VenueCardSkeleton } from './VenueCardSkeleton';
@@ -223,7 +224,12 @@ export function VenueCarousel({
   if (error) {
     return (
       <View style={[styles.emptyContainer, { backgroundColor: colors.card }]}>
-        <Text style={styles.emptyEmoji}>⚠️</Text>
+        <Ionicons
+          name="alert-circle"
+          size={48}
+          color={colors.error ?? colors.textSecondary}
+          style={styles.emptyIcon}
+        />
         <Text style={[styles.emptyText, { color: colors.text }]}>
           Erro ao carregar venues
         </Text>
@@ -246,7 +252,12 @@ export function VenueCarousel({
   if (venues.length === 0) {
     return (
       <View style={[styles.emptyContainer, { backgroundColor: colors.card }]}>
-        <Text style={styles.emptyEmoji}>🔍</Text>
+        <Ionicons
+          name="search"
+          size={48}
+          color={colors.textSecondary}
+          style={styles.emptyIcon}
+        />
         <Text style={[styles.emptyText, { color: colors.text }]}>
           Nenhum local encontrado
         </Text>
@@ -266,15 +277,12 @@ export function VenueCarousel({
         horizontal
         showsHorizontalScrollIndicator={false}
         snapToInterval={snapInterval}
+        snapToAlignment="start"
         decelerationRate="fast"
+        disableIntervalMomentum
         contentContainerStyle={styles.listContent}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        getItemLayout={(_, index) => ({
-          length: snapInterval,
-          offset: snapInterval * index,
-          index,
-        })}
       />
       {renderPaginationDots()}
     </View>
@@ -320,8 +328,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
-  emptyEmoji: {
-    fontSize: 48,
+  emptyIcon: {
     marginBottom: 16,
   },
   emptyText: {

@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/theme';
 import { Button } from '../../../src/components/ui/Button';
 import { OnboardingProgress } from '../../../src/components/common/OnboardingProgress';
@@ -145,12 +146,12 @@ export default function PhotosScreen() {
               style={[styles.removeButton, { backgroundColor: colors.error }]}
               onPress={() => removePhoto(index)}
             >
-              <Text style={styles.removeButtonText}>✕</Text>
+              <Ionicons name="close" size={16} color="#fff" />
             </TouchableOpacity>
           </>
         ) : (
           <>
-            <Text style={[styles.addIcon, { color: colors.textSecondary }]}>+</Text>
+            <Ionicons name="add" size={36} color={colors.textSecondary} />
             {index === 0 && (
               <Text style={[styles.mainLabel, { color: colors.textSecondary }]}>Principal</Text>
             )}
@@ -259,10 +260,6 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
-  addIcon: {
-    fontSize: 40,
-    fontWeight: '300',
-  },
   mainLabel: {
     fontSize: 12,
     marginTop: 4,
@@ -276,11 +273,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  removeButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '700',
   },
   tipContainer: {
     marginBottom: 24,

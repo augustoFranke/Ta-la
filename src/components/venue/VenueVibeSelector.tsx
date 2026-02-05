@@ -148,7 +148,11 @@ export function VenueVibeSelector({
                   disabled={isDisabled}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.vibeEmoji}>{config.emoji}</Text>
+                  <Ionicons
+                    name={config.icon}
+                    size={16}
+                    color={isSelected ? '#fff' : colors.text}
+                  />
                   <Text
                     style={[
                       styles.vibeText,
@@ -268,9 +272,6 @@ const styles = StyleSheet.create({
   },
   vibeChipDisabled: {
     opacity: 0.4,
-  },
-  vibeEmoji: {
-    fontSize: 16,
   },
   vibeText: {
     fontSize: 13,

@@ -3,7 +3,7 @@
  * Modal with venue information and check-in action
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -19,12 +19,14 @@ import { useTheme } from '../../theme';
 import { getVenueTypeLabel, formatDistance } from '../../services/places';
 import type { VenueWithDistance } from '../../stores/venueStore';
 import { VIBE_CONFIG } from '../../types/database';
+import { VenueReportModal } from './VenueReportModal';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface VenueDetailsModalProps {
   visible: boolean;
   venue: VenueWithDistance | null;
+  userId?: string;
   onClose: () => void;
   onCheckIn: (venue: VenueWithDistance) => void;
 }
@@ -32,10 +34,12 @@ interface VenueDetailsModalProps {
 export function VenueDetailsModal({
   visible,
   venue,
+  userId,
   onClose,
   onCheckIn,
 }: VenueDetailsModalProps) {
   const { colors } = useTheme();
+  const [showReportModal, setShowReportModal] = useState(false);
 
   if (!venue) return null;
 
@@ -48,8 +52,10 @@ export function VenueDetailsModal({
 
   const ratingText = venue.rating ? `${venue.rating.toFixed(1)} / 5` : 'Sem avaliação';
   const distanceText = formatDistance(venue.distance);
+  const isTooFar = venue.distance * 1000 > 50;
 
   const handleCheckIn = () => {
+    if (isTooFar) return;
     onCheckIn(venue);
     onClose();
   };
@@ -147,6 +153,20 @@ export function VenueDetailsModal({
                 </View>
               </View>
             )}
+
+            {/* Report link */}
+            {userId && (
+              <TouchableOpacity
+                style={styles.reportLink}
+                onPress={() => setShowReportModal(true)}
+                hitSlop={8}
+              >
+                <Ionicons name="flag-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.reportLinkText, { color: colors.textSecondary }]}>
+                  Reportar local
+                </Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
 
           <View style={styles.actions}>
@@ -160,17 +180,41 @@ export function VenueDetailsModal({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+              style={[
+                styles.primaryButton,
+                { backgroundColor: isTooFar ? colors.border : colors.primary },
+              ]}
               onPress={handleCheckIn}
               activeOpacity={0.8}
             >
-              <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>
-                Fazer check-in
+              <Text
+                style={[
+                  styles.primaryButtonText,
+                  { color: isTooFar ? colors.textSecondary : colors.onPrimary },
+                ]}
+              >
+                {isTooFar ? 'Você está muito longe' : 'Fazer check-in'}
               </Text>
             </TouchableOpacity>
           </View>
+          {isTooFar ? (
+            <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+              Aproxime-se a até 50m para fazer check-in.
+            </Text>
+          ) : null}
         </Pressable>
       </Pressable>
+
+      {/* Report Modal */}
+      {userId && (
+        <VenueReportModal
+          visible={showReportModal}
+          placeId={venue.place_id}
+          venueName={venue.name}
+          userId={userId}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
     </Modal>
   );
 }
@@ -281,10 +325,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  reportLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'center',
+    paddingVertical: 8,
+  },
+  reportLinkText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
   actions: {
     flexDirection: 'row',
     gap: 12,
     padding: 16,
+  },
+  helperText: {
+    textAlign: 'center',
+    fontSize: 12,
+    paddingBottom: 12,
   },
   secondaryButton: {
     flex: 1,

@@ -14,6 +14,7 @@ interface ButtonProps extends TouchableOpacityProps {
   title: string;
   variant?: 'primary' | 'secondary' | 'ghost' | 'outline';
   loading?: boolean;
+  textStyle?: TextStyle;
 }
 
 export function Button({
@@ -23,6 +24,7 @@ export function Button({
   loading = false,
   disabled,
   style,
+  textStyle,
   ...rest
 }: ButtonProps) {
   const { colors, spacing, typography } = useTheme();
@@ -85,12 +87,15 @@ export function Button({
         <ActivityIndicator color={getTextColor()} />
       ) : (
         <Text
-          style={{
-            color: getTextColor(),
-            fontSize: typography.sizes.md,
-            fontWeight: typography.weights.bold as any,
-            textAlign: 'center',
-          }}
+          style={[
+            {
+              color: getTextColor(),
+              fontSize: typography.sizes.md,
+              fontWeight: typography.weights.bold as any,
+              textAlign: 'center',
+            },
+            textStyle,
+          ]}
         >
           {title}
         </Text>

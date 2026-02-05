@@ -175,15 +175,15 @@ export type VibeType =
   | 'upscale_crowd'
   | 'casual_vibes';
 
-// Vibe configuration with labels and emojis
-export const VIBE_CONFIG: Record<VibeType, { label: string; emoji: string }> = {
-  good_for_dating: { label: 'Bom para encontros', emoji: '💕' },
-  singles_friendly: { label: 'Singles friendly', emoji: '💫' },
-  great_atmosphere: { label: 'Otima atmosfera', emoji: '✨' },
-  easy_conversation: { label: 'Facil conversar', emoji: '💬' },
-  intimate_setting: { label: 'Ambiente intimo', emoji: '🕯️' },
-  upscale_crowd: { label: 'Publico sofisticado', emoji: '🥂' },
-  casual_vibes: { label: 'Casual e relaxado', emoji: '😎' },
+// Vibe configuration with labels and icon names
+export const VIBE_CONFIG: Record<VibeType, { label: string; icon: string }> = {
+  good_for_dating: { label: 'Bom para encontros', icon: 'heart' },
+  singles_friendly: { label: 'Amigável para solteiros', icon: 'people' },
+  great_atmosphere: { label: 'Ótima atmosfera', icon: 'sparkles' },
+  easy_conversation: { label: 'Fácil conversar', icon: 'chatbubble-ellipses' },
+  intimate_setting: { label: 'Ambiente íntimo', icon: 'moon' },
+  upscale_crowd: { label: 'Público sofisticado', icon: 'wine' },
+  casual_vibes: { label: 'Casual e relaxado', icon: 'happy' },
 };
 
 // Venue vibe record from database
@@ -211,4 +211,171 @@ export interface CheckIn {
   open_to_meeting: boolean;
   checked_in_at: string;
   checked_out_at: string | null;
+}
+
+// Conexões (matches confirmados)
+export interface Match {
+  id: string;
+  user1_id: string;
+  user2_id: string;
+  venue_id: string | null;
+  confirmed: boolean;
+  matched_at: string;
+  confirmed_at: string | null;
+}
+
+// Pedido de conexão
+export interface ConnectionRequest {
+  id: string;
+  requester_id: string;
+  requested_id: string;
+  status: 'pending' | 'accepted' | 'declined' | 'canceled';
+  created_at: string;
+  responded_at: string | null;
+}
+
+// Favoritos
+export interface UserFavoritePlace {
+  id: string;
+  user_id: string;
+  place_id: string;
+  name: string;
+  address: string | null;
+  photo_url: string | null;
+  created_at: string;
+}
+
+// Mensagens (chat)
+export interface Message {
+  id: string;
+  match_id: string;
+  sender_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  media_path: string | null;
+  media_mime: string | null;
+  media_width: number | null;
+  media_height: number | null;
+}
+
+// ============================================================================
+// Venue Filtering & Metadata Types
+// ============================================================================
+
+// Venue metadata for nightlife scoring and community curation
+export interface VenueMetadata {
+  id: string;
+  place_id: string;
+  // Operating hours analysis
+  opening_hours: GooglePlaceOpeningHours | null;
+  closes_late_weekend: boolean;
+  opens_evening: boolean;
+  // Review keyword signals
+  review_keywords_positive: number;
+  review_keywords_negative: number;
+  // Community curation
+  is_verified_nightlife: boolean | null;
+  is_blocked: boolean;
+  user_flag_count: number;
+  // Computed score
+  nightlife_score: number;
+  // Cache management
+  last_details_fetch: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// User flag types for community curation
+export type VenueFlagType = 'not_nightlife' | 'closed' | 'wrong_category';
+
+// Venue flag record from database
+export interface VenueFlag {
+  id: string;
+  place_id: string;
+  user_id: string;
+  flag_type: VenueFlagType;
+  note: string | null;
+  created_at: string;
+}
+
+// Flag type configuration with labels
+export const VENUE_FLAG_CONFIG: Record<VenueFlagType, { label: string; description: string }> = {
+  not_nightlife: {
+    label: 'Nao e bar/balada',
+    description: 'Este lugar nao e um bar, boate ou local de vida noturna',
+  },
+  closed: {
+    label: 'Lugar fechou',
+    description: 'Este estabelecimento fechou permanentemente',
+  },
+  wrong_category: {
+    label: 'Categoria errada',
+    description: 'O tipo de estabelecimento esta incorreto',
+  },
+};
+
+// ============================================================================
+// Google Places Details API Types
+// ============================================================================
+
+// Opening hours period from Google Places Details API
+export interface GooglePlaceOpeningPeriod {
+  open: {
+    day: number; // 0 = Sunday, 6 = Saturday
+    time: string; // HHMM format, e.g., "1800"
+  };
+  close?: {
+    day: number;
+    time: string;
+  };
+}
+
+// Full opening hours object from Google Places Details API
+export interface GooglePlaceOpeningHours {
+  open_now?: boolean;
+  periods?: GooglePlaceOpeningPeriod[];
+  weekday_text?: string[];
+}
+
+// Review from Google Places Details API
+export interface GooglePlaceReview {
+  author_name: string;
+  rating: number;
+  text: string;
+  time: number;
+  language?: string;
+}
+
+// Google Places Details API response
+export interface GooglePlaceDetailsResult {
+  place_id: string;
+  name: string;
+  formatted_address?: string;
+  formatted_phone_number?: string;
+  website?: string;
+  url?: string; // Google Maps URL
+  types: string[];
+  opening_hours?: GooglePlaceOpeningHours;
+  reviews?: GooglePlaceReview[];
+  rating?: number;
+  user_ratings_total?: number;
+  price_level?: number;
+  geometry: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
+  photos?: {
+    photo_reference: string;
+    width: number;
+    height: number;
+  }[];
+}
+
+export interface GooglePlaceDetailsResponse {
+  result: GooglePlaceDetailsResult;
+  status: string;
+  error_message?: string;
 }

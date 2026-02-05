@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/theme';
 import { Button } from '../../../src/components/ui/Button';
 import { useProfile } from '../../../src/hooks/useProfile';
@@ -18,46 +19,46 @@ const MAX_INTERESTS = 10;
 // Lista de interesses pré-definidos (same as onboarding)
 const AVAILABLE_INTERESTS = [
   // Música e entretenimento
-  { emoji: '🎵', label: 'Música' },
-  { emoji: '🎬', label: 'Filmes' },
-  { emoji: '📺', label: 'Séries' },
-  { emoji: '🎮', label: 'Games' },
-  { emoji: '🎤', label: 'Karaokê' },
-  { emoji: '🎸', label: 'Shows' },
+  { icon: 'musical-notes', label: 'Música' },
+  { icon: 'film', label: 'Filmes' },
+  { icon: 'tv', label: 'Séries' },
+  { icon: 'game-controller', label: 'Games' },
+  { icon: 'mic', label: 'Karaokê' },
+  { icon: 'musical-notes', label: 'Shows' },
 
   // Comida e bebida
-  { emoji: '🍺', label: 'Cerveja' },
-  { emoji: '🍷', label: 'Vinho' },
-  { emoji: '🍹', label: 'Drinks' },
-  { emoji: '☕', label: 'Café' },
-  { emoji: '🍕', label: 'Pizza' },
-  { emoji: '🍔', label: 'Hambúrguer' },
-  { emoji: '🍣', label: 'Comida japonesa' },
-  { emoji: '🌮', label: 'Comida mexicana' },
+  { icon: 'beer', label: 'Cerveja' },
+  { icon: 'wine', label: 'Vinho' },
+  { icon: 'wine', label: 'Drinks' },
+  { icon: 'cafe', label: 'Café' },
+  { icon: 'pizza', label: 'Pizza' },
+  { icon: 'fast-food', label: 'Hambúrguer' },
+  { icon: 'restaurant', label: 'Comida japonesa' },
+  { icon: 'restaurant', label: 'Comida mexicana' },
 
   // Esportes e atividades
-  { emoji: '⚽', label: 'Futebol' },
-  { emoji: '🏋️', label: 'Academia' },
-  { emoji: '🏃', label: 'Corrida' },
-  { emoji: '🚴', label: 'Ciclismo' },
-  { emoji: '🏊', label: 'Natação' },
-  { emoji: '🧘', label: 'Yoga' },
+  { icon: 'football', label: 'Futebol' },
+  { icon: 'barbell', label: 'Academia' },
+  { icon: 'walk', label: 'Corrida' },
+  { icon: 'bicycle', label: 'Ciclismo' },
+  { icon: 'water', label: 'Natação' },
+  { icon: 'body', label: 'Yoga' },
 
   // Hobbies
-  { emoji: '📚', label: 'Leitura' },
-  { emoji: '✈️', label: 'Viagens' },
-  { emoji: '📷', label: 'Fotografia' },
-  { emoji: '🎨', label: 'Arte' },
-  { emoji: '🍳', label: 'Cozinhar' },
-  { emoji: '🌱', label: 'Plantas' },
-  { emoji: '🐕', label: 'Cachorros' },
-  { emoji: '🐱', label: 'Gatos' },
+  { icon: 'book', label: 'Leitura' },
+  { icon: 'airplane', label: 'Viagens' },
+  { icon: 'camera', label: 'Fotografia' },
+  { icon: 'color-palette', label: 'Arte' },
+  { icon: 'restaurant', label: 'Cozinhar' },
+  { icon: 'leaf', label: 'Plantas' },
+  { icon: 'paw', label: 'Cachorros' },
+  { icon: 'paw', label: 'Gatos' },
 
   // Social
-  { emoji: '💬', label: 'Conversar' },
-  { emoji: '🎉', label: 'Festas' },
-  { emoji: '🕺', label: 'Dançar' },
-  { emoji: '🎲', label: 'Jogos de tabuleiro' },
+  { icon: 'chatbubble-ellipses', label: 'Conversar' },
+  { icon: 'sparkles', label: 'Festas' },
+  { icon: 'musical-notes', label: 'Dançar' },
+  { icon: 'dice', label: 'Jogos de tabuleiro' },
 ];
 
 export default function EditInterestsScreen() {
@@ -143,13 +144,17 @@ export default function EditInterestsScreen() {
                 onPress={() => toggleInterest(interest.label)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.interestEmoji}>{interest.emoji}</Text>
+                <Ionicons
+                  name={interest.icon}
+                  size={18}
+                  color={isSelected ? colors.onPrimary : colors.text}
+                  style={styles.interestIcon}
+                />
                 <Text
                   style={[
                     styles.interestLabel,
                     {
                       color: isSelected ? colors.onPrimary : colors.text,
-                      fontWeight: isSelected ? '600' : '400',
                     },
                   ]}
                 >
@@ -213,8 +218,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
   },
-  interestEmoji: {
-    fontSize: 18,
+  interestIcon: {
     marginRight: 6,
   },
   interestLabel: {

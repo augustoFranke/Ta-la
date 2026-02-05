@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/theme';
 import { Button } from '../../../src/components/ui/Button';
 import { OnboardingProgress } from '../../../src/components/common/OnboardingProgress';
 import { useAuth } from '../../../src/hooks/useAuth';
-import { getCurrentLocation } from '../../../src/services/location';
+import { useLocationStore } from '../../../src/stores/locationStore';
 
 export default function PermissionsScreen() {
   const router = useRouter();
   const { colors, spacing, typography, isDark } = useTheme();
   const { completeOnboarding, isLoading: authLoading } = useAuth();
+  const getCurrentLocation = useLocationStore((state) => state.getCurrentLocation);
   const [locLoading, setLocLoading] = useState(false);
 
   const handleEnableLocation = async () => {
@@ -69,7 +71,7 @@ export default function PermissionsScreen() {
 
       <View style={styles.content}>
         <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
-          <Text style={{ fontSize: 64 }}>📍</Text>
+          <Ionicons name="location" size={64} color={colors.primary} />
         </View>
       </View>
 

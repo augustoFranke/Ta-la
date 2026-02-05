@@ -69,9 +69,14 @@ export function useProfile(options: UseProfileOptions = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isValidUuid = (value: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value
+    );
+
   // Fetch user photos
   const fetchPhotos = useCallback(async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || !isValidUuid(session.user.id)) return;
 
     try {
       const { data, error: fetchError } = await supabase
@@ -89,7 +94,7 @@ export function useProfile(options: UseProfileOptions = {}) {
 
   // Fetch user interests
   const fetchInterests = useCallback(async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || !isValidUuid(session.user.id)) return;
 
     try {
       const { data, error: fetchError } = await supabase

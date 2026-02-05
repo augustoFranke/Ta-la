@@ -3,23 +3,23 @@
  * Visualização e edição do perfil do usuário
  */
 
-import { ScrollView, RefreshControl, Alert, StyleSheet, View, Text } from 'react-native';
+import { ScrollView, RefreshControl, StyleSheet, View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../../src/theme';
-import { useAuth } from '../../../src/hooks/useAuth';
 import { useProfile } from '../../../src/hooks/useProfile';
-import { Button } from '../../../src/components/ui/Button';
 import {
   ProfileHeader,
   ProfilePhotos,
   ProfileBioSection,
   ProfileInterests,
 } from '../../../src/components/profile';
+import { Button } from '../../../src/components/ui/Button';
 
 export default function ProfileScreen() {
   const { colors, spacing, typography, isDark } = useTheme();
-  const { signOut, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter();
 
   const {
     user,
@@ -33,23 +33,6 @@ export default function ProfileScreen() {
     updateOccupation,
     updatePhotos,
   } = useProfile();
-
-  const handleLogout = async () => {
-    Alert.alert(
-      'Sair da conta',
-      'Tem certeza que deseja sair?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: async () => {
-            await signOut();
-          },
-        },
-      ]
-    );
-  };
 
   const handleRefresh = () => {
     fetchProfile();
@@ -102,23 +85,19 @@ export default function ProfileScreen() {
           isLoading={isLoading}
         />
 
-        {/* Settings Placeholder */}
+        {/* Settings */}
         <View style={[styles.settingsSection, { backgroundColor: colors.card }]}>
           <Text style={[styles.settingsTitle, { color: colors.textSecondary }]}>
             Configurações
           </Text>
           <Text style={[styles.settingsPlaceholder, { color: colors.textSecondary }]}>
-            Configurações adicionais serão adicionadas em breve
+            Ajuste permissões e aparência do app
           </Text>
-        </View>
-
-        {/* Logout Button */}
-        <View style={styles.logoutContainer}>
           <Button
-            title="Sair da conta"
+            title="Abrir configurações"
             variant="outline"
-            onPress={handleLogout}
-            loading={isAuthLoading}
+            onPress={() => router.push('/(tabs)/profile/settings')}
+            style={styles.settingsButton}
           />
         </View>
 
@@ -151,6 +130,10 @@ const styles = StyleSheet.create({
   },
   settingsPlaceholder: {
     fontSize: 14,
+    marginBottom: 12,
+  },
+  settingsButton: {
+    alignSelf: 'stretch',
   },
   logoutContainer: {
     marginBottom: 16,

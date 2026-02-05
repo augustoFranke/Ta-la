@@ -42,6 +42,8 @@ export function VenueCard({ venue, cardWidth, onPress }: VenueCardProps) {
         label: venue.open_now ? 'Aberto agora' : 'Fechado',
         color: venue.open_now ? '#1b6b2b' : '#7a1b1b',
       };
+  const distanceMeters = venue.distance * 1000;
+  const isTooFar = distanceMeters > 50;
 
   const renderRatingStars = (rating: number | null) => {
     if (!rating) return null;
@@ -50,18 +52,15 @@ export function VenueCard({ venue, cardWidth, onPress }: VenueCardProps) {
     const stars = [];
 
     for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push('★');
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push('★'); // Using full star for simplicity
-      } else {
-        stars.push('☆');
-      }
+      const name = i < fullStars || (i === fullStars && hasHalfStar)
+        ? 'star'
+        : 'star-outline';
+      stars.push(<Ionicons key={`star-${i}`} name={name} size={14} color="#FFD700" />);
     }
 
     return (
       <View style={styles.ratingContainer}>
-        <Text style={styles.ratingStars}>{stars.join('')}</Text>
+        <View style={styles.ratingStars}>{stars}</View>
         <Text style={styles.ratingNumber}>{rating.toFixed(1)}</Text>
       </View>
     );
@@ -151,7 +150,7 @@ export function VenueCard({ venue, cardWidth, onPress }: VenueCardProps) {
                 const config = VIBE_CONFIG[vibe];
                 return (
                   <View key={vibe} style={styles.vibeChip}>
-                    <Text style={styles.vibeEmoji}>{config.emoji}</Text>
+                    <Ionicons name={config.icon} size={12} color="#fff" />
                     <Text style={styles.vibeText}>{config.label}</Text>
                   </View>
                 );
@@ -160,12 +159,20 @@ export function VenueCard({ venue, cardWidth, onPress }: VenueCardProps) {
           )}
 
           <TouchableOpacity
-            style={[styles.detailsButton, { backgroundColor: colors.primary }]}
+            style={[
+              styles.detailsButton,
+              { backgroundColor: isTooFar ? colors.border : colors.primary },
+            ]}
             onPress={handlePress}
             activeOpacity={0.8}
           >
-            <Text style={[styles.detailsButtonText, { color: colors.onPrimary }]}>
-              Ver detalhes
+            <Text
+              style={[
+                styles.detailsButtonText,
+                { color: isTooFar ? colors.textSecondary : colors.onPrimary },
+              ]}
+            >
+              {isTooFar ? 'Você está muito longe' : 'Ver detalhes'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -296,8 +303,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   ratingStars: {
-    color: '#FFD700',
-    fontSize: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   ratingNumber: {
     color: '#fff',
@@ -332,9 +340,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  vibeEmoji: {
-    fontSize: 12,
   },
   vibeText: {
     color: '#fff',

@@ -7,23 +7,26 @@ import {
   Alert,
   AppState,
   Linking,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Location from 'expo-location';
-import { useTheme } from '../../src/theme';
-import { Button } from '../../src/components/ui/Button';
-import { useLocationStore } from '../../src/stores/locationStore';
-import { getCurrentLocation } from '../../src/services/location';
+import { useTheme } from '../../../src/theme';
+import { useLocationStore } from '../../../src/stores/locationStore';
+import { useAuth } from '../../../src/hooks/useAuth';
+import { Button } from '../../../src/components/ui/Button';
 
-export default function SettingsScreen() {
-  const { colors, spacing, typography, isDark } = useTheme();
+export default function ProfileSettingsScreen() {
+  const { colors, spacing, typography, isDark, setMode } = useTheme();
+  const { signOut, isLoading: isAuthLoading } = useAuth();
   const {
     permissionGranted,
     errorMsg,
     isLoading,
     setPermission,
     setError,
+    getCurrentLocation,
   } = useLocationStore();
   const [isRequesting, setIsRequesting] = useState(false);
 
@@ -54,6 +57,13 @@ export default function SettingsScreen() {
     });
   }, []);
 
+  const handleToggleTheme = useCallback(
+    (nextValue: boolean) => {
+      setMode(nextValue ? 'dark' : 'light');
+    },
+    [setMode]
+  );
+
   const handleToggleLocation = useCallback(
     async (nextValue: boolean) => {
       if (nextValue) {
@@ -79,8 +89,25 @@ export default function SettingsScreen() {
         ]
       );
     },
-    [handleOpenSettings]
+    [handleOpenSettings, getCurrentLocation]
   );
+
+  const handleLogout = useCallback(() => {
+    Alert.alert(
+      'Sair da conta',
+      'Tem certeza que deseja sair?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+          },
+        },
+      ]
+    );
+  }, [signOut]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -91,63 +118,74 @@ export default function SettingsScreen() {
           Configurações
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontSize: typography.sizes.md }]}>
-          Gerencie permissões e preferências do app.
+          Ajuste preferências e permissões do app.
         </Text>
       </View>
 
-      <View style={[styles.section, { paddingHorizontal: spacing.lg }]}>
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <ScrollView contentContainerStyle={{ paddingBottom: spacing.xl }}>
+        <View style={[styles.section, { paddingHorizontal: spacing.lg }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            Aparência
+          </Text>
+          <View style={[styles.list, { borderColor: colors.border }]}>
+            <View style={[styles.row, styles.rowDivider, { borderColor: colors.border }]}>
+              <Text style={[styles.rowTitle, { color: colors.text }]}>
+                Modo escuro
+              </Text>
+              <Switch
+                value={isDark}
+                onValueChange={handleToggleTheme}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={isDark ? colors.onPrimary : colors.textSecondary}
+                ios_backgroundColor={colors.border}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.section, { paddingHorizontal: spacing.lg, paddingTop: spacing.md }]}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             Permissões
           </Text>
-
-          <View style={styles.row}>
-            <View style={styles.rowText}>
+          <View style={[styles.list, { borderColor: colors.border }]}>
+            <View style={styles.row}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>
                 Localização
               </Text>
-              <Text style={[styles.rowSubtitle, { color: colors.textSecondary }]}>
-                Necessária para mostrar locais próximos a você.
-              </Text>
+              <Switch
+                value={permissionGranted}
+                onValueChange={handleToggleLocation}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={permissionGranted ? colors.onPrimary : colors.textSecondary}
+                ios_backgroundColor={colors.border}
+                disabled={isLoading || isRequesting}
+              />
             </View>
-            <Switch
-              value={permissionGranted}
-              onValueChange={handleToggleLocation}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={permissionGranted ? colors.onPrimary : colors.textSecondary}
-              ios_backgroundColor={colors.border}
-              disabled={isLoading || isRequesting}
-            />
           </View>
-
-          <View style={styles.statusRow}>
-            <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>
-              Status
-            </Text>
-            <Text
-              style={[
-                styles.statusValue,
-                { color: permissionGranted ? colors.success : colors.error },
-              ]}
-            >
-              {permissionGranted ? 'Ativada' : 'Desativada'}
-            </Text>
-          </View>
-
+          <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+            Necessária para mostrar locais próximos a você.
+          </Text>
           {errorMsg ? (
             <Text style={[styles.errorText, { color: colors.error }]}>
               {errorMsg}
             </Text>
           ) : null}
-
-          <Button
-            title="Abrir ajustes do sistema"
-            variant="outline"
-            onPress={handleOpenSettings}
-            style={{ marginTop: spacing.md }}
-          />
         </View>
-      </View>
+
+        <View style={[styles.section, { paddingHorizontal: spacing.lg, paddingTop: spacing.md }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            Conta
+          </Text>
+          <View style={styles.logoutContainer}>
+            <Button
+              title="Sair da conta"
+              variant="outline"
+              onPress={handleLogout}
+              loading={isAuthLoading}
+            />
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -167,13 +205,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   section: {
-    flex: 1,
-  },
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-    gap: 16,
+    gap: 12,
   },
   sectionTitle: {
     fontSize: 14,
@@ -181,37 +213,31 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
+  list: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 16,
+    paddingVertical: 12,
   },
-  rowText: {
-    flex: 1,
-    gap: 4,
+  rowDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   rowTitle: {
     fontSize: 16,
     fontWeight: '600',
   },
-  rowSubtitle: {
+  helperText: {
     fontSize: 13,
     lineHeight: 18,
   },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statusLabel: {
-    fontSize: 13,
-  },
-  statusValue: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
   errorText: {
     fontSize: 12,
+  },
+  logoutContainer: {
+    marginTop: 8,
   },
 });

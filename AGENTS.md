@@ -1,36 +1,63 @@
-# Agent Instructions & Design Guidelines
+# Project Instructions
 
-This document outlines specific rules and design choices that must be followed when generating code or making modifications to this project.
+## Project Overview
+- Tá lá! is a social mobile app built with React Native (Expo) and Supabase.
+- Target region: Dourados, MS, Brazil.
+
+## Directory Structure
+```
+app/           # Expo Router pages (file-based routing)
+  (auth)/      # Authentication screens
+  (tabs)/      # Tab navigation screens
+src/
+  components/  # Reusable UI components
+    ui/        # Base UI components (Button, Input, Card, etc.)
+  hooks/       # Custom React hooks
+  services/    # API and external service integrations
+  stores/      # Zustand state stores
+  theme/       # Design tokens and styling
+  types/       # TypeScript type definitions
+```
+
+## Tech Stack & Environment
+- Framework: Expo SDK 54 + React Native 0.81
+- Routing: Expo Router (file-based) under `app/` (do not migrate to React Navigation)
+- State: Zustand
+- Database: Supabase
+- Auth: Supabase Auth (email OTP)
+- HTTP: `fetch` only (do not add Axios)
+- Location: `expo-location` (do not replace with RN Geolocation)
+- Realtime: Supabase Realtime for offers/check-ins
+- Language: TypeScript
+- Build: Expo Go / EAS Preview only (no development builds)
 
 ## UI/Visual Design
+- No emojis in UI or code for visual representation
+- Use icon libraries (`expo-vector-icons` or project icon components) and keep styling consistent
+- Prefer UI components from `src/components/ui/` when possible
+- Primary color: `#c1ff72`
 
-### 1. No Emojis
-- **Rule:** Do not use emojis (e.g., 🚀, 👋, ⚠️) in the user interface or within the code for visual representation.
-- **Reasoning:** To maintain a professional, consistent, and native look and feel across platforms.
+## Localization
+- All user-facing text must be in Portuguese (pt-BR), including labels, buttons, placeholders, errors, notifications, navigation, empty states
+- Code comments and variable/function names may remain in English
 
-### 2. Iconography
-- **Rule:** Always use icon libraries instead of emojis.
-- **Implementation:**
-  - Use established icon sets compatible with the project's tech stack (e.g., `lucide-react-native`, `expo-vector-icons`, or the project's specific icon component).
-  - Ensure icons are consistently styled (size, color, stroke width) to match the application's theme.
+## Forms & State
+- `useState`: small/simple forms, few fields, minimal validation, no dynamic logic
+- `useReducer`: medium/large forms with state updates dependent on previous state or multi-step conditional flows
+- `react-hook-form`: large forms where performance and real-time/async validation matter
 
-## Localization & Language
+## MVP Scope Guardrails
+- Core MVP features: drink offers, check-in, and discovery of users at the same venue
+- Check-in must validate proximity (50-100m) and confirm venue presence
+- No in-app chat/messaging in MVP
+- Venue vibes/dating score are out of scope for now
 
-### 1. Portuguese (pt-BR) Required for User-Facing Text
-- **Rule:** Always translate all user-facing text to Portuguese (Brazilian Portuguese, pt-BR).
-- **Scope:** This applies to all components that will be read by users of the app, including:
-  - Labels, titles, and headings
-  - Button text and CTAs (Call-to-Action)
-  - Placeholder text in input fields
-  - Error messages and validation feedback
-  - Tooltips and helper text
-  - Navigation items and menu labels
-  - Notifications and alerts
-  - Empty state messages
-- **Reasoning:** The primary user base of this application speaks Portuguese. Consistent localization ensures a seamless user experience.
-- **Exceptions:** Code comments, variable names, function names, and developer-facing documentation may remain in English.
+## Commands
+- `npm start` — Expo dev server (Expo Go / Preview)
+- `npm run web` — Web preview
 
-## General Coding Standards
+## Commits
+- Use Conventional Commits (`feat`, `fix`, `chore`, `docs`, `test`, `refactor`)
 
-- Adhere to the existing project structure and conventions.
-- When in doubt about visual elements, prefer standard UI components and icons over text-based graphics or emojis.
+## Workflow
+- Always create a new git worktree and a new branch for every new feature.
