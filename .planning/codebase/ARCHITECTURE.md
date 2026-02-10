@@ -4,230 +4,143 @@
 
 ## Pattern Overview
 
-**Overall:** Component-based React Native architecture with Expo Router (file-based routing)
+**Overall:** Route-first feature architecture with thin service/hooks/store layers around Supabase and device APIs.
 
 **Key Characteristics:**
-- Client-side mobile app using React Native with Expo SDK 54
-- File-based routing via Expo Router (no React Navigation)
-- Centralized state management with Zustand stores
-- Service layer for external API calls (Supabase, Google Places)
-- Hook-based data fetching and business logic abstraction
-- Component-driven UI with reusable design system
+- Expo Router drives screen composition from `app/` while business logic lives under `src/` (`app/_layout.tsx`, `app/(tabs)/index.tsx`, `app/(auth)/login.tsx`).
+- Custom hooks orchestrate async flows and aggregate state from Zustand stores plus service calls (`src/hooks/useAuth.ts`, `src/hooks/useVenues.ts`, `src/hooks/useCheckIn.ts`, `src/hooks/useProfile.ts`).
+- Services are explicit boundary modules for external systems (Supabase, Radar Places), keeping transport and mapping logic out of UI files (`src/services/supabase.ts`, `src/services/auth.ts`, `src/services/places.ts`, `src/services/venueEnrichment.ts`, `src/services/drinks.ts`).
 
 ## Layers
 
-**Presentation Layer (app/):**
-- Purpose: Screen components and routing configuration
-- Location: `app/`
-- Contains: Route screens organized by navigation groups
-- Depends on: `src/hooks/`, `src/stores/`, `src/components/`, `src/theme/`
-- Used by: Expo Router file system
-- Pattern: File-based routing with layout nesting
+**Navigation & Screen Layer:**
+- Purpose: Define route tree, screen transitions, and route guards.
+- Location: `app/` (root at `app/_layout.tsx`, groups in `app/(auth)/`, `app/(tabs)/`, dynamic routes in `app/venue/[id].tsx` and `app/user/[id].tsx`).
+- Contains: Expo Router layouts, tab stacks, screen-level UI composition, local screen state.
+- Depends on: Hooks and shared UI components from `src/`.
+- Used by: End users through route resolution from `expo-router/entry` (`package.json`).
 
-**Component Layer (src/components/):**
-- Purpose: Reusable UI components and composed feature components
-- Location: `src/components/`
-- Contains: UI primitives (`ui/`), feature components (`venue/`, `profile/`), shared components (`common/`)
-- Depends on: `src/theme/`, `src/types/`, `src/stores/` (via hooks)
-- Used by: Presentation layer screens
-- Pattern: Composition with themed styling
+**Hook Orchestration Layer:**
+- Purpose: Coordinate view-model logic, async calls, and store updates for screens.
+- Location: `src/hooks/`.
+- Contains: Auth lifecycle and onboarding submit (`src/hooks/useAuth.ts`), venue fetching/cache control (`src/hooks/useVenues.ts`), check-in lifecycle (`src/hooks/useCheckIn.ts`), profile data sync (`src/hooks/useProfile.ts`).
+- Depends on: `src/services/*`, `src/stores/*`, `src/types/database.ts`.
+- Used by: Screen files in `app/`.
 
-**Business Logic Layer (src/hooks/):**
-- Purpose: Custom hooks encapsulating data fetching, side effects, and business rules
-- Location: `src/hooks/`
-- Contains: `useAuth.ts`, `useVenues.ts`, `useProfile.ts`, `useCheckIn.ts`
-- Depends on: `src/services/`, `src/stores/`, `src/types/`
-- Used by: Presentation layer and components
-- Pattern: React Hooks for stateful logic
+**State Layer (Client Store):**
+- Purpose: Keep cross-screen client state stable across navigation transitions.
+- Location: `src/stores/`.
+- Contains: Session/onboarding draft (`src/stores/authStore.ts`), permission/location coordinates (`src/stores/locationStore.ts`), venue list/cache/selection (`src/stores/venueStore.ts`), active check-in snapshot (`src/stores/checkInStore.ts`).
+- Depends on: Zustand and domain types.
+- Used by: Hooks and directly by some screens (`app/(tabs)/index.tsx`, `app/(tabs)/profile/settings.tsx`).
 
-**State Management Layer (src/stores/):**
-- Purpose: Global application state with Zustand
-- Location: `src/stores/`
-- Contains: `authStore.ts`, `venueStore.ts`, `locationStore.ts`, `checkInStore.ts`
-- Depends on: `src/types/`, external libraries (expo-location)
-- Used by: Hooks and components
-- Pattern: Zustand stores with actions and selectors
+**Service & Integration Layer:**
+- Purpose: Encapsulate all database/API side effects and response transformation.
+- Location: `src/services/`.
+- Contains: Supabase client bootstrap (`src/services/supabase.ts`), auth helpers (`src/services/auth.ts`), Radar Places fetch + filtering + mapping (`src/services/places.ts`), Supabase enrichment joins (`src/services/venueEnrichment.ts`), drink/match relation resolution (`src/services/drinks.ts`).
+- Depends on: Runtime env vars and remote APIs.
+- Used by: Hooks and a few direct screen calls (`app/(tabs)/discover.tsx`, `app/venue/[id].tsx`, `app/user/[id].tsx`).
 
-**Service Layer (src/services/):**
-- Purpose: External API communication and data transformation
-- Location: `src/services/`
-- Contains: `supabase.ts` (client), `auth.ts`, `places.ts`, `drinks.ts`, `venueEnrichment.ts`
-- Depends on: `@supabase/supabase-js`, `src/types/`
-- Used by: Hooks layer
-- Pattern: Async functions returning typed results
+**Presentation & Design System Layer:**
+- Purpose: Provide reusable themed primitives and feature components.
+- Location: `src/components/` and `src/theme/`.
+- Contains: Base controls (`src/components/ui/Button.tsx`, `src/components/ui/Input.tsx`, `src/components/ui/Card.tsx`, `src/components/ui/Avatar.tsx`, `src/components/ui/Tag.tsx`), feature widgets (`src/components/venue/*`, `src/components/profile/*`), theme context/tokens (`src/theme/index.ts`, `src/theme/colors.ts`, `src/theme/spacing.ts`, `src/theme/typography.ts`).
+- Depends on: React Native primitives and `useTheme`.
+- Used by: All route screens.
 
-**Configuration Layer (src/config/):**
-- Purpose: Static configuration data and constants
-- Location: `src/config/`
-- Contains: `verifiedVenues.ts`, `venueTypeScores.ts`
-- Depends on: `src/types/`
-- Used by: Service layer
-- Pattern: Exported constants and lookup tables
+**Data Platform Layer (Schema/RLS/Functions):**
+- Purpose: Persist domain data, enforce access policies, and execute server-side logic.
+- Location: `supabase/migrations/*.sql`.
+- Contains: Core tables (`supabase/migrations/002_create_users.sql`, `supabase/migrations/005_create_venues.sql`, `supabase/migrations/006_create_check_ins.sql`, `supabase/migrations/007_create_drinks.sql`, `supabase/migrations/008_create_matches.sql`), storage policy (`supabase/migrations/013_create_storage_buckets.sql`), RPC/trigger logic (`supabase/migrations/011_create_functions.sql`, `supabase/migrations/017_create_venue_filtering.sql`).
+- Depends on: Postgres + Supabase Auth context (`auth.uid()`, `auth.role()`).
+- Used by: Client via Supabase table queries and RPC calls.
 
 ## Data Flow
 
-**Authentication Flow:**
+**App Bootstrap and Route Gating:**
 
-1. User enters email in `app/(auth)/login.tsx`
-2. Screen calls `useAuth().sendOTP()` hook method
-3. Hook calls `sendEmailVerification()` from `src/services/auth.ts`
-4. Service uses Supabase client to send OTP via email
-5. User verifies code, hook calls `confirmEmailCode()` service
-6. Service updates Supabase Auth session
-7. `onAuthStateChanged` listener in `useAuth` detects session change
-8. Hook fetches user profile from `users` table via Supabase
-9. `authStore.setSession()` and `authStore.setUser()` update global state
-10. Root layout (`app/_layout.tsx`) `useProtectedRoute` redirects to tabs or onboarding
+1. `app/_layout.tsx` mounts `ThemeProvider`, calls `useAuth()`, and waits for auth initialization.
+2. `src/hooks/useAuth.ts` subscribes to `onAuthStateChanged()` from `src/services/auth.ts` and stores session/user in `src/stores/authStore.ts`.
+3. `app/_layout.tsx` inspects `session`, `isAuthenticated`, and `needsOnboarding` and redirects to `/(auth)/welcome`, `/(auth)/onboarding/photos`, or `/(tabs)`.
 
-**Venue Discovery Flow:**
+**Nearby Venue Discovery:**
 
-1. `app/(tabs)/index.tsx` mounts and calls `useVenues({ autoFetch: true })`
-2. Hook checks `locationStore` for coordinates
-3. If no location, calls `locationStore.bootstrap()` to request permissions and get GPS
-4. Hook calls `places.ts` service to fetch nearby venues from Google Places API
-5. Service enriches venue data with Supabase check-in counts and vibes
-6. Hook updates `venueStore.setVenues()` with enriched results
-7. Screen renders `VenueCarousel` component with venue data
-8. User taps venue card, router navigates to `app/venue/[id].tsx`
+1. `app/(tabs)/index.tsx` triggers location bootstrap through `src/stores/locationStore.ts` and consumes `useVenues()`.
+2. `src/hooks/useVenues.ts` calls `searchNearbyVenues()` in `src/services/places.ts` and enriches results with `enrichWithActiveUserCounts()` in `src/services/venueEnrichment.ts`.
+3. Results are cached in `src/stores/venueStore.ts`; UI renders via `src/components/venue/VenueCarousel.tsx` and detail route `app/venue/[id].tsx`.
 
-**Check-In Flow:**
+**Check-in and Discover People:**
 
-1. User taps "Check-in" on venue detail screen
-2. Screen opens `CheckInModal` component
-3. Component calls `useCheckIn().performCheckIn()` hook method
-4. Hook validates proximity (50-100m) using `locationStore` coordinates
-5. Hook inserts check-in record to Supabase `checkins` table
-6. Hook updates `checkInStore.setActiveCheckIn()` with new check-in
-7. Supabase Realtime broadcasts check-in to other users at same venue
-8. Modal closes and screen shows active check-in state
+1. `app/venue/[id].tsx` submits check-in intent through `useCheckIn().checkInToPlace()` in `src/hooks/useCheckIn.ts`.
+2. Hook invokes Supabase RPC `check_in_to_place` and refreshes active check-in from `check_ins` table.
+3. `app/(tabs)/discover.tsx` reads active check-in and loads users in the same venue via Supabase RPC `get_users_at_venue` (defined in `supabase/migrations/011_create_functions.sql`), then resolves drink state through `src/services/drinks.ts`.
 
 **State Management:**
-
-- Zustand stores hold global state (auth, venues, location, check-ins)
-- Hooks read from stores and call store actions
-- Components subscribe to stores via hooks (automatic re-render on updates)
-- No Redux, Context API used minimally (ThemeProvider only)
+- Global state uses scoped Zustand stores per domain (`src/stores/authStore.ts`, `src/stores/locationStore.ts`, `src/stores/venueStore.ts`, `src/stores/checkInStore.ts`).
+- Screen-local ephemeral UI state remains in `useState` inside route files (`app/(tabs)/discover.tsx`, `app/(auth)/verify.tsx`, `app/(auth)/onboarding/preferences.tsx`).
 
 ## Key Abstractions
 
-**Stores (Zustand):**
-- Purpose: Global state containers with actions
-- Examples: `src/stores/authStore.ts`, `src/stores/venueStore.ts`, `src/stores/locationStore.ts`, `src/stores/checkInStore.ts`
-- Pattern: `create<State>()` with state properties and action methods
-- Usage: Hooks call store actions, components subscribe via custom hooks
+**Route Group Gatekeeping:**
+- Purpose: Segment auth and app routes while centralizing access rules.
+- Examples: `app/_layout.tsx`, `app/(auth)/_layout.tsx`, `app/(auth)/onboarding/_layout.tsx`, `app/(tabs)/_layout.tsx`.
+- Pattern: Root guard + nested route groups with no duplicate auth logic in child screens.
 
-**Services:**
-- Purpose: Encapsulate external API calls and data transformation
-- Examples: `src/services/auth.ts`, `src/services/places.ts`, `src/services/supabase.ts`
-- Pattern: Async functions returning `Promise<{ success: boolean, data?, error? }>`
-- Usage: Called by custom hooks, never directly from components
+**Domain Hooks as Use Cases:**
+- Purpose: Treat each business workflow as a hook-level use case API.
+- Examples: `src/hooks/useAuth.ts` (`sendOTP`, `verifyOTP`, `completeOnboarding`), `src/hooks/useCheckIn.ts` (`checkInToPlace`), `src/hooks/useVenues.ts` (`refreshVenues`), `src/hooks/useProfile.ts` (`updatePhotos`, `updateInterests`).
+- Pattern: Hook exposes serializable state + imperative async actions.
 
-**Custom Hooks:**
-- Purpose: Reusable stateful logic combining stores, services, and side effects
-- Examples: `src/hooks/useAuth.ts`, `src/hooks/useVenues.ts`, `src/hooks/useCheckIn.ts`
-- Pattern: `useEffect` for initialization, `useCallback` for actions, return state + methods
-- Usage: Screens and feature components import and invoke hooks
+**Provider Adapters:**
+- Purpose: Normalize third-party payloads into app domain models.
+- Examples: Radar place mapping in `src/services/places.ts` (`transformToVenue`), count enrichment in `src/services/venueEnrichment.ts`.
+- Pattern: Service functions return typed domain-oriented objects consumed by hooks/stores.
 
-**Route Groups (Expo Router):**
-- Purpose: Organize routes with shared layouts without affecting URL structure
-- Examples: `app/(auth)/`, `app/(tabs)/`, `app/(auth)/onboarding/`
-- Pattern: `(groupName)/_layout.tsx` defines Stack or Tabs navigator for children
-- Usage: Routes nested in group inherit layout configuration
+**Feature Component Modules:**
+- Purpose: Keep complex screen sections reusable and isolated.
+- Examples: Venue module (`src/components/venue/VenueCard.tsx`, `src/components/venue/VenueCarousel.tsx`, `src/components/venue/CheckInModal.tsx`) and profile module (`src/components/profile/ProfileHeader.tsx`, `src/components/profile/ProfilePhotos.tsx`, `src/components/profile/ProfileBioSection.tsx`, `src/components/profile/ProfileInterests.tsx`).
+- Pattern: Feature folders with barrel exports (`src/components/venue/index.ts`, `src/components/profile/index.ts`).
 
 ## Entry Points
 
-**Root Layout:**
-- Location: `app/_layout.tsx`
-- Triggers: App launch
-- Responsibilities:
-  - Wrap app with `ThemeProvider` and `SafeAreaProvider`
-  - Initialize auth state via `useAuth` hook
-  - Protected routing with `useProtectedRoute` (redirects based on auth state)
-  - Define root Stack navigator with auth, tabs, and modal screens
+**App Runtime Entry:**
+- Location: `package.json` (`"main": "expo-router/entry"`).
+- Triggers: Expo app startup.
+- Responsibilities: Boot Expo Router tree from `app/`.
 
-**Authentication Entry:**
-- Location: `app/(auth)/welcome.tsx`
-- Triggers: User not authenticated
-- Responsibilities: Show welcome screen with login CTA
+**Global Layout / Router Guard:**
+- Location: `app/_layout.tsx`.
+- Triggers: Every route resolution.
+- Responsibilities: Provide theme + safe area context, run protected route logic, register stack screens, and gate auth/onboarding.
 
-**Authenticated Entry:**
-- Location: `app/(tabs)/index.tsx`
-- Triggers: User authenticated and profile complete
-- Responsibilities: Show home screen with venue recommendations and check-in
+**Auth Flow Entry:**
+- Location: `app/(auth)/welcome.tsx` and `app/(auth)/login.tsx`.
+- Triggers: Unauthenticated or signed-out state.
+- Responsibilities: Start OTP flow and route to `app/(auth)/verify.tsx`.
 
-**Onboarding Entry:**
-- Location: `app/(auth)/onboarding/photos.tsx`
-- Triggers: User authenticated but profile incomplete (`needsOnboarding = true`)
-- Responsibilities: Multi-step onboarding flow to complete user profile
+**Main Product Entry:**
+- Location: `app/(tabs)/index.tsx`.
+- Triggers: Authenticated + onboarded users.
+- Responsibilities: Kick off location + venue discovery and navigate to venue details.
+
+**Data Definition Entry:**
+- Location: `supabase/migrations/` (ordered SQL files).
+- Triggers: Supabase migration application.
+- Responsibilities: Define schema, RLS policies, DB functions, and storage permissions.
 
 ## Error Handling
 
-**Strategy:** Service-level error catching with user-friendly messages
+**Strategy:** Catch-and-return at hook/service boundaries with UI feedback via `Alert.alert` and store-level `error` fields.
 
 **Patterns:**
-- Services return `{ success: boolean, error?: string }` instead of throwing
-- Hooks catch service errors and update store error state
-- Components display error messages from store state (not caught exceptions)
-- Supabase errors are mapped to Portuguese user-facing messages in hooks
-- Location errors set `locationStore.errorMsg` displayed in UI
-- Auth errors show inline validation feedback on form screens
-
-**Example:**
-```typescript
-// Service (src/services/auth.ts)
-export async function sendEmailVerification(email: string): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase.auth.signInWithOtp({ email });
-  if (error) return { success: false, error: error.message };
-  return { success: true };
-}
-
-// Hook (src/hooks/useAuth.ts)
-const sendOTP = useCallback(async (email: string) => {
-  const result = await sendEmailVerification(email);
-  if (!result.success) {
-    return { success: false, error: result.error || 'Erro ao enviar código' };
-  }
-  return { success: true };
-}, []);
-
-// Component (app/(auth)/login.tsx)
-const result = await sendOTP(email);
-if (!result.success) {
-  Alert.alert('Erro', result.error);
-}
-```
+- Services return `{ data/error }` style semantics and hooks translate failures to user-facing messages (`src/services/places.ts`, `src/hooks/useVenues.ts`, `src/hooks/useCheckIn.ts`, `src/hooks/useAuth.ts`).
+- Screens handle recoverable failures inline (retry buttons, disabled actions, empty states) instead of throwing to a global boundary (`src/components/venue/VenueCarousel.tsx`, `app/(tabs)/discover.tsx`, `app/(auth)/verify.tsx`).
 
 ## Cross-Cutting Concerns
 
-**Logging:** 
-- Approach: `console.error()` for caught errors in hooks and services
-- No centralized logging service (future: Sentry integration)
-
-**Validation:** 
-- Approach: Inline validation in screens (email format, required fields)
-- No form library (uses `useState` for simple forms)
-- Supabase RLS policies enforce database-level validation
-
-**Authentication:** 
-- Approach: Supabase Auth with Email OTP (passwordless)
-- Session managed by `authStore` with auto-refresh
-- Protected routes via `useProtectedRoute` in root layout
-- JWT token stored in AsyncStorage by Supabase client
-
-**Authorization:**
-- Approach: Row-Level Security (RLS) policies in Supabase
-- User ID from JWT claims used in database queries
-- No role-based access control (all users have same permissions)
-
-**Theming:**
-- Approach: `ThemeProvider` context with light/dark mode support
-- Design tokens in `src/theme/` (colors, spacing, typography)
-- Components use `useTheme()` hook for consistent styling
-
-**Location:**
-- Approach: `expo-location` with permission handling in `locationStore`
-- GPS coordinates cached in store, refreshed on venue search
-- Proximity validation for check-ins (50-100m radius)
+**Logging:** Console logging is used for diagnostics in hooks/services (`src/hooks/useAuth.ts`, `src/hooks/useCheckIn.ts`, `src/hooks/useProfile.ts`, `src/services/places.ts`).
+**Validation:** Input validation is local to screens/hooks (email and OTP checks in `app/(auth)/login.tsx` and `app/(auth)/verify.tsx`, onboarding validation in `app/(auth)/onboarding/bio.tsx`, UUID checks in `src/hooks/useProfile.ts`).
+**Authentication:** Supabase Auth session drives all protected access; route gating is centralized in `app/_layout.tsx`, while DB access is enforced by RLS in `supabase/migrations/*.sql`.
 
 ---
 

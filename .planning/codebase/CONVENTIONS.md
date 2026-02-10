@@ -2,411 +2,99 @@
 
 **Analysis Date:** 2026-02-10
 
-## Language Standards
-
-**TypeScript:**
-- TypeScript strict mode enabled (`"strict": true` in `tsconfig.json`)
-- Extends Expo's base TypeScript config
-- All source files use `.ts` or `.tsx` extensions
-
-**Portuguese for UI text:**
-- All user-facing strings (labels, buttons, placeholders, errors, notifications) must be in Portuguese (pt-BR)
-- Examples:
-  - `'Qual seu email?'` (login screen title)
-  - `'Enviar código'` (button label)
-  - `'Ver detalhes'` (venue card button)
-  - `'Você está muito longe'` (distance warning)
-
-**English for code:**
-- Variable names, function names, types, and comments use English
-- Example: `useAuth`, `fetchUserProfile`, `calculateDistance`
-
-## Naming Conventions
+## Naming Patterns
 
 **Files:**
-- React components: PascalCase with `.tsx` extension
-  - `Button.tsx`, `VenueCard.tsx`, `ProfileHeader.tsx`
-- Hooks: camelCase with `use` prefix, `.ts` extension
-  - `useAuth.ts`, `useCheckIn.ts`, `useVenues.ts`
-- Services: camelCase, `.ts` extension
-  - `auth.ts`, `places.ts`, `supabase.ts`
-- Stores: camelCase with `Store` suffix, `.ts` extension
-  - `authStore.ts`, `venueStore.ts`, `checkInStore.ts`
-- Types: camelCase, `.ts` extension
-  - `database.ts`
-- Config: camelCase, `.ts` extension
-  - `venueTypeScores.ts`, `verifiedVenues.ts`
-
-**Components:**
-- Named exports with PascalCase
-- Example: `export function Button({ ... }) { ... }`
-- File name matches component name
+- Use PascalCase for React component files in `src/components/ui/Button.tsx`, `src/components/profile/ProfileBioSection.tsx`, and `src/components/venue/VenueCard.tsx`.
+- Use camelCase for hooks, services, stores, and config files in `src/hooks/useAuth.ts`, `src/services/places.ts`, `src/stores/locationStore.ts`, and `src/config/verifiedVenues.ts`.
+- Use lowercase route file names and Expo Router dynamic segments in `app/(auth)/login.tsx`, `app/(tabs)/discover.tsx`, `app/venue/[id].tsx`, and `app/user/[id].tsx`.
 
 **Functions:**
-- camelCase for all functions
-- Examples: `sendEmailVerification`, `calculateDistance`, `formatDate`
-- Async functions clearly named: `fetchUserProfile`, `fetchActiveCheckIn`
+- Use camelCase for function names (`fetchUserProfile`, `sendOTP`, `checkInToPlace`) in `src/hooks/useAuth.ts` and `src/hooks/useCheckIn.ts`.
+- Prefix hooks with `use` and export them as named functions (`useAuth`, `useVenues`, `useProfile`) in `src/hooks/useAuth.ts`, `src/hooks/useVenues.ts`, and `src/hooks/useProfile.ts`.
+- Use `handle*` naming for UI event handlers (`handleSendOTP`, `handleToggleLocation`, `handleRespondDrink`) in `app/(auth)/login.tsx`, `app/(tabs)/profile/settings.tsx`, and `app/(tabs)/discover.tsx`.
 
 **Variables:**
-- camelCase for variables
-- UPPER_SNAKE_CASE for constants
-- Examples: 
-  - `const email = ...`
-  - `const DEFAULT_RADIUS = 10000`
-  - `const BLACKLISTED_TYPES = [...]`
+- Use camelCase for local variables and state (`isLoading`, `pendingEmail`, `searchQuery`) in `src/hooks/useAuth.ts`, `src/hooks/useProfile.ts`, and `app/(tabs)/discover.tsx`.
+- Use UPPER_SNAKE_CASE for constants (`DEV_SKIP_AUTH`, `RADAR_BASE_URL`, `VENUE_CACHE_DURATION`) in `src/hooks/useAuth.ts`, `src/services/places.ts`, and `src/stores/venueStore.ts`.
+- Keep DB field names in snake_case when mapping table columns (`birth_date`, `open_to_meeting`, `place_id`) in `src/types/database.ts`, `src/hooks/useCheckIn.ts`, and `src/hooks/useProfile.ts`.
 
 **Types:**
-- PascalCase for type/interface names
-- Examples: `User`, `VenueWithDistance`, `OnboardingData`, `AuthSession`
-- Props interfaces: ComponentName + `Props` suffix
-  - `ButtonProps`, `InputProps`, `VenueCardProps`
+- Use PascalCase for interfaces and type aliases (`AuthState`, `VenueWithDistance`, `DrinkRelation`) in `src/stores/authStore.ts`, `src/stores/venueStore.ts`, and `src/services/drinks.ts`.
+- Keep union literals explicit for constrained domains (`Gender`, `GenderPreference`, `DrinkRelationState`) in `src/types/database.ts` and `src/services/drinks.ts`.
+- Prefer `import type` for type-only imports as in `src/hooks/useAuth.ts`, `src/stores/authStore.ts`, and `src/components/profile/ProfileInterests.tsx`.
 
-## Component Patterns
+## Code Style
 
-**Component Structure:**
-```typescript
-/**
- * Component description
- * Purpose and responsibilities
- */
+**Formatting:**
+- Tool used: Not detected (`.prettierrc*` not present, `biome.json` not present).
+- Keep 2-space indentation, semicolons, and single quotes, matching `app/(auth)/login.tsx` and `src/hooks/useAuth.ts`.
+- Prefer trailing commas in multiline objects/arrays as in `src/hooks/useAuth.ts` and `app/(tabs)/discover.tsx`.
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../../theme';
-
-interface ComponentProps {
-  prop: string;
-  optional?: boolean;
-}
-
-export function ComponentName({ prop, optional }: ComponentProps) {
-  const { colors, spacing, typography } = useTheme();
-
-  return (
-    <View style={[styles.container, { backgroundColor: colors.card }]}>
-      <Text style={{ color: colors.text }}>Content</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    // Static styles
-  },
-});
-```
-
-**Props Patterns:**
-- Extend React Native base props when appropriate
-  - `interface ButtonProps extends TouchableOpacityProps`
-  - `interface InputProps extends TextInputProps`
-- Optional props use `?` suffix
-- Destructure props in function parameters
-
-**Hooks Usage:**
-- Custom hooks always start with `use` prefix
-- Place hooks at top of component, before any logic
-- Theme hook pattern: `const { colors, spacing, typography, isDark } = useTheme();`
-- Auth hook pattern: `const { user, session, isLoading } = useAuth();`
-
-**File-level Comments:**
-- Start complex files with JSDoc-style comment describing purpose
-- Example from `src/hooks/useAuth.ts`:
-  ```typescript
-  /**
-   * Hook de autenticação
-   * Gerencia login via Email OTP com Supabase Auth, sessão e perfil do usuário
-   */
-  ```
-
-## State Management
-
-**`useState` - Small/Simple Forms:**
-- Use for few fields (1-3)
-- Minimal validation
-- No dependent state updates
-- Example: login screen with email input (`app/(auth)/login.tsx`)
-```typescript
-const [email, setEmail] = useState('');
-const [error, setError] = useState('');
-```
-
-**`useReducer` - Medium/Large Forms:**
-- Use for medium/large forms with state dependent on previous state
-- Multi-step conditional flows
-- Example: onboarding bio screen (`app/(auth)/onboarding/bio.tsx`)
-```typescript
-const [name, setName] = useState('');
-const [birthDate, setBirthDate] = useState('');
-const [bio, setBio] = useState('');
-const [occupation, setOccupation] = useState('');
-const [errors, setErrors] = useState<{ [key: string]: string }>({});
-```
-
-**`react-hook-form` - Large Forms:**
-- Not currently used in codebase
-- Would be used for: large forms with performance requirements, real-time/async validation
-
-**Zustand for Global State:**
-- All global state uses Zustand stores
-- Store files: `src/stores/`
-- Pattern:
-```typescript
-import { create } from 'zustand';
-
-interface StoreState {
-  // State
-  data: DataType | null;
-  isLoading: boolean;
-  
-  // Actions
-  setData: (data: DataType | null) => void;
-  setLoading: (loading: boolean) => void;
-  reset: () => void;
-}
-
-export const useStore = create<StoreState>((set) => ({
-  data: null,
-  isLoading: false,
-  
-  setData: (data) => set({ data }),
-  setLoading: (isLoading) => set({ isLoading }),
-  reset: () => set({ data: null, isLoading: false }),
-}));
-```
-
-## Styling
-
-**Theme Usage:**
-- Always import and use theme hook: `const { colors, spacing, typography } = useTheme();`
-- Never hardcode colors, spacing, or font sizes
-
-**Primary Color:**
-- Light mode: `#95d84a`
-- Dark mode: `#c1ff72` (defined in `src/theme/colors.ts`)
-- Access via: `colors.primary`
-
-**Style Patterns:**
-- Combine static styles with dynamic theme values:
-```typescript
-<View style={[
-  styles.container,
-  { 
-    backgroundColor: colors.card,
-    padding: spacing.md 
-  }
-]} />
-```
-
-**No Emojis:**
-- Never use emojis for visual representation in UI
-- Use icon libraries (`@expo/vector-icons`) instead
-- Example: `<Ionicons name="location" size={14} color={colors.text} />`
-
-**StyleSheet:**
-- Create StyleSheet objects at bottom of file
-- Use for static/unchanging styles only
-- Theme-dependent values go inline
-
-**Border Radius:**
-- Common values: 12, 16, 20, 24
-- Cards: typically 16 or 24
-- Buttons: typically 12
-- Badges: typically 20
+**Linting:**
+- Tool used: Not detected (`.eslintrc*` and `eslint.config.*` not present).
+- Enforce strict TypeScript via `"strict": true` in `tsconfig.json`.
+- Avoid broad `any` casts; current exceptions appear in `app/(tabs)/index.tsx`, `src/hooks/useAuth.ts`, `src/hooks/useCheckIn.ts`, and `src/components/ui/Button.tsx`.
 
 ## Import Organization
 
 **Order:**
-1. React and React Native imports
-2. Third-party libraries (Expo, Supabase, etc.)
-3. Local imports (components, hooks, services, types)
+1. React and framework imports first (`react`, `react-native`, `expo-router`) as in `app/(tabs)/discover.tsx`.
+2. Third-party packages next (`@expo/vector-icons`, `expo-location`) as in `app/(tabs)/discover.tsx` and `app/(tabs)/profile/settings.tsx`.
+3. Internal modules last with relative paths (`../../src/...`, `../services/...`) as in `app/(tabs)/index.tsx` and `src/hooks/useVenues.ts`.
 
-**Example:**
-```typescript
-import { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { useTheme } from '../../src/theme';
-import { Button } from '../../src/components/ui/Button';
-import { useAuth } from '../../src/hooks/useAuth';
-```
-
-**Path Patterns:**
-- Relative imports for local files: `'../../src/theme'`
-- No path aliases configured
-- Deep imports when necessary: `'@supabase/supabase-js'`
-
-**Type Imports:**
-- Use `import type` for type-only imports:
-  ```typescript
-  import type { User } from '../types/database';
-  import type { Session } from '@supabase/supabase-js';
-  ```
+**Path Aliases:**
+- Not detected; use relative imports in `app/(auth)/verify.tsx`, `app/(tabs)/profile/index.tsx`, and `src/components/ui/Input.tsx`.
 
 ## Error Handling
 
-**Async Function Pattern:**
-```typescript
-const functionName = useCallback(async (input: string) => {
-  setLoading(true);
-  try {
-    const result = await someAsyncOperation(input);
-    
-    if (!result.success) {
-      return { success: false, error: result.error || 'Erro genérico' };
-    }
-    
-    return { success: true, data: result.data };
-  } catch (error: any) {
-    console.error('Contexto do erro:', error);
-    return { success: false, error: error.message || 'Mensagem padrão' };
-  } finally {
-    setLoading(false);
-  }
-}, [dependencies]);
-```
-
-**Return Type Pattern:**
-- Success/error objects: `{ success: boolean; error?: string; data?: T }`
-- Example from `src/hooks/useAuth.ts`:
-```typescript
-return { success: false, error: 'Email inválido' };
-return { success: true, email: normalizedEmail };
-```
-
-**User Feedback:**
-- Use `Alert.alert()` for errors requiring user attention
-- Store error state for inline display
-- Portuguese error messages
-
-**Validation:**
-- Validate early, return early
-- Set field-specific errors: `setErrors({ fieldName: 'Mensagem de erro' })`
-- Example from `app/(auth)/onboarding/bio.tsx`:
-```typescript
-const validateForm = (): boolean => {
-  const newErrors: { [key: string]: string } = {};
-  
-  if (!name.trim()) {
-    newErrors.name = 'Nome é obrigatório';
-  } else if (name.trim().length < 2) {
-    newErrors.name = 'Nome muito curto';
-  }
-  
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
-```
+**Patterns:**
+- Wrap async IO in `try/catch/finally`, set loading state before/after, and return structured result objects (`{ success: boolean; error?: string }`) in `src/hooks/useAuth.ts`, `src/hooks/useCheckIn.ts`, and `src/hooks/useProfile.ts`.
+- Throw early for invariant violations (`throw new Error(...)`) and convert to user-safe messages in `src/hooks/useAuth.ts` and `src/services/places.ts`.
+- Surface operation errors in Zustand stores via `setError(...)` in `src/hooks/useVenues.ts`, `src/hooks/useCheckIn.ts`, and `src/stores/locationStore.ts`.
 
 ## Logging
 
-**Framework:**
-- Standard `console` methods only
-- No external logging library
+**Framework:** console
 
 **Patterns:**
-- `console.error()` for errors with context:
-  ```typescript
-  console.error('Erro ao buscar perfil:', error);
-  console.error('Error fetching venues from Radar:', error);
-  ```
-- Always include descriptive context string before error object
-- Use Portuguese or English consistently per file (Portuguese for user-facing, English for internal services)
+- Use `console.error` for exception logging in hooks and services (`src/hooks/useAuth.ts`, `src/hooks/useProfile.ts`, `src/services/venueEnrichment.ts`, `src/services/places.ts`).
+- Do not use `console.log`/`console.warn` in current application code under `src/`.
 
-**When to Log:**
-- All caught errors in try/catch blocks
-- Failed async operations
-- API errors
-- Service failures
+## Comments
 
-**What NOT to Log:**
-- Sensitive data (passwords, tokens, API keys)
-- User PII unless necessary for debugging
-- Successful operations (no "success" logs)
+**When to Comment:**
+- Add file-level block comments for purpose/context in screens, hooks, and services (`app/_layout.tsx`, `app/(tabs)/index.tsx`, `src/services/auth.ts`, `src/hooks/useVenues.ts`).
+- Add short section comments to partition UI blocks and state transitions in screens (`app/(tabs)/profile/index.tsx`, `app/(tabs)/discover.tsx`, `app/(auth)/login.tsx`).
+- Keep comments explanatory for non-obvious logic (sorting/scoring/caching) as seen in `app/(tabs)/index.tsx`, `src/services/places.ts`, and `src/stores/venueStore.ts`.
+
+**JSDoc/TSDoc:**
+- Use JSDoc primarily in service and utility layers (`src/services/auth.ts`, `src/services/places.ts`, `src/services/venueEnrichment.ts`).
+- Keep component props documented through TypeScript interfaces rather than JSDoc in `src/components/ui/Button.tsx` and `src/components/profile/ProfileBioSection.tsx`.
 
 ## Function Design
 
 **Size:**
-- Keep functions focused and small
-- Extract complex logic into helper functions
-- Example: validation, formatting, transformation functions
+- Keep store actions and UI handlers small and focused (`src/stores/checkInStore.ts`, `app/(auth)/login.tsx`).
+- Allow larger orchestration functions for data workflows in hooks/services (`src/hooks/useProfile.ts`, `src/services/places.ts`).
 
 **Parameters:**
-- Use object destructuring for multiple parameters
-- Example: `async function searchNearbyVenues(latitude: number, longitude: number, radius: number, options: {...})`
+- Prefer typed object parameters for multi-field operations (`checkInToPlace(input)`, `sendDrinkOffer(params)`) in `src/hooks/useCheckIn.ts` and `src/services/drinks.ts`.
+- Use optional options objects for hook configuration (`useVenues(options)`, `useProfile(options)`) in `src/hooks/useVenues.ts` and `src/hooks/useProfile.ts`.
 
 **Return Values:**
-- Consistent return types across similar functions
-- Async functions return Promise with success/error pattern
-- Helper functions return direct values
-
-**Callbacks:**
-- Wrap in `useCallback` when passed as props
-- Include dependencies array
-- Example:
-```typescript
-const handlePress = useCallback(() => {
-  onPress?.(venue);
-}, [venue, onPress]);
-```
+- Return stable data/action objects from hooks (`useAuth`, `useVenues`, `useProfile`) in `src/hooks/useAuth.ts`, `src/hooks/useVenues.ts`, and `src/hooks/useProfile.ts`.
+- Return explicit success/error payloads for mutating operations in `src/hooks/useAuth.ts`, `src/hooks/useCheckIn.ts`, and `src/services/auth.ts`.
 
 ## Module Design
 
 **Exports:**
-- Named exports preferred over default exports for components and utilities
-- Only use default export for Expo Router page components
-- Example from `src/components/ui/Button.tsx`:
-  ```typescript
-  export function Button({ ... }) { ... }
-  ```
+- Prefer named exports for hooks, services, and components (`export function ...`, `export const ...`) across `src/hooks/useAuth.ts`, `src/services/drinks.ts`, and `src/components/ui/Button.tsx`.
+- Use default exports only for Expo Router route screens in `app/(auth)/login.tsx`, `app/(tabs)/discover.tsx`, and `app/venue/[id].tsx`.
 
 **Barrel Files:**
-- Used in component directories: `src/components/venue/index.ts`
-- Re-export related components:
-  ```typescript
-  export { VenueCard } from './VenueCard';
-  export { VenueCarousel } from './VenueCarousel';
-  ```
-
-**Service Files:**
-- Export multiple related functions
-- Example from `src/services/auth.ts`:
-  ```typescript
-  export async function sendEmailVerification(email: string) { ... }
-  export async function confirmEmailCode(email: string, code: string) { ... }
-  export async function signOut() { ... }
-  ```
-
-## Git Conventions
-
-**Commit Messages:**
-- Follow Conventional Commits specification
-- Format: `type: description`
-
-**Types:**
-- `feat`: new feature
-- `fix`: bug fix
-- `chore`: maintenance, tooling
-- `docs`: documentation changes
-- `refactor`: code restructuring
-- `test`: adding or updating tests
-
-**Examples from git log:**
-```
-refactor: clean unfinished app flows and simplify core MVP
-chore: add Codespaces config
-feat: new venuecard and navigation bar style
-```
-
-**Scope (optional):**
-- Can add scope: `feat(auth): add OTP verification`
-- Keep concise, lowercase
-
-**Body and Footer:**
-- Optional, use for detailed explanations
-- Not commonly used in this codebase
+- Use barrel exports for component groups in `src/components/profile/index.ts` and `src/components/venue/index.ts`.
+- Import from barrels for grouped feature modules where available, e.g. `src/components/profile` in `app/(tabs)/profile/index.tsx` and `src/components/venue` in `app/(tabs)/index.tsx`.
 
 ---
 

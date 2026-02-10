@@ -2,192 +2,132 @@
 
 **Analysis Date:** 2026-02-10
 
-## Technical Debt
+## Tech Debt
 
-**Large Complex Files:**
-- Issue: Several files exceed 300+ lines with mixed concerns
-- Files: `app/venue/[id].tsx` (577 lines), `src/services/places.ts` (415 lines), `app/(tabs)/discover.tsx` (405 lines), `src/types/database.ts` (381 lines), `src/components/profile/ProfilePhotos.tsx` (374 lines), `app/user/[id].tsx` (361 lines), `src/components/venue/VenueCard.tsx` (361 lines), `src/hooks/useProfile.ts` (349 lines)
-- Impact: Difficult to maintain, test, and debug; high cognitive load for changes
-- Fix approach: Extract business logic into services, split UI components into smaller composable units, separate type definitions by domain
+**Monolithic screen components:**
+- Issue: Large page components mix data access, business rules, and UI rendering in single files.
+- Files: `app/venue/[id].tsx`, `app/(tabs)/discover.tsx`, `app/user/[id].tsx`, `app/(tabs)/index.tsx`
+- Impact: Changes are high-risk, review is slow, and regressions are likely when touching unrelated behavior.
+- Fix approach: Extract data hooks/services (favorites, drink actions, venue state), then keep screens focused on presentation and navigation.
 
-**Manual Base64 Decoding:**
-- Issue: Custom base64 implementation in profile photo handling
-- Files: `src/hooks/useProfile.ts` (lines 22-45)
-- Impact: Potential encoding bugs, reinventing the wheel
-- Fix approach: Use standard library or well-tested npm package for base64 operations
+**Type safety erosion in data paths:**
+- Issue: Frequent `any` casts and loose typing around auth/session and Supabase responses.
+- Files: `src/hooks/useAuth.ts`, `src/hooks/useCheckIn.ts`, `src/hooks/useProfile.ts`, `src/types/database.ts`, `src/components/ui/Button.tsx`
+- Impact: Runtime failures are easier to introduce and harder to detect during refactors.
+- Fix approach: Replace `any` with explicit DTO types and typed Supabase query helpers; tighten `Database` typing in `src/types/database.ts`.
 
-**Proximity Validation Inconsistency:**
-- Issue: Check-in proximity validation is client-side only (50m threshold)
-- Files: `app/venue/[id].tsx` (lines 65-66), `src/components/venue/VenueCard.tsx` (lines 47-48)
-- Impact: Can be bypassed; no server-side validation prevents fake check-ins
-- Fix approach: Move proximity validation to database RPC function `check_in_to_place`, return error if user location is > 50-100m from venue coordinates
+**Schema types are incomplete versus runtime usage:**
+- Issue: The `Database` type only models `users` while runtime code depends on many additional tables/functions.
+- Files: `src/types/database.ts`, `src/hooks/useCheckIn.ts`, `src/services/drinks.ts`, `app/venue/[id].tsx`, `app/(tabs)/discover.tsx`
+- Impact: Compile-time guarantees do not protect core features (check-ins, drinks, favorites), increasing production defect risk.
+- Fix approach: Regenerate and commit full Supabase types, then use them across hooks/services.
 
-**Excessive Console Logging:**
-- Issue: 23+ `console.*` statements throughout codebase
-- Files: Throughout `app/` and `src/` directories
-- Impact: Noise in production logs, potential performance impact, no structured logging
-- Fix approach: Replace with structured logging service (e.g., Sentry) or remove in production builds
+## Known Bugs
 
-## Known Issues
+**Favorite venues table is referenced but not defined in migrations:**
+- Symptoms: Favoriting can fail at runtime with relation-not-found errors when DB does not already contain `user_favorite_places`.
+- Files: `app/venue/[id].tsx`, `supabase/migrations/`
+- Trigger: Open a venue and toggle favorite in an environment built only from repository migrations.
+- Workaround: Manually create `user_favorite_places` in DB outside this repo.
 
-**No TODO/FIXME Comments Found:**
-- No explicit TODO/FIXME/HACK comments detected
-- This is actually good, but may indicate incomplete features are not marked
+**Check-in RPC is called but not present in repository migrations:**
+- Symptoms: Check-in flow can fail with RPC-not-found errors for `check_in_to_place`.
+- Files: `src/hooks/useCheckIn.ts`, `supabase/migrations/`
+- Trigger: Execute check-in in an environment provisioned strictly from current SQL migrations.
+- Workaround: Create/restore `check_in_to_place` directly in the target DB.
 
-**Missing Error Context:**
-- Issue: Many try/catch blocks catch errors but only log to console without user feedback
-- Files: `src/hooks/useProfile.ts` (lines 90-92, 107-109), `app/(tabs)/discover.tsx` (lines 75-77), `app/venue/[id].tsx` (lines 78-82)
-- Impact: Silent failures lead to poor UX, hard to debug issues
-- Fix approach: Surface errors to users via toast/alert, add error tracking service
+## Security Considerations
 
-**Incomplete Check-In Auto-Checkout:**
-- Issue: No automatic checkout mechanism when user leaves venue
-- Files: `src/hooks/useCheckIn.ts` (check-in function exists but no auto-checkout)
-- Symptoms: Users remain "checked in" indefinitely unless manually checking out
-- Fix approach: Implement background location monitoring or time-based auto-checkout (e.g., 4 hours)
+**Shared venue metadata is writable by any authenticated user:**
+- Risk: Any signed-in user can mutate or delete shared `venue_metadata` records due permissive `FOR ALL USING (true)` policy.
+- Files: `supabase/migrations/019_fix_venue_metadata_rls_v2.sql`, `supabase/migrations/017_create_venue_filtering.sql`
+- Current mitigation: `WITH CHECK (auth.uid() IS NOT NULL)` blocks anonymous writes only.
+- Recommendations: Restrict write access to `service_role` or narrowly scoped RPCs; remove broad `FOR ALL` user policy.
 
-## Security Concerns
-
-**Environment Variable Fallback to Empty String:**
-- Risk: API keys fall back to empty string if not set, causing runtime failures instead of build-time errors
-- Files: `src/services/supabase.ts` (lines 5-6), `src/services/places.ts` (line 11)
-- Current mitigation: None - app will fail silently or at runtime
-- Recommendations: Throw error at initialization if critical env vars are missing; validate env vars at build time
-
-**Dev Auth Bypass:**
-- Risk: `EXPO_PUBLIC_DEV_SKIP_AUTH` bypasses authentication entirely
-- Files: `src/hooks/useAuth.ts` (lines 17-84)
-- Current mitigation: Only active when `__DEV__ === true`
-- Recommendations: Ensure this flag is never enabled in production builds; add warning logs when active
-
-**Client-Side Photo Validation Only:**
-- Risk: Photo upload validation happens client-side; no server-side file type/size validation visible
-- Files: `src/hooks/useProfile.ts` (photo upload logic)
-- Current mitigation: File extension detection from MIME type
-- Recommendations: Add server-side validation in Supabase storage policies or edge functions
+**Client-side distance gate is visible but server-side validation is not versioned here:**
+- Risk: A modified client can bypass the 50m UI guard and attempt remote check-ins unless the backend RPC enforces geofence.
+- Files: `app/venue/[id].tsx`, `src/hooks/useCheckIn.ts`, `supabase/migrations/`
+- Current mitigation: UI disables check-in when `distanceMeters > 50`.
+- Recommendations: Enforce distance validation inside `check_in_to_place` SQL and keep that function in repository migrations.
 
 ## Performance Bottlenecks
 
-**Venue Filtering on Client:**
-- Problem: Large venue lists filtered and scored client-side
-- Files: `src/services/places.ts` (lines 140-175), `src/services/venueScoring.ts`
-- Cause: Radar API returns all venues, then client applies nightlife scoring and blacklist filtering
-- Improvement path: Pre-filter venues server-side or cache scored results; implement pagination
+**Quadratic deduplication in venue search pipeline:**
+- Problem: Venue dedupe uses `reduce` + `find`, producing O(n^2) behavior as result sets grow.
+- Files: `src/services/places.ts`
+- Cause: `uniqueVenues` is built with repeated linear scans.
+- Improvement path: Deduplicate with a `Map`/`Set` keyed by `place_id` in one pass.
 
-**Missing Memoization in Large Lists:**
-- Problem: Venue lists and user discovery re-render without optimization
-- Files: `app/(tabs)/discover.tsx` (venueUsers list), `app/(tabs)/index.tsx` (venues list)
-- Cause: No `useMemo` or `React.memo` for expensive computations or large list items
-- Improvement path: Memoize filtered/sorted lists, optimize FlatList renderItem with `React.memo`
+**High-frequency relation refresh with broad drink query:**
+- Problem: Drink state reload can pull up to 300 rows repeatedly during search/user list updates.
+- Files: `app/(tabs)/discover.tsx`, `app/user/[id].tsx`, `src/services/drinks.ts`
+- Cause: `fetchDrinkRelations` runs on changing target lists and queries `drinks` with `.or(...).limit(300)` before client-side filtering.
+- Improvement path: Add server-side filtered RPC for specific target IDs and fetch only latest relation per pair.
 
-**Photo Upload Without Compression:**
-- Problem: Photos uploaded at full resolution without client-side compression
-- Files: `src/hooks/useProfile.ts` (photo upload), `src/components/profile/ProfilePhotos.tsx`
-- Cause: `expo-image-picker` may return large images; no compression before upload
-- Improvement path: Add image compression library (expo-image-manipulator) to resize before upload
+**Potentially expensive ILIKE user search without dedicated index strategy:**
+- Problem: Name search uses `%term%` matching which degrades on larger `users` tables.
+- Files: `app/(tabs)/discover.tsx`, `supabase/migrations/002_create_users.sql`
+- Cause: No migration defines trigram/functional index for name search patterns.
+- Improvement path: Add trigram index (`pg_trgm`) or searchable normalized column and query strategy aligned with index.
 
 ## Fragile Areas
 
-**Drink Relation State Logic:**
-- Files: `src/services/drinks.ts` (lines 39-96)
-- Why fragile: Complex nested conditionals mapping drink status to UI state; easy to miss edge cases
-- Safe modification: Add unit tests for all state transitions before changing logic
-- Test coverage: No tests detected for this critical feature
+**Database migration drift versus app assumptions:**
+- Files: `src/hooks/useCheckIn.ts`, `app/venue/[id].tsx`, `supabase/migrations/`
+- Why fragile: Core runtime dependencies (`check_in_to_place`, `user_favorite_places`) are not reproducible from repo migrations.
+- Safe modification: Add missing migrations first, then refactor frontend calls with typed contracts.
+- Test coverage: No automated DB integration tests detected in repository.
 
-**Type Casting and Nullability:**
-- Files: `src/hooks/useCheckIn.ts` (line 49: `(data as any).venues`), `app/(tabs)/discover.tsx` (line 74: `as VenueUser[]`)
-- Why fragile: Type assertions bypass TypeScript safety; can cause runtime crashes if data shape changes
-- Safe modification: Define proper return types for Supabase RPC functions; avoid `as any`
-- Test coverage: None
-
-**Venue Photo URL Handling:**
-- Files: `app/venue/[id].tsx` (lines 54-56)
-- Why fragile: Fallback logic for `photo_urls` vs `photo_url` indicates inconsistent data shape
-- Safe modification: Normalize venue data at API boundary; ensure consistent photo structure
-- Test coverage: None
+**Global stores are not comprehensively reset on logout:**
+- Files: `src/hooks/useAuth.ts`, `src/stores/authStore.ts`, `src/stores/checkInStore.ts`, `src/stores/venueStore.ts`
+- Why fragile: `signOut` resets auth store but does not explicitly reset check-in/venue stores, allowing stale local state windows.
+- Safe modification: Centralize logout cleanup and reset all user-scoped stores atomically.
+- Test coverage: No store-level logout/reset tests detected.
 
 ## Scaling Limits
 
-**Radar API Radius Limit:**
-- Current capacity: 10km search radius (Radar API max)
-- Limit: Cannot discover venues beyond 10km without multiple API calls
-- Scaling path: Implement venue caching in Supabase; pre-populate local venues for target region (Dourados, MS)
+**Venue discovery payload cap and client-side ranking:**
+- Current capacity: At most 100 venues returned from Radar request (`limit=100`) then sorted/deduped in-app.
+- Limit: Dense areas can exceed cap, causing partial venue visibility and unstable ranking under growth.
+- Scaling path: Move ranking/filtering to backend service with pagination/cursor support.
 
-**Drink Relations Query Performance:**
-- Current capacity: Queries up to 300 most recent drinks per user
-- Files: `src/services/drinks.ts` (line 71: `.limit(300)`)
-- Limit: Performance degrades as user accumulates more drink history
-- Scaling path: Add pagination; index on `sender_id`, `receiver_id`, and `created_at`; archive old drinks
-
-**Check-In Store Not Persisted:**
-- Current capacity: Check-in state lost on app restart
-- Files: `src/stores/checkInStore.ts` (no persistence layer)
-- Limit: User must re-fetch active check-in on every app launch
-- Scaling path: Add Zustand persistence middleware with AsyncStorage
+**Drink relation loading cap:**
+- Current capacity: `fetchDrinkRelations` processes up to 300 drink rows per call.
+- Limit: Relationship history growth can hide relevant state beyond cap and increase latency.
+- Scaling path: Replace broad history fetch with pairwise latest-status query/RPC and DB indexes for sender+receiver lookups.
 
 ## Dependencies at Risk
 
-**React Native 0.81.5 (Pre-release):**
-- Risk: Using pre-release version may have stability issues
-- Impact: Potential crashes, missing features, breaking changes
-- Migration plan: Monitor for stable 0.81.x release; consider downgrading to 0.76 LTS if issues arise
-
-**No Test Framework:**
-- Risk: No testing dependencies in `package.json`
-- Impact: Cannot write automated tests; regression risk on every change
-- Migration plan: Add Jest + React Native Testing Library for unit/integration tests
+**Not detected:**
+- Risk: No dependency deprecation or unsupported package risk is encoded in repository metadata reviewed.
+- Impact: Not applicable from current source snapshot.
+- Migration plan: Reassess with periodic `npm audit` and SDK compatibility checks in CI.
 
 ## Missing Critical Features
 
-**No Realtime Implementation:**
-- Problem: Supabase Realtime mentioned in AGENTS.md as required for offers/check-ins but not implemented
-- Blocks: Real-time drink offer notifications, live check-in updates, venue user list updates
-- Priority: High - core MVP feature per spec
-- Files: No files found with `subscribe`, `channel`, or realtime logic
-
-**No Automated Testing:**
-- Problem: Zero test files detected (`.test.*` or `.spec.*`)
-- Blocks: Safe refactoring, CI/CD pipeline, regression prevention
-- Priority: High - critical for production app
-- Files: No test files exist
-
-**Missing Checkout Functionality:**
-- Problem: Check-in exists but no checkout UI or logic
-- Blocks: User cannot manually leave venue; no check-in duration tracking
-- Priority: Medium - impacts user control and data accuracy
-- Files: `src/hooks/useCheckIn.ts` has `checkInToPlace` but no `checkOutFromPlace`
+**Automated quality gates for regressions:**
+- Problem: There are no test files, test runner configs, or test scripts to protect core flows.
+- Blocks: Safe refactoring of auth, check-in, drinks, and venue discovery logic.
 
 ## Test Coverage Gaps
 
-**Authentication Flow:**
-- What's not tested: OTP send/verify, onboarding completion, session persistence
-- Files: `src/hooks/useAuth.ts`, `src/services/auth.ts`
-- Risk: Auth failures in production undetected until user reports
+**Authentication and onboarding flows are untested:**
+- What's not tested: OTP send/verify paths, onboarding completion writes, and logout state cleanup.
+- Files: `src/hooks/useAuth.ts`, `app/(auth)/verify.tsx`, `app/(auth)/onboarding/photos.tsx`
+- Risk: User access and profile creation regressions can ship undetected.
 - Priority: High
 
-**Check-In Proximity Validation:**
-- What's not tested: Distance calculation, 50m threshold enforcement
-- Files: `app/venue/[id].tsx` (lines 65-66), `src/hooks/useCheckIn.ts`
-- Risk: Users could fake check-ins by spoofing location
+**Check-in and venue discovery paths are untested:**
+- What's not tested: location permission bootstrap, venue fetch/cache behavior, check-in RPC integration, and proximity gating.
+- Files: `src/hooks/useCheckIn.ts`, `src/hooks/useVenues.ts`, `src/services/places.ts`, `app/venue/[id].tsx`, `app/(tabs)/index.tsx`
+- Risk: Core MVP experience can silently degrade in production.
 - Priority: High
 
-**Drink Offer State Machine:**
-- What's not tested: All state transitions (none → sent → accepted → matched)
-- Files: `src/services/drinks.ts`
-- Risk: Broken drink offers lead to poor core experience
+**Drink relation logic is untested:**
+- What's not tested: relation state precedence, accept/decline transitions, and UI actions across discover/profile screens.
+- Files: `src/services/drinks.ts`, `app/(tabs)/discover.tsx`, `app/user/[id].tsx`
+- Risk: False positives/negatives in match state and inconsistent interaction UX.
 - Priority: High
-
-**Venue Scoring and Filtering:**
-- What's not tested: Nightlife score calculation, blacklist filtering
-- Files: `src/services/venueScoring.ts`, `src/services/places.ts`
-- Risk: Wrong venues shown to users, poor discovery experience
-- Priority: Medium
-
-**Photo Upload and Storage:**
-- What's not tested: Base64 conversion, file extension detection, upload flow
-- Files: `src/hooks/useProfile.ts` (lines 22-280)
-- Risk: Photo upload failures, corrupt images
-- Priority: Medium
 
 ---
 
