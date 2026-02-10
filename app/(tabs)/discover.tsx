@@ -17,6 +17,12 @@ import { useAuth } from '../../src/hooks/useAuth';
 import { supabase } from '../../src/services/supabase';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
 import { useRouter } from 'expo-router';
+import {
+  fetchDrinkRelations,
+  respondDrinkOffer,
+  sendDrinkOffer,
+  type DrinkRelation,
+} from '../../src/services/drinks';
 
 type VenueUser = {
   id: string;
@@ -24,6 +30,7 @@ type VenueUser = {
   bio: string | null;
   occupation: string | null;
   age: number;
+  checked_in_at: string;
 };
 
 type BasicUser = {
@@ -33,6 +40,16 @@ type BasicUser = {
   occupation: string | null;
   birth_date?: string;
 };
+
+function formatRecency(checkedInAt: string): string {
+  const diffMs = Date.now() - new Date(checkedInAt).getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'agora mesmo';
+  if (diffMin < 60) return `ha ${diffMin} min`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours === 1) return 'ha 1h';
+  return `ha ${diffHours}h`;
+}
 
 export default function DiscoverScreen() {
   const { colors, spacing, typography, isDark } = useTheme();
@@ -45,6 +62,8 @@ export default function DiscoverScreen() {
   const [searchResults, setSearchResults] = useState<BasicUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [drinkRelations, setDrinkRelations] = useState<Record<string, DrinkRelation>>({});
+  const [actionTargetId, setActionTargetId] = useState<string | null>(null);
 
   const userId = user?.id;
 
@@ -71,6 +90,21 @@ export default function DiscoverScreen() {
       setIsLoading(false);
     }
   }, [userId, activeCheckIn?.venue_id]);
+
+  const refreshDrinkRelations = useCallback(async (targetIds: string[]) => {
+    if (!userId || targetIds.length === 0) {
+      setDrinkRelations({});
+      return;
+    }
+
+    const uniqueIds = Array.from(new Set(targetIds));
+    try {
+      const next = await fetchDrinkRelations(userId, uniqueIds);
+      setDrinkRelations(next);
+    } catch (err) {
+      console.error('Erro ao carregar status de drinks:', err);
+    }
+  }, [userId]);
 
   const performSearch = useCallback(async () => {
     if (!userId || searchQuery.trim().length < 2) {
@@ -115,12 +149,67 @@ export default function DiscoverScreen() {
     return () => clearTimeout(handler);
   }, [performSearch]);
 
-  const renderUserCard = (profile: BasicUser, ageOverride?: number) => {
+  useEffect(() => {
+    const targetIds = [
+      ...venueUsers.map((profile) => profile.id),
+      ...searchResults.map((profile) => profile.id),
+    ];
+    refreshDrinkRelations(targetIds);
+  }, [venueUsers, searchResults, refreshDrinkRelations]);
+
+  const handleSendDrink = useCallback(async (targetId: string) => {
+    if (!userId) return;
+    if (!activeCheckIn?.venue_id) {
+      Alert.alert('Check-in necessário', 'Faça check-in para pagar um drink.');
+      return;
+    }
+
+    setActionTargetId(targetId);
+    try {
+      await sendDrinkOffer({
+        senderId: userId,
+        receiverId: targetId,
+        venueId: activeCheckIn.venue_id,
+      });
+      await refreshDrinkRelations([targetId]);
+      Alert.alert('Drink enviado', 'Agora é só aguardar a resposta.');
+    } catch (err: any) {
+      Alert.alert('Erro', err?.message || 'Não foi possível enviar o drink.');
+    } finally {
+      setActionTargetId(null);
+    }
+  }, [userId, activeCheckIn?.venue_id, refreshDrinkRelations]);
+
+  const handleRespondDrink = useCallback(async (targetId: string, action: 'accepted' | 'declined') => {
+    const relation = drinkRelations[targetId];
+    if (!relation?.incomingDrinkId) return;
+
+    setActionTargetId(targetId);
+    try {
+      await respondDrinkOffer({
+        drinkId: relation.incomingDrinkId,
+        action,
+      });
+      await refreshDrinkRelations([targetId]);
+      if (action === 'accepted') {
+        Alert.alert('Drink aceito', 'Se vocês dois aceitarem, a conexão será confirmada.');
+      }
+    } catch (err: any) {
+      Alert.alert('Erro', err?.message || 'Não foi possível responder o drink.');
+    } finally {
+      setActionTargetId(null);
+    }
+  }, [drinkRelations, refreshDrinkRelations]);
+
+  const renderUserCard = (profile: BasicUser, ageOverride?: number, checkedInAt?: string) => {
     const age = typeof ageOverride === 'number'
       ? ageOverride
       : profile.birth_date
       ? Math.floor((Date.now() - new Date(profile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
       : null;
+
+    const relation = drinkRelations[profile.id]?.state ?? 'none';
+    const isBusy = actionTargetId === profile.id;
 
     return (
       <Card key={profile.id} style={styles.card}>
@@ -130,6 +219,14 @@ export default function DiscoverScreen() {
             <Text style={[styles.cardName, { color: colors.text }]}>
               {profile.name}{age ? `, ${age}` : ''}
             </Text>
+            {checkedInAt && (
+              <View style={styles.recencyRow}>
+                <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
+                <Text style={[styles.recencyText, { color: colors.textSecondary }]}>
+                  {formatRecency(checkedInAt)}
+                </Text>
+              </View>
+            )}
             {profile.bio ? (
               <Text style={[styles.cardBio, { color: colors.textSecondary }]} numberOfLines={2}>
                 {profile.bio}
@@ -147,6 +244,46 @@ export default function DiscoverScreen() {
             onPress={() => router.push(`/user/${profile.id}`)}
             style={styles.cardButton}
           />
+          {relation === 'matched' ? (
+            <Button title="Conectados" disabled style={styles.cardButton} />
+          ) : relation === 'sent_pending' ? (
+            <Button title="Drink enviado" disabled style={styles.cardButton} />
+          ) : relation === 'received_pending' ? (
+            <View style={styles.cardActionGroup}>
+              <Button
+                title="Aceitar drink"
+                onPress={() => handleRespondDrink(profile.id, 'accepted')}
+                style={styles.cardButton}
+                loading={isBusy}
+                disabled={isBusy}
+              />
+              <Button
+                title="Recusar"
+                variant="outline"
+                onPress={() => handleRespondDrink(profile.id, 'declined')}
+                style={styles.cardButton}
+                disabled={isBusy}
+              />
+            </View>
+          ) : relation === 'received_accepted' ? (
+            <Button
+              title="Retribuir drink"
+              onPress={() => handleSendDrink(profile.id)}
+              style={styles.cardButton}
+              loading={isBusy}
+              disabled={isBusy}
+            />
+          ) : relation === 'sent_accepted' ? (
+            <Button title="Drink aceito" disabled style={styles.cardButton} />
+          ) : (
+            <Button
+              title={activeCheckIn?.venue_id ? 'Pagar um drink' : 'Faça check-in para drink'}
+              onPress={() => handleSendDrink(profile.id)}
+              style={styles.cardButton}
+              loading={isBusy}
+              disabled={isBusy || !activeCheckIn?.venue_id}
+            />
+          )}
         </View>
       </Card>
     );
@@ -204,7 +341,8 @@ export default function DiscoverScreen() {
                   bio: profile.bio,
                   occupation: profile.occupation,
                 },
-                profile.age
+                profile.age,
+                profile.checked_in_at
               )
             )
           )}
@@ -267,14 +405,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  recencyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  recencyText: {
+    fontSize: 11,
+  },
   cardBio: {
     fontSize: 13,
     marginTop: 4,
   },
   cardActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  cardActionGroup: {
+    flexDirection: 'row',
+    gap: 8,
   },
   cardButton: {
     flex: 1,
+    minWidth: 120,
   },
 });
