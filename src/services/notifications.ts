@@ -27,3 +27,16 @@ export async function upsertNotificationPreferences(
     );
   if (error) throw error;
 }
+
+/** Check if a user should receive a notification for a given category via server-side RPC. */
+export async function checkShouldNotify(
+  userId: string,
+  category: NotificationCategory
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('should_notify_user', {
+    p_user_id: userId,
+    p_category: category,
+  });
+  if (error) throw error;
+  return data ?? true;
+}

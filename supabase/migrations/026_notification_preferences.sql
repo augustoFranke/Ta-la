@@ -27,3 +27,35 @@ CREATE POLICY "Users can insert own preferences"
 CREATE POLICY "Users can update own preferences"
   ON notification_preferences FOR UPDATE
   USING (auth.uid() = user_id);
+
+-- Server-side function to check if a user should receive a notification for a given category
+-- Opt-out model: returns TRUE when no row exists (user never configured preferences)
+CREATE OR REPLACE FUNCTION should_notify_user(p_user_id UUID, p_category TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_prefs notification_preferences%ROWTYPE;
+BEGIN
+  SELECT * INTO v_prefs
+  FROM notification_preferences
+  WHERE user_id = p_user_id;
+
+  -- No preferences row = all enabled (opt-out model)
+  IF NOT FOUND THEN
+    RETURN TRUE;
+  END IF;
+
+  -- Check the specific category column
+  CASE p_category
+    WHEN 'social_drinks' THEN RETURN v_prefs.social_drinks;
+    WHEN 'social_matches' THEN RETURN v_prefs.social_matches;
+    WHEN 'venue_offers' THEN RETURN v_prefs.venue_offers;
+    ELSE RETURN TRUE; -- Unknown categories default to enabled
+  END CASE;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION should_notify_user(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION should_notify_user(UUID, TEXT) TO service_role;
