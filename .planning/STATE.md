@@ -5,23 +5,23 @@
 See: `.planning/PROJECT.md` (updated 2026-02-10)
 
 **Core value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
-**Current focus:** Phase 2 - Same-Venue Discovery (Complete)
+**Current focus:** Phase 3 - Safety and Moderation Enforcement (In Progress)
 
 ## Current Position
 
-Phase: 2 of 4 (Same-Venue Discovery)
-Plan: 2 of 2 in current phase
-Status: Phase Complete
-Last activity: 2026-02-10 - Completed 02-02-PLAN.md (client visibility selector & recency indicators)
+Phase: 3 of 4 (Safety and Moderation Enforcement)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-10 - Completed 03-01-PLAN.md (block/report indexes & types)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 62%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 1.5 min
-- Total execution time: 0.12 hours
+- Total plans completed: 5
+- Average duration: 1.4 min
+- Total execution time: 0.13 hours
 
 **By Phase:**
 
@@ -29,11 +29,11 @@ Progress: [█████░░░░░] 50%
 |-------|-------|-------|----------|
 | 1. Check-in Trust Core | 2 | 3 min | 1.5 min |
 | 2. Same-Venue Discovery | 2 | 3 min | 1.5 min |
-| 3. Safety and Moderation Enforcement | 0 | 0 min | 0 min |
+| 3. Safety and Moderation Enforcement | 1 | 1 min | 1 min |
 | 4. Offer and Notification Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (1 min), 01-02 (2 min), 02-01 (1 min), 02-02 (2 min)
+- Last 5 plans: 01-02 (2 min), 02-01 (1 min), 02-02 (2 min), 03-01 (1 min)
 - Trend: Stable
 
 ## Accumulated Context
@@ -59,6 +59,8 @@ Recent decisions affecting current work:
 - [Phase 2, Plan 02]: Visibility defaults to 'public' in both UI state and RPC fallback.
 - [Phase 2, Plan 02]: Recency shown only for venue users (not search results) — checked_in_at presence determines display.
 - [Phase 2, Plan 02]: Radio-button-on/off Ionicons for visibility selector indicator.
+- [Phase 3, Plan 01]: Constraint named reports_reporter_reported_unique for clarity and consistency.
+- [Phase 3, Plan 01]: REPORT_REASONS as readonly array with pt-BR labels for direct UI consumption.
 
 ### Pending Todos
 
@@ -73,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-10 19:22
-Stopped at: Completed 02-02-PLAN.md (Phase 2 complete)
+Last session: 2026-02-10 19:48
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None

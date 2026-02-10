@@ -56,7 +56,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Backend: missing blocked_id index, reports UNIQUE constraint, TypeScript types
+- [x] 03-01-PLAN.md — Backend: missing blocked_id index, reports UNIQUE constraint, TypeScript types
 - [ ] 03-02-PLAN.md — Frontend: moderation service, block store, block/report UI on profile + discover screens
 
 ### Phase 4: Offer and Notification Controls
@@ -76,7 +76,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Check-in Trust Core | 2/2 | Complete | 2026-02-10 |
 | 2. Same-Venue Discovery | 2/2 | Complete | 2026-02-10 |
-| 3. Safety and Moderation Enforcement | 0/2 | Not started | - |
+| 3. Safety and Moderation Enforcement | 1/2 | In progress | - |
 | 4. Offer and Notification Controls | 0/TBD | Not started | - |
 
 ## Requirement Coverage
