@@ -5,35 +5,35 @@
 See: `.planning/PROJECT.md` (updated 2026-02-10)
 
 **Core value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
-**Current focus:** Phase 1 - Check-in Trust Core
+**Current focus:** Phase 2 - Same-Venue Discovery
 
 ## Current Position
 
-Phase: 1 of 4 (Check-in Trust Core)
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase Complete
-Last activity: 2026-02-10 - Completed 01-02-PLAN.md (client-side server-authoritative check-in)
+Phase: 2 of 4 (Same-Venue Discovery)
+Plan: 1 of 2 in current phase
+Status: In Progress
+Last activity: 2026-02-10 - Completed 02-01-PLAN.md (server-side visibility & recency schema)
 
-Progress: [██░░░░░░░░] 25%
+Progress: [███░░░░░░░] 37%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 1.5 min
-- Total execution time: 0.05 hours
+- Total plans completed: 3
+- Average duration: 1.3 min
+- Total execution time: 0.07 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Check-in Trust Core | 2 | 3 min | 1.5 min |
-| 2. Same-Venue Discovery | 0 | 0 min | 0 min |
+| 2. Same-Venue Discovery | 1 | 1 min | 1 min |
 | 3. Safety and Moderation Enforcement | 0 | 0 min | 0 min |
 | 4. Offer and Notification Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (1 min), 01-02 (2 min)
+- Last 5 plans: 01-01 (1 min), 01-02 (2 min), 02-01 (1 min)
 - Trend: Stable
 
 ## Accumulated Context
@@ -52,6 +52,10 @@ Recent decisions affecting current work:
 - [Phase 1, Plan 02]: Denial codes mapped to pt-BR messages client-side for user feedback.
 - [Phase 2]: Separate discovery visibility from moderation enforcement to keep requirement ownership unambiguous.
 - [Phase 4]: Keep offer unlock and notifications together as post-trust value delivery.
+- [Phase 2, Plan 01]: Visibility stored as TEXT + CHECK constraint (not ENUM) for simpler migration.
+- [Phase 2, Plan 01]: Default 'public' ensures backward compatibility — no data migration needed.
+- [Phase 2, Plan 01]: friends_only filtering deferred to Phase 3 — column is schema-ready now.
+- [Phase 2, Plan 01]: No GRANT needed for get_users_at_venue — CREATE OR REPLACE preserves permissions.
 
 ### Pending Todos
 
@@ -66,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-10 19:05
-Stopped at: Completed 01-02-PLAN.md — Phase 1 complete
+Last session: 2026-02-10 19:17
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

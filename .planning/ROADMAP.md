@@ -42,7 +42,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Server-side visibility column + updated RPCs (recency data + visibility filter)
+- [x] 02-01-PLAN.md — Server-side visibility column + updated RPCs (recency data + visibility filter)
 - [ ] 02-02-PLAN.md — Client visibility selector in check-in modal + recency indicators on discover screen
 
 ### Phase 3: Safety and Moderation Enforcement
@@ -71,7 +71,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Check-in Trust Core | 2/2 | Complete | 2026-02-10 |
-| 2. Same-Venue Discovery | 0/2 | Planned | - |
+| 2. Same-Venue Discovery | 1/2 | In progress | - |
 | 3. Safety and Moderation Enforcement | 0/TBD | Not started | - |
 | 4. Offer and Notification Controls | 0/TBD | Not started | - |
 
