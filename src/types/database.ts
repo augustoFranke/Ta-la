@@ -62,6 +62,37 @@ export type Gender = 'masculino' | 'feminino' | 'outro';
 export type GenderPreference = 'masculino' | 'feminino' | 'todos';
 export type CheckInVisibility = 'public' | 'friends_only' | 'private';
 
+export type ReportReason =
+  | 'comportamento_inadequado'
+  | 'fotos_falsas'
+  | 'spam'
+  | 'assedio'
+  | 'outro';
+
+export const REPORT_REASONS: readonly { value: ReportReason; label: string }[] = [
+  { value: 'comportamento_inadequado', label: 'Comportamento inadequado' },
+  { value: 'fotos_falsas', label: 'Fotos falsas' },
+  { value: 'spam', label: 'Spam' },
+  { value: 'assedio', label: 'Assedio' },
+  { value: 'outro', label: 'Outro' },
+] as const;
+
+export interface Block {
+  id: string;
+  blocker_id: string;
+  blocked_id: string;
+  created_at: string;
+}
+
+export interface Report {
+  id: string;
+  reporter_id: string;
+  reported_id: string;
+  reason: ReportReason;
+  details: string | null;
+  created_at: string;
+}
+
 export interface User {
   id: string;
   email: string;
