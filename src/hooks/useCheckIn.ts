@@ -2,6 +2,14 @@ import { useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useCheckInStore, type ActiveCheckIn } from '../stores/checkInStore';
 import { useAuthStore } from '../stores/authStore';
+import { useLocationStore } from '../stores/locationStore';
+
+const DENIAL_MESSAGES: Record<string, string> = {
+  not_authenticated: 'Voce precisa estar logado para fazer check-in.',
+  too_far: 'Voce esta muito longe deste local. Aproxime-se para fazer check-in.',
+  stale_location: 'Sua localizacao esta desatualizada. Aguarde a atualizacao do GPS e tente novamente.',
+  cooldown: 'Voce fez check-out deste local recentemente. Aguarde alguns minutos para fazer check-in novamente.',
+};
 
 type CheckInToPlaceInput = {
   place_id: string;
@@ -15,9 +23,15 @@ type CheckInToPlaceInput = {
   open_to_meeting: boolean;
 };
 
+type CheckInV2Response = {
+  success: boolean;
+  check_in_id?: string;
+  denial_reason?: string;
+};
+
 export function useCheckIn() {
   const { session } = useAuthStore();
-  const { activeCheckIn, isLoading, error, setActiveCheckIn, setLoading, setError } = useCheckInStore();
+  const { activeCheckIn, isLoading, error, denialReason, setActiveCheckIn, setLoading, setError, setDenialReason } = useCheckInStore();
 
   const fetchActiveCheckIn = useCallback(async () => {
     if (!session?.user?.id) {
@@ -69,14 +83,21 @@ export function useCheckIn() {
   const checkInToPlace = useCallback(
     async (input: CheckInToPlaceInput) => {
       if (!session?.user?.id) {
-        return { success: false as const, error: 'Usuário não autenticado' };
+        return { success: false as const, error: 'Usuario nao autenticado' };
       }
 
       setLoading(true);
       setError(null);
+      setDenialReason(null);
 
       try {
-        const { data, error: rpcError } = await supabase.rpc('check_in_to_place', {
+        // Get fresh GPS coordinates
+        const coords = await useLocationStore.getState().getCurrentLocation();
+        if (!coords) {
+          return { success: false as const, error: 'Nao foi possivel obter sua localizacao. Verifique as permissoes.' };
+        }
+
+        const { data, error: rpcError } = await supabase.rpc('check_in_to_place_v2', {
           p_place_id: input.place_id,
           p_name: input.name,
           p_address: input.address,
@@ -86,14 +107,27 @@ export function useCheckIn() {
           p_photo_url: input.photo_url,
           p_rating: input.rating,
           p_open_to_meeting: input.open_to_meeting,
+          p_user_lat: coords.latitude,
+          p_user_lng: coords.longitude,
+          p_user_accuracy: coords.accuracy,
+          p_user_location_timestamp: new Date().toISOString(),
         });
 
         if (rpcError) throw rpcError;
 
-        // Atualiza check-in ativo no store (buscando venue_id/place_id corretamente)
-        await fetchActiveCheckIn();
+        const response = data as CheckInV2Response;
 
-        return { success: true as const, check_in_id: data as string };
+        if (!response.success) {
+          const reason = response.denial_reason || 'unknown';
+          const message = DENIAL_MESSAGES[reason] || 'Nao foi possivel fazer check-in.';
+          setDenialReason(reason);
+          return { success: false as const, error: message };
+        }
+
+        // Success: clear denial, refresh active check-in
+        setDenialReason(null);
+        await fetchActiveCheckIn();
+        return { success: true as const, check_in_id: response.check_in_id };
       } catch (err: any) {
         console.error('Erro ao fazer check-in:', err);
         const message = err?.message || 'Erro ao fazer check-in';
@@ -103,15 +137,15 @@ export function useCheckIn() {
         setLoading(false);
       }
     },
-    [session?.user?.id, setLoading, setError, fetchActiveCheckIn]
+    [session?.user?.id, setLoading, setError, setDenialReason, fetchActiveCheckIn]
   );
 
   return {
     activeCheckIn,
     isLoading,
     error,
+    denialReason,
     fetchActiveCheckIn,
     checkInToPlace,
   };
 }
-

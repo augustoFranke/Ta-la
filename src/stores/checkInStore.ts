@@ -12,9 +12,11 @@ type CheckInState = {
   activeCheckIn: ActiveCheckIn | null;
   isLoading: boolean;
   error: string | null;
+  denialReason: string | null;
   setActiveCheckIn: (checkIn: ActiveCheckIn | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setDenialReason: (reason: string | null) => void;
   reset: () => void;
 };
 
@@ -22,10 +24,12 @@ export const useCheckInStore = create<CheckInState>((set) => ({
   activeCheckIn: null,
   isLoading: false,
   error: null,
+  denialReason: null,
 
   setActiveCheckIn: (activeCheckIn) => set({ activeCheckIn }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
-  reset: () => set({ activeCheckIn: null, isLoading: false, error: null }),
+  setDenialReason: (denialReason) => set({ denialReason }),
+  reset: () => set({ activeCheckIn: null, isLoading: false, error: null, denialReason: null }),
 }));
 
