@@ -136,6 +136,24 @@ export interface Interest {
   created_at: string;
 }
 
+// Notification preference types
+export type NotificationCategory = 'social_drinks' | 'social_matches' | 'venue_offers';
+
+export interface NotificationPreferences {
+  id: string;
+  user_id: string;
+  social_drinks: boolean;
+  social_matches: boolean;
+  venue_offers: boolean;
+  updated_at: string;
+}
+
+export const NOTIFICATION_CATEGORIES: readonly { value: NotificationCategory; label: string }[] = [
+  { value: 'social_drinks', label: 'Convites de drink' },
+  { value: 'social_matches', label: 'Conexoes e matches' },
+  { value: 'venue_offers', label: 'Ofertas do local' },
+] as const;
+
 // Venue types
 export type VenueType = string;
 
