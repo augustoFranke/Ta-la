@@ -5,35 +5,35 @@
 See: `.planning/PROJECT.md` (updated 2026-02-10)
 
 **Core value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
-**Current focus:** Phase 2 - Same-Venue Discovery
+**Current focus:** Phase 2 - Same-Venue Discovery (Complete)
 
 ## Current Position
 
 Phase: 2 of 4 (Same-Venue Discovery)
-Plan: 1 of 2 in current phase
-Status: In Progress
-Last activity: 2026-02-10 - Completed 02-01-PLAN.md (server-side visibility & recency schema)
+Plan: 2 of 2 in current phase
+Status: Phase Complete
+Last activity: 2026-02-10 - Completed 02-02-PLAN.md (client visibility selector & recency indicators)
 
-Progress: [███░░░░░░░] 37%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 1.3 min
-- Total execution time: 0.07 hours
+- Total plans completed: 4
+- Average duration: 1.5 min
+- Total execution time: 0.12 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Check-in Trust Core | 2 | 3 min | 1.5 min |
-| 2. Same-Venue Discovery | 1 | 1 min | 1 min |
+| 2. Same-Venue Discovery | 2 | 3 min | 1.5 min |
 | 3. Safety and Moderation Enforcement | 0 | 0 min | 0 min |
 | 4. Offer and Notification Controls | 0 | 0 min | 0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (1 min), 01-02 (2 min), 02-01 (1 min)
+- Last 5 plans: 01-01 (1 min), 01-02 (2 min), 02-01 (1 min), 02-02 (2 min)
 - Trend: Stable
 
 ## Accumulated Context
@@ -56,6 +56,9 @@ Recent decisions affecting current work:
 - [Phase 2, Plan 01]: Default 'public' ensures backward compatibility — no data migration needed.
 - [Phase 2, Plan 01]: friends_only filtering deferred to Phase 3 — column is schema-ready now.
 - [Phase 2, Plan 01]: No GRANT needed for get_users_at_venue — CREATE OR REPLACE preserves permissions.
+- [Phase 2, Plan 02]: Visibility defaults to 'public' in both UI state and RPC fallback.
+- [Phase 2, Plan 02]: Recency shown only for venue users (not search results) — checked_in_at presence determines display.
+- [Phase 2, Plan 02]: Radio-button-on/off Ionicons for visibility selector indicator.
 
 ### Pending Todos
 
@@ -70,6 +73,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-10 19:17
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-02-10 19:22
+Stopped at: Completed 02-02-PLAN.md (Phase 2 complete)
 Resume file: None

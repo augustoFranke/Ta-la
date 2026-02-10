@@ -11,7 +11,7 @@ This roadmap delivers the v1 trust loop in dependency order: trustworthy check-i
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Check-in Trust Core** - Users can establish trusted presence at a venue under server-enforced rules.
-- [ ] **Phase 2: Same-Venue Discovery** - Users can see who is currently at the same venue and control their own visibility.
+- [x] **Phase 2: Same-Venue Discovery** - Users can see who is currently at the same venue and control their own visibility.
 - [ ] **Phase 3: Safety and Moderation Enforcement** - Users can block/report others and discovery excludes blocked users.
 - [ ] **Phase 4: Offer and Notification Controls** - Users can unlock offers from valid presence and control notification categories.
 
@@ -43,7 +43,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Server-side visibility column + updated RPCs (recency data + visibility filter)
-- [ ] 02-02-PLAN.md — Client visibility selector in check-in modal + recency indicators on discover screen
+- [x] 02-02-PLAN.md — Client visibility selector in check-in modal + recency indicators on discover screen
 
 ### Phase 3: Safety and Moderation Enforcement
 **Goal**: Users can protect themselves in discovery contexts and blocked relationships are enforced in visible surfaces.
@@ -71,7 +71,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Check-in Trust Core | 2/2 | Complete | 2026-02-10 |
-| 2. Same-Venue Discovery | 1/2 | In progress | - |
+| 2. Same-Venue Discovery | 2/2 | Complete | 2026-02-10 |
 | 3. Safety and Moderation Enforcement | 0/TBD | Not started | - |
 | 4. Offer and Notification Controls | 0/TBD | Not started | - |
 
