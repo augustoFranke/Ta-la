@@ -71,7 +71,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Server-enforced drink offer gating on active check-in + clear offer state UI
+- [x] 04-01-PLAN.md — Server-enforced drink offer gating on active check-in + clear offer state UI
 - [ ] 04-02-PLAN.md — Notification preferences schema, service, store, and settings UI toggles
 
 ## Progress
@@ -81,7 +81,7 @@ Plans:
 | 1. Check-in Trust Core | 2/2 | Complete | 2026-02-10 |
 | 2. Same-Venue Discovery | 2/2 | Complete | 2026-02-10 |
 | 3. Safety and Moderation Enforcement | 2/2 | Complete | 2026-02-10 |
-| 4. Offer and Notification Controls | 0/2 | Not started | - |
+| 4. Offer and Notification Controls | 1/2 | In progress | - |
 
 ## Requirement Coverage
 

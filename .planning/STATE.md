@@ -5,23 +5,23 @@
 See: `.planning/PROJECT.md` (updated 2026-02-10)
 
 **Core value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
-**Current focus:** Phase 3 - Safety and Moderation Enforcement (Complete)
+**Current focus:** Phase 4 - Offer and Notification Controls (In Progress)
 
 ## Current Position
 
-Phase: 3 of 4 (Safety and Moderation Enforcement)
-Plan: 2 of 2 in current phase (Complete)
-Status: Phase Complete
-Last activity: 2026-02-10 - Completed 03-02-PLAN.md (block/report UI & filtering)
+Phase: 4 of 4 (Offer and Notification Controls)
+Plan: 1 of 2 in current phase (Complete)
+Status: In Progress
+Last activity: 2026-02-10 - Completed 04-01-PLAN.md (server-enforced drink offer gating + offer state UI)
 
-Progress: [████████░░] 75%
+Progress: [████████░░] 87%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 1.5 min
-- Total execution time: 0.18 hours
+- Total plans completed: 7
+- Average duration: 1.6 min
+- Total execution time: 0.2 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [████████░░] 75%
 | 1. Check-in Trust Core | 2 | 3 min | 1.5 min |
 | 2. Same-Venue Discovery | 2 | 3 min | 1.5 min |
 | 3. Safety and Moderation Enforcement | 2 | 4 min | 2 min |
-| 4. Offer and Notification Controls | 0 | 0 min | 0 min |
+| 4. Offer and Notification Controls | 1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (2 min), 02-01 (1 min), 02-02 (2 min), 03-01 (1 min), 03-02 (3 min)
+- Last 5 plans: 02-01 (1 min), 02-02 (2 min), 03-01 (1 min), 03-02 (3 min), 04-01 (2 min)
 - Trend: Stable
 
 ## Accumulated Context
@@ -64,6 +64,9 @@ Recent decisions affecting current work:
 - [Phase 3, Plan 02]: Set<string> in Zustand for O(1) blocked-user lookups on client.
 - [Phase 3, Plan 02]: Client-side filtering layered on top of server RPC for optimistic consistency after new blocks.
 - [Phase 3, Plan 02]: Report modal uses REPORT_REASONS array from database types for single source of truth.
+- [Phase 4, Plan 01]: SECURITY DEFINER RPC replaces direct client INSERT for drink offers — server validates active check-in.
+- [Phase 4, Plan 01]: Removed senderId from client params — server uses auth.uid() for sender identity.
+- [Phase 4, Plan 01]: Error codes mapped to pt-BR messages client-side via DRINK_ERROR_MESSAGES constant.
 
 ### Pending Todos
 
@@ -78,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-10 19:53
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-02-10 20:17
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
