@@ -146,7 +146,6 @@ export default function UserProfileScreen() {
     setIsActionLoading(true);
     try {
       await sendDrinkOffer({
-        senderId: userId,
         receiverId: resolvedUserId,
         venueId: activeCheckIn.venue_id,
       });

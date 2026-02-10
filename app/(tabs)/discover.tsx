@@ -178,7 +178,6 @@ export default function DiscoverScreen() {
     setActionTargetId(targetId);
     try {
       await sendDrinkOffer({
-        senderId: userId,
         receiverId: targetId,
         venueId: activeCheckIn.venue_id,
       });
