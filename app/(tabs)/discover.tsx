@@ -281,9 +281,14 @@ export default function DiscoverScreen() {
             style={styles.cardButton}
           />
           {relation === 'matched' ? (
-            <Button title="Conectados" disabled style={styles.cardButton} />
+            <View style={styles.cardActionColumn}>
+              <Button title="Conectados" disabled style={styles.cardButton} />
+            </View>
           ) : relation === 'sent_pending' ? (
-            <Button title="Drink enviado" disabled style={styles.cardButton} />
+            <View style={styles.cardActionColumn}>
+              <Button title="Drink enviado" disabled style={styles.cardButton} />
+              <Text style={[styles.stateHelper, { color: colors.textSecondary }]}>Aguardando resposta</Text>
+            </View>
           ) : relation === 'received_pending' ? (
             <View style={styles.cardActionGroup}>
               <Button
@@ -311,14 +316,23 @@ export default function DiscoverScreen() {
             />
           ) : relation === 'sent_accepted' ? (
             <Button title="Drink aceito" disabled style={styles.cardButton} />
-          ) : (
+          ) : activeCheckIn?.venue_id ? (
             <Button
-              title={activeCheckIn?.venue_id ? 'Pagar um drink' : 'Faça check-in para drink'}
+              title="Pagar um drink"
               onPress={() => handleSendDrink(profile.id)}
               style={styles.cardButton}
               loading={isBusy}
-              disabled={isBusy || !activeCheckIn?.venue_id}
+              disabled={isBusy}
             />
+          ) : (
+            <View style={styles.cardActionColumn}>
+              <Button
+                title="Faca check-in primeiro"
+                disabled
+                style={styles.cardButton}
+              />
+              <Text style={[styles.stateHelper, { color: colors.textSecondary }]}>Necessario check-in ativo para drinks</Text>
+            </View>
           )}
           <TouchableOpacity
             onPress={() => handleBlockFromCard(profile.id, profile.name)}
@@ -468,6 +482,15 @@ const styles = StyleSheet.create({
   cardActionGroup: {
     flexDirection: 'row',
     gap: 8,
+  },
+  cardActionColumn: {
+    flex: 1,
+    minWidth: 120,
+    gap: 4,
+  },
+  stateHelper: {
+    fontSize: 11,
+    textAlign: 'center',
   },
   cardButton: {
     flex: 1,
