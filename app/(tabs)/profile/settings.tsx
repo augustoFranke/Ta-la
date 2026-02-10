@@ -16,10 +16,13 @@ import { useTheme } from '../../../src/theme';
 import { useLocationStore } from '../../../src/stores/locationStore';
 import { useAuth } from '../../../src/hooks/useAuth';
 import { Button } from '../../../src/components/ui/Button';
+import { useNotificationStore } from '../../../src/stores/notificationStore';
+import { fetchNotificationPreferences, upsertNotificationPreferences } from '../../../src/services/notifications';
+import { NOTIFICATION_CATEGORIES } from '../../../src/types/database';
 
 export default function ProfileSettingsScreen() {
   const { colors, spacing, typography, isDark, setMode } = useTheme();
-  const { signOut, isLoading: isAuthLoading } = useAuth();
+  const { session, signOut, isLoading: isAuthLoading } = useAuth();
   const {
     permissionGranted,
     errorMsg,
@@ -28,7 +31,36 @@ export default function ProfileSettingsScreen() {
     setError,
     getCurrentLocation,
   } = useLocationStore();
+  const { preferences, isLoaded: notifLoaded, setPreferences, updateCategory } = useNotificationStore();
   const [isRequesting, setIsRequesting] = useState(false);
+  const userId = session?.user?.id;
+
+  // Load notification preferences on mount
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const prefs = await fetchNotificationPreferences(userId);
+        if (cancelled) return;
+        if (prefs) {
+          setPreferences(prefs);
+        } else {
+          // First visit — persist defaults
+          const defaults = { social_drinks: true, social_matches: true, venue_offers: true };
+          await upsertNotificationPreferences(userId, defaults);
+          if (cancelled) return;
+          const created = await fetchNotificationPreferences(userId);
+          if (!cancelled) setPreferences(created);
+        }
+      } catch {
+        // Silently fail — toggles remain disabled until loaded
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [userId, setPreferences]);
 
   const refreshPermissionStatus = useCallback(async () => {
     try {
@@ -170,6 +202,39 @@ export default function ProfileSettingsScreen() {
               {errorMsg}
             </Text>
           ) : null}
+        </View>
+
+        <View style={[styles.section, { paddingHorizontal: spacing.lg, paddingTop: spacing.md }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            Notificacoes
+          </Text>
+          <View style={[styles.list, { borderColor: colors.border }]}>
+            {NOTIFICATION_CATEGORIES.map((cat, index) => (
+              <View
+                key={cat.value}
+                style={[
+                  styles.row,
+                  index < NOTIFICATION_CATEGORIES.length - 1 && styles.rowDivider,
+                  index < NOTIFICATION_CATEGORIES.length - 1 && { borderColor: colors.border },
+                ]}
+              >
+                <Text style={[styles.rowTitle, { color: colors.text }]}>
+                  {cat.label}
+                </Text>
+                <Switch
+                  value={preferences?.[cat.value] ?? true}
+                  onValueChange={(val) => { if (userId) updateCategory(userId, cat.value, val); }}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={preferences?.[cat.value] ? colors.onPrimary : colors.textSecondary}
+                  ios_backgroundColor={colors.border}
+                  disabled={!notifLoaded || !userId}
+                />
+              </View>
+            ))}
+          </View>
+          <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+            Escolha quais notificacoes deseja receber.
+          </Text>
         </View>
 
         <View style={[styles.section, { paddingHorizontal: spacing.lg, paddingTop: spacing.md }]}>
