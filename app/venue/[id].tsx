@@ -27,6 +27,7 @@ import { CheckInModal } from '../../src/components/venue/CheckInModal';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
 import { useAuth } from '../../src/hooks/useAuth';
 import { supabase } from '../../src/services/supabase';
+import type { CheckInVisibility } from '../../src/types/database';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 320;
@@ -119,7 +120,7 @@ export default function VenueDetailsScreen() {
     setCheckInModalVisible(true);
   };
 
-  const handleConfirmCheckIn = async (openToMeeting: boolean) => {
+  const handleConfirmCheckIn = async (openToMeeting: boolean, visibility: CheckInVisibility) => {
     const result = await checkInToPlace({
       place_id: venue.place_id,
       name: venue.name,
@@ -130,6 +131,7 @@ export default function VenueDetailsScreen() {
       photo_url: venue.photo_url || null,
       rating: venue.rating ?? null,
       open_to_meeting: openToMeeting,
+      visibility,
     });
 
     if (result.success) {

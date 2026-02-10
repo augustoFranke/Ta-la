@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase';
 import { useCheckInStore, type ActiveCheckIn } from '../stores/checkInStore';
 import { useAuthStore } from '../stores/authStore';
 import { useLocationStore } from '../stores/locationStore';
+import type { CheckInVisibility } from '../types/database';
 
 const DENIAL_MESSAGES: Record<string, string> = {
   not_authenticated: 'Voce precisa estar logado para fazer check-in.',
@@ -21,6 +22,7 @@ type CheckInToPlaceInput = {
   photo_url: string | null;
   rating: number | null;
   open_to_meeting: boolean;
+  visibility?: CheckInVisibility;
 };
 
 type CheckInV2Response = {
@@ -111,6 +113,7 @@ export function useCheckIn() {
           p_user_lng: coords.longitude,
           p_user_accuracy: coords.accuracy,
           p_user_location_timestamp: new Date().toISOString(),
+          p_visibility: input.visibility ?? 'public',
         });
 
         if (rpcError) throw rpcError;

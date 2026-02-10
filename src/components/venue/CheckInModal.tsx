@@ -16,13 +16,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 import type { VenueWithDistance } from '../../stores/venueStore';
+import type { CheckInVisibility } from '../../types/database';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface CheckInModalProps {
   visible: boolean;
   venue: VenueWithDistance | null;
-  onConfirm: (openToMeeting: boolean) => void;
+  onConfirm: (openToMeeting: boolean, visibility: CheckInVisibility) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -36,14 +37,17 @@ export function CheckInModal({
 }: CheckInModalProps) {
   const { colors } = useTheme();
   const [openToMeeting, setOpenToMeeting] = useState(false);
+  const [visibility, setVisibility] = useState<CheckInVisibility>('public');
 
   const handleConfirm = () => {
-    onConfirm(openToMeeting);
+    onConfirm(openToMeeting, visibility);
     setOpenToMeeting(false);
+    setVisibility('public');
   };
 
   const handleCancel = () => {
     setOpenToMeeting(false);
+    setVisibility('public');
     onCancel();
   };
 
@@ -103,6 +107,69 @@ export function CheckInModal({
               </Text>
             </View>
           )}
+
+          {/* Visibility selector */}
+          <View style={styles.visibilitySection}>
+            <Text style={[styles.visibilityLabel, { color: colors.text }]}>
+              Visibilidade
+            </Text>
+            <View style={[styles.visibilityContainer, { borderColor: colors.border }]}>
+              <TouchableOpacity
+                style={styles.visibilityOption}
+                onPress={() => setVisibility('public')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="eye" size={20} color={visibility === 'public' ? colors.primary : colors.textSecondary} />
+                <View style={styles.visibilityTextContainer}>
+                  <Text style={[styles.visibilityTitle, { color: colors.text }]}>Todos no local</Text>
+                  <Text style={[styles.visibilitySubtitle, { color: colors.textSecondary }]}>Qualquer pessoa no local pode ver voce</Text>
+                </View>
+                <Ionicons
+                  name={visibility === 'public' ? 'radio-button-on' : 'radio-button-off'}
+                  size={22}
+                  color={visibility === 'public' ? colors.primary : colors.textSecondary}
+                />
+              </TouchableOpacity>
+
+              <View style={[styles.visibilityDivider, { backgroundColor: colors.border }]} />
+
+              <TouchableOpacity
+                style={styles.visibilityOption}
+                onPress={() => setVisibility('friends_only')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="people" size={20} color={visibility === 'friends_only' ? colors.primary : colors.textSecondary} />
+                <View style={styles.visibilityTextContainer}>
+                  <Text style={[styles.visibilityTitle, { color: colors.text }]}>Somente amigos</Text>
+                  <Text style={[styles.visibilitySubtitle, { color: colors.textSecondary }]}>Apenas seus amigos podem ver voce</Text>
+                </View>
+                <Ionicons
+                  name={visibility === 'friends_only' ? 'radio-button-on' : 'radio-button-off'}
+                  size={22}
+                  color={visibility === 'friends_only' ? colors.primary : colors.textSecondary}
+                />
+              </TouchableOpacity>
+
+              <View style={[styles.visibilityDivider, { backgroundColor: colors.border }]} />
+
+              <TouchableOpacity
+                style={styles.visibilityOption}
+                onPress={() => setVisibility('private')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="eye-off" size={20} color={visibility === 'private' ? colors.primary : colors.textSecondary} />
+                <View style={styles.visibilityTextContainer}>
+                  <Text style={[styles.visibilityTitle, { color: colors.text }]}>Privado</Text>
+                  <Text style={[styles.visibilitySubtitle, { color: colors.textSecondary }]}>Ninguem pode ver que voce esta aqui</Text>
+                </View>
+                <Ionicons
+                  name={visibility === 'private' ? 'radio-button-on' : 'radio-button-off'}
+                  size={22}
+                  color={visibility === 'private' ? colors.primary : colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* Actions */}
           <View style={styles.actions}>
@@ -244,5 +311,41 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  visibilitySection: {
+    marginBottom: 16,
+  },
+  visibilityLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  visibilityContainer: {
+    borderWidth: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  visibilityOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    gap: 12,
+  },
+  visibilityTextContainer: {
+    flex: 1,
+  },
+  visibilityTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  visibilitySubtitle: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  visibilityDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 12,
   },
 });
