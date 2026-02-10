@@ -23,7 +23,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../src/theme';
 import { useVenueStore } from '../../src/stores/venueStore';
 import { getVenueTypeLabel, formatDistance } from '../../src/services/places';
-import { VIBE_CONFIG } from '../../src/types/database';
 import { CheckInModal } from '../../src/components/venue/CheckInModal';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
 import { useAuth } from '../../src/hooks/useAuth';
@@ -61,7 +60,7 @@ export default function VenueDetailsScreen() {
       };
 
   const distanceMeters = venue.distance * 1000;
-  const isTooFar = distanceMeters > 50;
+  const isDistanceWarning = distanceMeters > 100;
 
   const fetchFavoriteStatus = async () => {
     if (!user?.id) return;
@@ -117,7 +116,6 @@ export default function VenueDetailsScreen() {
   }, [venue.place_id, user?.id]);
 
   const handleCheckIn = () => {
-    if (isTooFar) return;
     setCheckInModalVisible(true);
   };
 
@@ -136,12 +134,18 @@ export default function VenueDetailsScreen() {
 
     if (result.success) {
       setCheckInModalVisible(false);
-      Alert.alert('Check-in realizado!', `Você está em ${venue.name}`);
-      router.back();
+      Alert.alert(
+        'Check-in realizado!',
+        `Você está em ${venue.name}. Quer ver quem está por perto agora?`,
+        [
+          { text: 'Depois', onPress: () => router.back() },
+          { text: 'Ver pessoas', onPress: () => router.replace('/(tabs)/discover') },
+        ]
+      );
       return;
     }
 
-    Alert.alert('Erro', result.error || 'Erro ao fazer check-in');
+    Alert.alert('Check-in recusado', result.error || 'Nao foi possivel fazer check-in.');
   };
 
   const handleImageScroll = (event: any) => {
@@ -319,24 +323,6 @@ export default function VenueDetailsScreen() {
               )}
             </View>
           )}
-
-          {/* Vibes */}
-          {venue.top_vibes && venue.top_vibes.length > 0 && (
-            <View style={styles.vibesSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Vibes</Text>
-              <View style={styles.vibesRow}>
-                {venue.top_vibes.map((vibe) => {
-                  const config = VIBE_CONFIG[vibe];
-                  return (
-                    <View key={vibe} style={[styles.vibeChip, { backgroundColor: colors.card }]}>
-                      <Ionicons name={config.icon} size={16} color={colors.primary} />
-                      <Text style={[styles.vibeText, { color: colors.text }]}>{config.label}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          )}
         </View>
       </ScrollView>
 
@@ -345,20 +331,20 @@ export default function VenueDetailsScreen() {
         <TouchableOpacity
           style={[
             styles.checkInButton,
-            { backgroundColor: isTooFar ? colors.border : colors.primary },
+            { backgroundColor: colors.primary },
           ]}
           onPress={handleCheckIn}
-          disabled={isTooFar || isCheckInLoading}
+          disabled={isCheckInLoading}
           activeOpacity={0.8}
         >
           <Ionicons name="checkmark-circle" size={22} color={colors.onPrimary} />
           <Text style={[styles.checkInButtonText, { color: colors.onPrimary }]}>
-            {isTooFar ? 'Você está muito longe' : 'Fazer check-in'}
+            Fazer check-in
           </Text>
         </TouchableOpacity>
-        {isTooFar ? (
+        {isDistanceWarning ? (
           <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-            Aproxime-se a até 50m para fazer check-in.
+            Voce parece estar longe deste local ({formatDistance(venue.distance)}).
           </Text>
         ) : null}
       </SafeAreaView>
@@ -515,32 +501,6 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  vibesSection: {
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  vibesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  vibeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  vibeText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
   bottomAction: {
     paddingHorizontal: 20,
