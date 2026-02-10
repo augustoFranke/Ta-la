@@ -53,7 +53,11 @@ Plans:
   1. User can block another user directly from profile and venue roster surfaces.
   2. User can submit a report with predefined reason and optional note from discovery/profile contexts.
   3. User never sees blocked users in discovery or venue roster views after block state applies.
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Backend: missing blocked_id index, reports UNIQUE constraint, TypeScript types
+- [ ] 03-02-PLAN.md — Frontend: moderation service, block store, block/report UI on profile + discover screens
 
 ### Phase 4: Offer and Notification Controls
 **Goal**: Users can access venue offer value only from valid presence and control which notification categories they receive.
@@ -72,7 +76,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Check-in Trust Core | 2/2 | Complete | 2026-02-10 |
 | 2. Same-Venue Discovery | 2/2 | Complete | 2026-02-10 |
-| 3. Safety and Moderation Enforcement | 0/TBD | Not started | - |
+| 3. Safety and Moderation Enforcement | 0/2 | Not started | - |
 | 4. Offer and Notification Controls | 0/TBD | Not started | - |
 
 ## Requirement Coverage
