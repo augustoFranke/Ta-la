@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +23,8 @@ import {
   sendDrinkOffer,
   type DrinkRelation,
 } from '../../src/services/drinks';
+import { blockUser, fetchBlockedIds } from '../../src/services/moderation';
+import { useBlockStore } from '../../src/stores/blockStore';
 
 type VenueUser = {
   id: string;
@@ -57,6 +59,8 @@ export default function DiscoverScreen() {
   const router = useRouter();
   const { activeCheckIn, fetchActiveCheckIn } = useCheckIn();
 
+  const { blockedIds, isLoaded: blocksLoaded, setBlockedIds, addBlockedId } = useBlockStore();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [venueUsers, setVenueUsers] = useState<VenueUser[]>([]);
   const [searchResults, setSearchResults] = useState<BasicUser[]>([]);
@@ -82,7 +86,8 @@ export default function DiscoverScreen() {
       });
 
       if (error) throw error;
-      setVenueUsers((data ?? []) as VenueUser[]);
+      const filtered = (data ?? []).filter((u: any) => !blockedIds.has(u.id));
+      setVenueUsers(filtered as VenueUser[]);
     } catch (err: any) {
       console.error('Erro ao buscar usuários no local:', err);
       Alert.alert('Erro', 'Não foi possível buscar pessoas no local.');
@@ -124,7 +129,8 @@ export default function DiscoverScreen() {
         .limit(20);
 
       if (error) throw error;
-      setSearchResults((data ?? []) as BasicUser[]);
+      const filtered = (data ?? []).filter((u: any) => !blockedIds.has(u.id));
+      setSearchResults(filtered as BasicUser[]);
     } catch (err: any) {
       console.error('Erro ao buscar usuários:', err);
       Alert.alert('Erro', 'Não foi possível buscar usuários.');
@@ -136,6 +142,11 @@ export default function DiscoverScreen() {
   useEffect(() => {
     fetchActiveCheckIn();
   }, [fetchActiveCheckIn]);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetchBlockedIds(userId).then(setBlockedIds).catch(console.error);
+  }, [userId, setBlockedIds]);
 
   useEffect(() => {
     loadVenueUsers();
@@ -200,6 +211,32 @@ export default function DiscoverScreen() {
       setActionTargetId(null);
     }
   }, [drinkRelations, refreshDrinkRelations]);
+
+  const handleBlockFromCard = useCallback(async (targetId: string, targetName: string) => {
+    if (!userId) return;
+    Alert.alert(
+      'Bloquear usuario',
+      `Voce nao vera mais ${targetName} e ${targetName.split(' ')[0]} nao vera voce. Deseja continuar?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Bloquear',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await blockUser(userId, targetId);
+              addBlockedId(targetId);
+              // Optimistic removal from current lists
+              setVenueUsers(prev => prev.filter(u => u.id !== targetId));
+              setSearchResults(prev => prev.filter(u => u.id !== targetId));
+            } catch (err: any) {
+              Alert.alert('Erro', 'Nao foi possivel bloquear este usuario.');
+            }
+          },
+        },
+      ]
+    );
+  }, [userId, addBlockedId]);
 
   const renderUserCard = (profile: BasicUser, ageOverride?: number, checkedInAt?: string) => {
     const age = typeof ageOverride === 'number'
@@ -284,6 +321,12 @@ export default function DiscoverScreen() {
               disabled={isBusy || !activeCheckIn?.venue_id}
             />
           )}
+          <TouchableOpacity
+            onPress={() => handleBlockFromCard(profile.id, profile.name)}
+            style={styles.blockIconButton}
+          >
+            <Ionicons name="ban-outline" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
       </Card>
     );
@@ -430,5 +473,10 @@ const styles = StyleSheet.create({
   cardButton: {
     flex: 1,
     minWidth: 120,
+  },
+  blockIconButton: {
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
