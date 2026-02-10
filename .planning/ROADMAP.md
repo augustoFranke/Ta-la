@@ -13,7 +13,7 @@ This roadmap delivers the v1 trust loop in dependency order: trustworthy check-i
 - [x] **Phase 1: Check-in Trust Core** - Users can establish trusted presence at a venue under server-enforced rules.
 - [x] **Phase 2: Same-Venue Discovery** - Users can see who is currently at the same venue and control their own visibility.
 - [x] **Phase 3: Safety and Moderation Enforcement** - Users can block/report others and discovery excludes blocked users.
-- [ ] **Phase 4: Offer and Notification Controls** - Users can unlock offers from valid presence and control notification categories.
+- [x] **Phase 4: Offer and Notification Controls** - Users can unlock offers from valid presence and control notification categories.
 
 ## Phase Details
 
@@ -72,7 +72,7 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md — Server-enforced drink offer gating on active check-in + clear offer state UI
-- [ ] 04-02-PLAN.md — Notification preferences schema, service, store, and settings UI toggles
+- [x] 04-02-PLAN.md — Notification preferences schema, service, store, and settings UI toggles
 
 ## Progress
 
@@ -81,7 +81,7 @@ Plans:
 | 1. Check-in Trust Core | 2/2 | Complete | 2026-02-10 |
 | 2. Same-Venue Discovery | 2/2 | Complete | 2026-02-10 |
 | 3. Safety and Moderation Enforcement | 2/2 | Complete | 2026-02-10 |
-| 4. Offer and Notification Controls | 1/2 | In progress | - |
+| 4. Offer and Notification Controls | 2/2 | Complete | 2026-02-10 |
 
 ## Requirement Coverage
 

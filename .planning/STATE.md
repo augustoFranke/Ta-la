@@ -5,23 +5,23 @@
 See: `.planning/PROJECT.md` (updated 2026-02-10)
 
 **Core value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
-**Current focus:** Phase 4 - Offer and Notification Controls (In Progress)
+**Current focus:** Phase 4 - Offer and Notification Controls (Complete)
 
 ## Current Position
 
 Phase: 4 of 4 (Offer and Notification Controls)
-Plan: 1 of 2 in current phase (Complete)
-Status: In Progress
-Last activity: 2026-02-10 - Completed 04-01-PLAN.md (server-enforced drink offer gating + offer state UI)
+Plan: 2 of 2 in current phase (Complete)
+Status: Milestone Complete
+Last activity: 2026-02-10 - Completed 04-02-PLAN.md (notification preferences schema, service, store, and settings UI)
 
-Progress: [████████░░] 87%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 1.6 min
-- Total execution time: 0.2 hours
+- Total execution time: 0.22 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [████████░░] 87%
 | 1. Check-in Trust Core | 2 | 3 min | 1.5 min |
 | 2. Same-Venue Discovery | 2 | 3 min | 1.5 min |
 | 3. Safety and Moderation Enforcement | 2 | 4 min | 2 min |
-| 4. Offer and Notification Controls | 1 | 2 min | 2 min |
+| 4. Offer and Notification Controls | 2 | 4 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (1 min), 02-02 (2 min), 03-01 (1 min), 03-02 (3 min), 04-01 (2 min)
+- Last 5 plans: 02-02 (2 min), 03-01 (1 min), 03-02 (3 min), 04-01 (2 min), 04-02 (2 min)
 - Trend: Stable
 
 ## Accumulated Context
@@ -67,6 +67,9 @@ Recent decisions affecting current work:
 - [Phase 4, Plan 01]: SECURITY DEFINER RPC replaces direct client INSERT for drink offers — server validates active check-in.
 - [Phase 4, Plan 01]: Removed senderId from client params — server uses auth.uid() for sender identity.
 - [Phase 4, Plan 01]: Error codes mapped to pt-BR messages client-side via DRINK_ERROR_MESSAGES constant.
+- [Phase 4, Plan 02]: Opt-out model — all notification categories enabled by default, user disables individually.
+- [Phase 4, Plan 02]: SECURITY DEFINER for should_notify_user to bypass RLS for server-side enforcement.
+- [Phase 4, Plan 02]: GRANT EXECUTE to both authenticated and service_role for future Edge Functions.
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-10 20:17
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-02-10 20:18
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
