@@ -2,7 +2,7 @@
  * Perfil público de outro usuário
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   Image,
   Alert,
   TouchableOpacity,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -19,6 +21,18 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../src/theme';
 import { supabase } from '../../src/services/supabase';
 import { Card } from '../../src/components/ui/Card';
+import { Button } from '../../src/components/ui/Button';
+import { useAuth } from '../../src/hooks/useAuth';
+import { useCheckIn } from '../../src/hooks/useCheckIn';
+import {
+  fetchDrinkRelations,
+  respondDrinkOffer,
+  sendDrinkOffer,
+  type DrinkRelationState,
+} from '../../src/services/drinks';
+import { blockUser, reportUser } from '../../src/services/moderation';
+import { useBlockStore } from '../../src/stores/blockStore';
+import { type ReportReason, REPORT_REASONS } from '../../src/types/database';
 
 type UserProfile = {
   id: string;
@@ -45,13 +59,24 @@ export default function UserProfileScreen() {
   const { colors, spacing, typography, isDark } = useTheme();
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const { activeCheckIn, fetchActiveCheckIn } = useCheckIn();
 
   const resolvedUserId = useMemo(() => (Array.isArray(id) ? id[0] : id), [id]);
+  const userId = user?.id;
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
+  const [drinkState, setDrinkState] = useState<DrinkRelationState>('none');
+  const [incomingDrinkId, setIncomingDrinkId] = useState<string | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState<ReportReason>('comportamento_inadequado');
+  const [reportDetails, setReportDetails] = useState('');
+
+  const { addBlockedId } = useBlockStore();
 
   const age = profile?.birth_date
     ? Math.floor((Date.now() - new Date(profile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -90,9 +115,109 @@ export default function UserProfileScreen() {
     }
   }, [resolvedUserId]);
 
+  const fetchDrinkState = useCallback(async () => {
+    if (!userId || !resolvedUserId) return;
+    try {
+      const relations = await fetchDrinkRelations(userId, [resolvedUserId]);
+      const relation = relations[resolvedUserId];
+      setDrinkState(relation?.state ?? 'none');
+      setIncomingDrinkId(relation?.incomingDrinkId ?? null);
+    } catch (err) {
+      console.error('Erro ao carregar status de drink:', err);
+    }
+  }, [userId, resolvedUserId]);
+
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  useEffect(() => {
+    fetchActiveCheckIn();
+    fetchDrinkState();
+  }, [fetchActiveCheckIn, fetchDrinkState]);
+
+  const handleSendDrink = useCallback(async () => {
+    if (!userId || !resolvedUserId) return;
+    if (!activeCheckIn?.venue_id) {
+      Alert.alert('Check-in necessário', 'Faça check-in para pagar um drink.');
+      return;
+    }
+
+    setIsActionLoading(true);
+    try {
+      await sendDrinkOffer({
+        senderId: userId,
+        receiverId: resolvedUserId,
+        venueId: activeCheckIn.venue_id,
+      });
+      await fetchDrinkState();
+      Alert.alert('Drink enviado', 'Agora é só aguardar a resposta.');
+    } catch (err: any) {
+      Alert.alert('Erro', err?.message || 'Não foi possível enviar o drink.');
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [userId, resolvedUserId, activeCheckIn?.venue_id, fetchDrinkState]);
+
+  const handleRespondDrink = useCallback(async (action: 'accepted' | 'declined') => {
+    if (!incomingDrinkId) return;
+
+    setIsActionLoading(true);
+    try {
+      await respondDrinkOffer({
+        drinkId: incomingDrinkId,
+        action,
+      });
+      await fetchDrinkState();
+    } catch (err: any) {
+      Alert.alert('Erro', err?.message || 'Não foi possível responder o drink.');
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [incomingDrinkId, fetchDrinkState]);
+
+  const handleBlock = useCallback(async () => {
+    if (!userId || !resolvedUserId) return;
+    Alert.alert(
+      'Bloquear usuario',
+      'Voce nao vera mais este usuario e ele nao vera voce. Deseja continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Bloquear',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await blockUser(userId, resolvedUserId);
+              addBlockedId(resolvedUserId);
+              Alert.alert('Usuario bloqueado', 'Voce nao vera mais este usuario.');
+              router.back();
+            } catch (err: any) {
+              Alert.alert('Erro', 'Nao foi possivel bloquear este usuario.');
+            }
+          },
+        },
+      ]
+    );
+  }, [userId, resolvedUserId, addBlockedId, router]);
+
+  const handleReport = useCallback(async () => {
+    if (!userId || !resolvedUserId) return;
+    try {
+      await reportUser({
+        reporterId: userId,
+        reportedId: resolvedUserId,
+        reason: reportReason,
+        details: reportDetails.trim() || undefined,
+      });
+      setReportModalVisible(false);
+      setReportReason('comportamento_inadequado');
+      setReportDetails('');
+      Alert.alert('Denuncia enviada', 'Obrigado por ajudar a manter a comunidade segura.');
+    } catch (err: any) {
+      Alert.alert('Erro', 'Nao foi possivel enviar a denuncia.');
+    }
+  }, [userId, resolvedUserId, reportReason, reportDetails]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}> 
@@ -155,6 +280,66 @@ export default function UserProfileScreen() {
                 )}
               </View>
             </Card>
+
+            <Card style={styles.sectionCard}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Interesse</Text>
+              {drinkState === 'matched' ? (
+                <Button title="Conectados" disabled />
+              ) : drinkState === 'sent_pending' ? (
+                <Button title="Drink enviado" disabled />
+              ) : drinkState === 'received_pending' ? (
+                <View style={styles.actionRow}>
+                  <Button
+                    title="Aceitar drink"
+                    onPress={() => handleRespondDrink('accepted')}
+                    style={styles.actionButton}
+                    loading={isActionLoading}
+                    disabled={isActionLoading}
+                  />
+                  <Button
+                    title="Recusar"
+                    variant="outline"
+                    onPress={() => handleRespondDrink('declined')}
+                    style={styles.actionButton}
+                    disabled={isActionLoading}
+                  />
+                </View>
+              ) : drinkState === 'received_accepted' ? (
+                <Button
+                  title="Retribuir drink"
+                  onPress={handleSendDrink}
+                  loading={isActionLoading}
+                  disabled={isActionLoading}
+                />
+              ) : drinkState === 'sent_accepted' ? (
+                <Button title="Drink aceito" disabled />
+              ) : (
+                <Button
+                  title={activeCheckIn?.venue_id ? 'Pagar um drink' : 'Faça check-in para drink'}
+                  onPress={handleSendDrink}
+                  loading={isActionLoading}
+                  disabled={isActionLoading || !activeCheckIn?.venue_id}
+                />
+              )}
+            </Card>
+
+            <Card style={styles.sectionCard}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Seguranca</Text>
+              <View style={styles.actionRow}>
+                <Button
+                  title="Denunciar"
+                  variant="outline"
+                  onPress={() => setReportModalVisible(true)}
+                  style={styles.actionButton}
+                />
+                <Button
+                  title="Bloquear"
+                  variant="outline"
+                  onPress={handleBlock}
+                  style={styles.actionButton}
+                />
+              </View>
+            </Card>
           </>
         ) : (
           <Text style={[styles.sectionText, { color: colors.textSecondary }]}> 
@@ -162,6 +347,72 @@ export default function UserProfileScreen() {
           </Text>
         )}
       </ScrollView>
+
+      <Modal
+        visible={reportModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReportModalVisible(false)}
+      >
+        <View style={styles.reportOverlay}>
+          <View style={[styles.reportContainer, { backgroundColor: colors.card }]}>
+            <Text style={[styles.reportTitle, { color: colors.text }]}>Denunciar usuario</Text>
+            <Text style={[styles.reportSubtitle, { color: colors.textSecondary }]}>
+              Selecione o motivo da denuncia
+            </Text>
+
+            <View style={[styles.reasonList, { borderColor: colors.border }]}>
+              {REPORT_REASONS.map((item, index) => (
+                <React.Fragment key={item.value}>
+                  {index > 0 && <View style={[styles.reasonDivider, { backgroundColor: colors.border }]} />}
+                  <TouchableOpacity
+                    style={styles.reasonOption}
+                    onPress={() => setReportReason(item.value)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.reasonText, { color: colors.text }]}>{item.label}</Text>
+                    <Ionicons
+                      name={reportReason === item.value ? 'radio-button-on' : 'radio-button-off'}
+                      size={22}
+                      color={reportReason === item.value ? colors.primary : colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </React.Fragment>
+              ))}
+            </View>
+
+            <TextInput
+              style={[styles.reportInput, { color: colors.text, borderColor: colors.border }]}
+              placeholder="Detalhes adicionais (opcional)"
+              placeholderTextColor={colors.textSecondary}
+              value={reportDetails}
+              onChangeText={setReportDetails}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            <View style={styles.reportActions}>
+              <TouchableOpacity
+                style={[styles.reportCancelButton, { borderColor: colors.border }]}
+                onPress={() => {
+                  setReportModalVisible(false);
+                  setReportReason('comportamento_inadequado');
+                  setReportDetails('');
+                }}
+              >
+                <Text style={[styles.reportButtonText, { color: colors.text }]}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.reportSubmitButton, { backgroundColor: colors.primary }]}
+                onPress={handleReport}
+              >
+                <Text style={[styles.reportButtonText, { color: colors.onPrimary }]}>Enviar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -236,5 +487,84 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 12,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    flex: 1,
+  },
+  reportOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  reportContainer: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 24,
+    padding: 24,
+  },
+  reportTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  reportSubtitle: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  reasonList: {
+    borderWidth: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  reasonOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  reasonDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 12,
+  },
+  reasonText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  reportInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    minHeight: 80,
+    marginBottom: 16,
+  },
+  reportActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  reportCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  reportSubmitButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  reportButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
