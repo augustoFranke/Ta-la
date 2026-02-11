@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-4 (shipped 2026-02-10)
-- ◆ **v1.1 Party Prep** — Phases 5-7
+- ✅ **v1.1 Party Prep** — Phases 5-7 (shipped 2026-02-11)
 
 ## Phases
 
@@ -39,9 +39,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — SQL migrations (is_available, realtime publication) + availability toggle UI
-- [ ] 06-02-PLAN.md — Presence confirmation hook/modal + checkout function
-- [ ] 06-03-PLAN.md — Realtime venue subscription + discover screen integration
+- [x] 06-01-PLAN.md — SQL migrations (is_available, realtime publication) + availability toggle UI — completed 2026-02-11
+- [x] 06-02-PLAN.md — Presence confirmation hook/modal + checkout function — completed 2026-02-11
+- [x] 06-03-PLAN.md — Realtime venue subscription + discover screen integration — completed 2026-02-11
 
 ### Phase 7: Trust Calibration
 
@@ -49,7 +49,10 @@ Plans:
 
 **Requirements:** REQ-06
 
-**Plans:** [To be planned]
+**Plans:** 1 plan
+
+Plans:
+- [x] 07-01-PLAN.md — Adjust auto-expiry and cooldown thresholds + document all trust parameters — completed 2026-02-11
 
 ## Progress
 
@@ -60,5 +63,5 @@ Plans:
 | 3. Safety and Moderation Enforcement | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 4. Offer and Notification Controls | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 5. Tech Debt and Party Foundation | v1.1 | 1/1 | Complete | 2026-02-11 |
-| 6. Party Experience | v1.1 | 0/3 | Pending | — |
-| 7. Trust Calibration | v1.1 | 0/? | Pending | — |
+| 6. Party Experience | v1.1 | 3/3 | Complete | 2026-02-11 |
+| 7. Trust Calibration | v1.1 | 1/1 | Complete | 2026-02-11 |
