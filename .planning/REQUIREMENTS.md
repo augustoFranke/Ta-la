@@ -1,35 +1,83 @@
-# Requirements: v1.1 Party Prep
+# Requirements: Tá lá! v1.2
 
-## Functional Requirements
+**Defined:** 2026-02-11
+**Core Value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
 
-### REQ-01: Tech Debt Cleanup
-Tighten types and clean dead code across hooks, services, and stores. Remove any `any` casts that have proper type alternatives. Ensure TypeScript strict compliance in modified files.
+## v1.2 Requirements
 
-### REQ-02: Party Entry Flow (Deep Linking)
-User receives invite link or QR code and lands directly on the party venue screen. Expo Router deep linking with `tala://venue/{id}` scheme. No venue browsing required — party uses invite link.
+Requirements for v1.2 Venue Discovery milestone. Each maps to roadmap phases.
 
-### REQ-03: Presence Confirmation
-In-app notification/prompt to confirm venue presence. When a user is checked in, periodically prompt "Ainda esta aqui?" to maintain check-in validity. Simple modal/alert — not push notification.
+### Venue Filtering
 
-### REQ-04: Availability Toggle
-Manual "Disponivel" / "Indisponivel" toggle on user's own profile. Controls whether the user can receive drink offers. Stored as `is_available` boolean on the `users` table. Default: available. No auto-reset, no timer — purely manual.
+- [x] **VENUE-01**: Remove nightlife score threshold filtering from venue transformation
+- [x] **VENUE-02**: Add NIGHTLIFE_TYPES whitelist array with approved venue types
+- [x] **VENUE-03**: Simplify isAllowedVenue() to use whitelist-only approach (no scoring)
+- [x] **VENUE-04**: Include core nightlife types in whitelist (bar, pub, lounge, night_club, brewery)
+- [x] **VENUE-05**: Include bar variants in whitelist (dive_bar, gastropub, speakeasy, tavern)
+- [x] **VENUE-06**: Include entertainment venues in whitelist (karaoke, jazz_club, comedy_club, music_venue)
+- [x] **VENUE-07**: Include restaurant type in whitelist (from Foursquare nightlife categories)
 
-### REQ-05: Realtime Discovery Tuning
-Supabase Realtime subscription for venue user roster. Discovery list updates in real-time when users check in/out at the same venue. Target: ~50-100 simultaneous users at a party.
+### Home Screen Polish
 
-### REQ-06: Fraud Threshold Calibration
-Review and adjust trust parameters in `check_in_to_place_v2` RPC for party context. Document current thresholds (distance, freshness, cooldown) and provide guidance for party-specific adjustments.
+- [ ] **HOME-01**: Improve empty state messaging when no venues found (clear call-to-action)
+- [ ] **HOME-02**: Add better error handling with retry functionality
+- [ ] **HOME-03**: Polish loading states and transitions
+- [ ] **HOME-04**: Improve location permission denial handling with clear prompts
 
-## Non-Functional Requirements
+## Future Requirements
 
-### REQ-07: All UI Text in pt-BR
-All new user-facing text must be in Portuguese (pt-BR).
+Deferred to future releases. Tracked but not in current roadmap.
+
+### Venue Discovery Enhancements
+
+- **VENUE-FUTURE-01**: Add distance-based sorting with user preference
+- **VENUE-FUTURE-02**: Add venue type filtering UI (show only bars, only clubs, etc.)
+- **VENUE-FUTURE-03**: Add "open now" filter toggle
+- **VENUE-FUTURE-04**: Cache venue data with smart refresh strategy
+
+### Home Screen Features
+
+- **HOME-FUTURE-01**: Add search/filter for venues by name
+- **HOME-FUTURE-02**: Add map view toggle for venue browsing
+- **HOME-FUTURE-03**: Add favorite venues feature
+- **HOME-FUTURE-04**: Add venue photos carousel in cards
 
 ## Out of Scope
 
-- Swift Live Activities (Apple Developer Program cost)
-- Location-based venue browsing fix (party uses invite link)
-- Swift rewrite
-- friends_only visibility filtering
-- In-app chat/messaging
-- Push notifications (only in-app prompts)
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| Restore nightlife scoring for filtering | Too strict, caused legitimate venues to be filtered out |
+| Add Google Places API | Foursquare already integrated and working, switching adds complexity |
+| Custom venue submission | User-generated content requires moderation infrastructure |
+| Venue reviews/ratings | Deferred until core discovery loop is validated |
+| Venue event calendar | Out of MVP scope, focus on real-time presence |
+| Advanced venue search | Basic discovery sufficient for v1.2 |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| VENUE-01 | Phase 8 | Complete |
+| VENUE-02 | Phase 8 | Complete |
+| VENUE-03 | Phase 8 | Complete |
+| VENUE-04 | Phase 8 | Complete |
+| VENUE-05 | Phase 8 | Complete |
+| VENUE-06 | Phase 8 | Complete |
+| VENUE-07 | Phase 8 | Complete |
+| HOME-01 | Phase 9 | Pending |
+| HOME-02 | Phase 9 | Pending |
+| HOME-03 | Phase 9 | Pending |
+| HOME-04 | Phase 9 | Pending |
+
+**Coverage:**
+- v1.2 requirements: 11 total
+- Mapped to phases: 11 ✓
+- Unmapped: 0
+
+---
+*Requirements defined: 2026-02-11*
+*Last updated: 2026-02-11 after roadmap creation*

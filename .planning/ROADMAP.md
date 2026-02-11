@@ -4,6 +4,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1-4 (shipped 2026-02-10)
 - ✅ **v1.1 Party Prep** — Phases 5-7 (shipped 2026-02-11)
+- 🚧 **v1.2 Venue Discovery** — Phases 8-9 (in progress)
 
 ## Phases
 
@@ -54,6 +55,58 @@ Plans:
 Plans:
 - [x] 07-01-PLAN.md — Adjust auto-expiry and cooldown thresholds + document all trust parameters — completed 2026-02-11
 
+---
+
+## v1.2 Venue Discovery
+
+**Started:** 2026-02-11
+**Goal:** Fix venue discovery by removing nightlife score filtering and implementing whitelist-only approach. Polish home screen UX with better error handling, loading states, and empty state messaging.
+
+### Phase 8: Venue Whitelist Filtering
+
+**Goal:** Users can reliably discover nearby nightlife venues using whitelist-only filtering
+
+**Dependencies:** None (fixes existing functionality)
+
+**Requirements:** VENUE-01, VENUE-02, VENUE-03, VENUE-04, VENUE-05, VENUE-06, VENUE-07
+
+**Success Criteria:**
+1. User sees bars, pubs, and lounges on home screen (previously filtered out)
+2. User sees breweries, dive bars, and gastropubs in venue list
+3. User sees entertainment venues (karaoke, jazz clubs, music venues) when nearby
+4. User sees restaurants categorized as nightlife venues
+5. No venues are filtered out based on nightlife scores
+
+**Files Changed:**
+- `src/services/places.ts` (remove scoring logic, add whitelist, simplify filtering)
+
+**Plans:** 1 plan
+
+Plans:
+- [x] 08-01-PLAN.md — Add whitelist, remove scoring threshold, simplify filtering — completed 2026-02-11
+
+### Phase 9: Home Screen Polish
+
+**Goal:** Users receive clear feedback when venue discovery encounters issues
+
+**Dependencies:** Phase 8 (whitelist filtering must work first)
+
+**Requirements:** HOME-01, HOME-02, HOME-03, HOME-04
+
+**Success Criteria:**
+1. User sees helpful empty state with clear action when no venues found
+2. User can retry when location or API errors occur
+3. User experiences smooth loading transitions when browsing venues
+4. User receives clear prompts when location permissions are denied
+
+**Files Changed:**
+- `app/(tabs)/index.tsx` (empty states, error handling, loading UI, permission prompts)
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD — Pending plan-phase execution
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -65,3 +118,5 @@ Plans:
 | 5. Tech Debt and Party Foundation | v1.1 | 1/1 | Complete | 2026-02-11 |
 | 6. Party Experience | v1.1 | 3/3 | Complete | 2026-02-11 |
 | 7. Trust Calibration | v1.1 | 1/1 | Complete | 2026-02-11 |
+| 8. Venue Whitelist Filtering | v1.2 | 1/1 | Complete | 2026-02-11 |
+| 9. Home Screen Polish | v1.2 | 0/0 | Pending | — |

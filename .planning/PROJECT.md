@@ -10,7 +10,7 @@ People can reliably discover who is at the same venue right now, with trustworth
 
 ## Current Milestone
 
-**v1.1 Party Prep** — Prepare the app for controlled party tests ("Ta la night") at partnered venues. Invite singles, they install the app, check in, browse people, send one free drink offer as match-style interaction.
+**v1.2 Venue Discovery** — Fix home screen venue display by removing nightlife score filtering and using whitelist-only approach. Polish existing features for reliability and user experience.
 
 ## Requirements
 
@@ -33,15 +33,18 @@ People can reliably discover who is at the same venue right now, with trustworth
 - ✓ User can see offer status clearly (available, unlocked, expired, unavailable) — v1.0
 - ✓ User can configure notification preferences by type (social vs venue offers) — v1.0
 - ✓ User receives only notification categories they opted in to — v1.0
+- ✓ Party entry via deep link — invite link/QR → land on party venue — v1.1
+- ✓ Presence confirmation prompt — periodic "Ainda esta aqui?" during check-in — v1.1
+- ✓ Availability toggle — manual Disponivel/Indisponivel controlling drink offer reception — v1.1
+- ✓ Realtime discovery — Supabase Realtime for venue roster updates at party scale — v1.1
+- ✓ Fraud threshold calibration — review trust parameters for party context — v1.1
+- ✓ Tech debt cleanup — remove dead files with LSP errors, tighten types — v1.1
 
 ### Active
 
-- [ ] Party entry via deep link — invite link/QR → land on party venue (REQ-02)
-- [ ] Presence confirmation prompt — periodic "Ainda esta aqui?" during check-in (REQ-03)
-- [ ] Availability toggle — manual Disponivel/Indisponivel controlling drink offer reception (REQ-04)
-- [ ] Realtime discovery — Supabase Realtime for venue roster updates at party scale (REQ-05)
-- [ ] Fraud threshold calibration — review trust parameters for party context (REQ-06)
-- [ ] Tech debt cleanup — remove dead files with LSP errors, tighten types (REQ-01)
+- [ ] Venue filtering — remove nightlife score threshold, use whitelist-only approach
+- [ ] Home screen — display nearby bars, pubs, lounges, breweries reliably
+- [ ] Whitelist expansion — add beer_bar and other nightlife types to approved list
 
 ### Out of Scope
 
@@ -57,15 +60,16 @@ People can reliably discover who is at the same venue right now, with trustworth
 ## Context
 
 - v1.0 MVP shipped 2026-02-10: 4 phases, 8 plans, 18 feat commits, 28 files changed, 2,400 insertions.
-- v1.1 Party Prep started 2026-02-11: preparing for controlled party tests at partnered venues.
+- v1.1 Party Prep shipped 2026-02-11: 3 phases (5-7), 5 plans, party features + tech debt cleanup.
+- v1.2 Venue Discovery started 2026-02-11: fix home screen venue display, remove nightlife scoring.
 - Architecture is route-first with domain hooks (`src/hooks/`), Zustand stores (`src/stores/`), and service boundaries (`src/services/`).
 - Backend uses Supabase Auth + Postgres with RPC-driven check-in/discovery/offer behavior. Key RPCs: `check_in_to_place_v2`, `get_users_at_venue`, `send_drink_offer_v2`, `should_notify_user`.
 - All trust-critical operations use SECURITY DEFINER RPCs that validate auth.uid() internally.
 - Client uses Expo Router file-based routing under `app/`, with `(auth)/` and `(tabs)/` route groups.
-- Deep link scheme `tala://` configured in app.json but no deep link routes implemented yet.
+- Deep link scheme `tala://` configured in app.json, implemented in v1.1 for party invites.
 - Settings screen fully functional (theme, location, notifications, logout).
 - User profile screen (`app/user/[id].tsx`) already has drink offer button.
-- Ghost LSP errors from deleted files (venueFlags.ts, venueDetails.ts, venueScoring.ts, VenueDetailsModal.tsx) — files don't exist on disk.
+- Foursquare Places API integrated but nightlife scoring algorithm too strict — bars (60 pts → 35 score) rejected by 40 threshold.
 
 ## Constraints
 
@@ -91,4 +95,4 @@ People can reliably discover who is at the same venue right now, with trustworth
 | pt-BR error/denial messages mapped client-side | Server returns codes, client maps to localized strings | ✓ Good — separation of concerns, easy to add languages later |
 
 ---
-*Last updated: 2026-02-11 — v1.1 Party Prep started*
+*Last updated: 2026-02-11 — v1.2 Venue Discovery started*
