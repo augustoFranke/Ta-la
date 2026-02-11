@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { Alert } from 'react-native';
 import { supabase } from '../services/supabase';
 import { useCheckInStore, type ActiveCheckIn } from '../stores/checkInStore';
 import { useAuthStore } from '../stores/authStore';
@@ -33,7 +34,7 @@ type CheckInV2Response = {
 
 export function useCheckIn() {
   const { session } = useAuthStore();
-  const { activeCheckIn, isLoading, error, denialReason, setActiveCheckIn, setLoading, setError, setDenialReason } = useCheckInStore();
+  const { activeCheckIn, isLoading, error, denialReason, setActiveCheckIn, setLoading, setError, setDenialReason, setLastConfirmedAt } = useCheckInStore();
 
   const fetchActiveCheckIn = useCallback(async () => {
     if (!session?.user?.id) {
@@ -69,6 +70,7 @@ export function useCheckIn() {
         place_id: venue?.google_place_id ?? null,
         venue_name: venue?.name ?? null,
         checked_in_at: data.checked_in_at,
+        lastConfirmedAt: null,
       };
 
       setActiveCheckIn(mapped);
@@ -143,6 +145,30 @@ export function useCheckIn() {
     [session?.user?.id, setLoading, setError, setDenialReason, fetchActiveCheckIn]
   );
 
+  const checkOut = useCallback(async () => {
+    if (!activeCheckIn?.id) return;
+
+    setLoading(true);
+    try {
+      const { error: updateError } = await supabase
+        .from('check_ins')
+        .update({
+          is_active: false,
+          checked_out_at: new Date().toISOString(),
+        })
+        .eq('id', activeCheckIn.id);
+
+      if (updateError) throw updateError;
+
+      setActiveCheckIn(null);
+    } catch (err: any) {
+      console.error('Erro ao fazer check-out:', err);
+      Alert.alert('Erro', 'Nao foi possivel fazer check-out.');
+    } finally {
+      setLoading(false);
+    }
+  }, [activeCheckIn?.id, setLoading, setActiveCheckIn]);
+
   return {
     activeCheckIn,
     isLoading,
@@ -150,5 +176,6 @@ export function useCheckIn() {
     denialReason,
     fetchActiveCheckIn,
     checkInToPlace,
+    checkOut,
   };
 }
