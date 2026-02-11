@@ -24,7 +24,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../src/theme';
 import { useVenueStore } from '../../src/stores/venueStore';
 import type { VenueWithDistance } from '../../src/stores/venueStore';
-import { getVenueTypeLabel, formatDistance } from '../../src/services/places';
+import { getVenueTypeLabel, formatDistance, fetchPlacePhotos } from '../../src/services/places';
 import { CheckInModal } from '../../src/components/venue/CheckInModal';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
 import { useAuth } from '../../src/hooks/useAuth';
@@ -47,6 +47,7 @@ export default function VenueDetailsScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [isLoadingVenue, setIsLoadingVenue] = useState(false);
+  const [fetchedPhotos, setFetchedPhotos] = useState<string[]>([]);
 
   // Deep link support: fetch venue from DB when store is empty but id param is present
   useEffect(() => {
@@ -112,6 +113,18 @@ export default function VenueDetailsScreen() {
     return () => { cancelled = true; };
   }, [id, venue]);
 
+  // Fetch photos from Foursquare when venue is available
+  useEffect(() => {
+    if (!venue?.place_id) return;
+    let cancelled = false;
+    fetchPlacePhotos(venue.place_id).then((urls) => {
+      if (!cancelled && urls.length > 0) {
+        setFetchedPhotos(urls);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [venue?.place_id]);
+
   // No venue, not loading, no deep link id - go back
   if (!venue && !isLoadingVenue && !id) {
     router.back();
@@ -145,7 +158,9 @@ export default function VenueDetailsScreen() {
 
   const photoUrls = Array.isArray(venue.photo_urls) ? venue.photo_urls.filter(Boolean) : [];
   const fallbackPhotoUrls = venue.photo_url ? [venue.photo_url] : [];
-  const availablePhotos = photoUrls.length > 0 ? photoUrls : fallbackPhotoUrls;
+  const storePhotos = photoUrls.length > 0 ? photoUrls : fallbackPhotoUrls;
+  // Merge store photos with fetched photos, deduplicating by URL
+  const availablePhotos = Array.from(new Set([...storePhotos, ...fetchedPhotos]));
 
   const openStatus = venue.open_now == null
     ? null

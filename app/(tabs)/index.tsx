@@ -26,25 +26,6 @@ import { useLocationStore } from '../../src/stores/locationStore';
 import { useVenueStore, type VenueWithDistance } from '../../src/stores/venueStore';
 import { formatDistance } from '../../src/services/places';
 
-const DAYS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-
-function getDayPills() {
-  const today = new Date();
-  const pills: { label: string; date: number; isToday: boolean }[] = [];
-
-  for (let i = -2; i <= 4; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    pills.push({
-      label: i === 0 ? 'Hoje' : DAYS_PT[d.getDay()],
-      date: d.getDate(),
-      isToday: i === 0,
-    });
-  }
-
-  return pills;
-}
-
 export default function HomeScreen() {
   const router = useRouter();
   const { colors, spacing, isDark } = useTheme();
@@ -73,8 +54,6 @@ export default function HomeScreen() {
       bootstrap();
     }
   }, [latitude, longitude, bootstrap]);
-
-  const dayPills = useMemo(() => getDayPills(), []);
 
   // Top 3 by nightlife score for "Em alta"
   const trendingVenues = useMemo(() => {
@@ -168,52 +147,12 @@ export default function HomeScreen() {
               <Text style={[styles.greeting, { color: colors.text }]}>
                 Olá, {user?.name?.split(' ')[0] || 'Usuário'}
               </Text>
-              <Text style={[styles.greetingSub, { color: colors.textSecondary }]}>
-                Descubra o que rola por perto
-              </Text>
             </View>
           </View>
           <TouchableOpacity style={[styles.notifButton, { backgroundColor: colors.card }]}>
             <Ionicons name="notifications-outline" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
-
-        {/* Day pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.dayPillsContainer, { paddingHorizontal: spacing.lg }]}
-          style={styles.dayPillsScroll}
-        >
-          {dayPills.map((pill, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dayPill,
-                {
-                  backgroundColor: pill.isToday ? colors.primary : colors.card,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.dayPillLabel,
-                  { color: pill.isToday ? colors.onPrimary : colors.textSecondary },
-                ]}
-              >
-                {pill.label}
-              </Text>
-              <Text
-                style={[
-                  styles.dayPillDate,
-                  { color: pill.isToday ? colors.onPrimary : colors.text },
-                ]}
-              >
-                {pill.date}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
 
         {/* Search bar */}
         <View style={[styles.searchContainer, { paddingHorizontal: spacing.lg }]}>
@@ -419,39 +358,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
   },
-  greetingSub: {
-    fontSize: 13,
-    marginTop: 1,
-  },
   notifButton: {
     width: 42,
     height: 42,
     borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  // Day pills
-  dayPillsScroll: {
-    marginBottom: 16,
-  },
-  dayPillsContainer: {
-    gap: 10,
-  },
-  dayPill: {
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    minWidth: 52,
-  },
-  dayPillLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  dayPillDate: {
-    fontSize: 16,
-    fontWeight: '700',
   },
   // Search
   searchContainer: {

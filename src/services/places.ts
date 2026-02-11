@@ -15,7 +15,9 @@ const FSQ_API_VERSION = '2025-06-17';
 // Default search radius in meters
 const DEFAULT_RADIUS = 10000;
 
-// Foursquare category IDs for nightlife/bar/restaurant venues
+// Response fields to request from the API (photos is Rich Data, not returned by default)
+const FSQ_FIELDS = 'fsq_id,name,geocodes,location,categories,distance,photos,rating,price,hours,tel,website';
+
 const FSQ_CATEGORIES = [
   '13003', // Bar
   '13065', // Night Club
@@ -115,10 +117,14 @@ type FsqPhoto = {
 };
 
 type FsqPlace = {
-  fsq_place_id: string;
+  fsq_place_id?: string;
+  fsq_id?: string;
   name: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  geocodes?: {
+    main?: { latitude: number; longitude: number };
+  };
   location?: {
     formatted_address?: string;
     address?: string;
@@ -176,7 +182,7 @@ async function fetchFsqPlaces(
   radius: number
 ): Promise<FsqPlace[]> {
   const safeRadius = Math.max(100, Math.min(radius, 100000));
-  const url = `${FSQ_BASE_URL}/places/search?ll=${latitude},${longitude}&radius=${safeRadius}&categories=${FSQ_CATEGORIES}&limit=50`;
+  const url = `${FSQ_BASE_URL}/places/search?ll=${latitude},${longitude}&radius=${safeRadius}&categories=${FSQ_CATEGORIES}&fields=${FSQ_FIELDS}&limit=50`;
 
   const response = await fetch(url, {
     headers: {
@@ -284,8 +290,14 @@ function transformToVenue(
   const name = (place.name || '').trim();
   if (!name) return null;
 
-  // New API returns latitude/longitude at top level
-  if (typeof place.latitude !== 'number' || typeof place.longitude !== 'number') {
+  // Resolve place ID (v3 returns fsq_id, legacy returns fsq_place_id)
+  const placeId = place.fsq_id || place.fsq_place_id;
+  if (!placeId) return null;
+
+  // Resolve coordinates (v3 returns geocodes.main, legacy returns top-level lat/lng)
+  const lat = place.latitude ?? place.geocodes?.main?.latitude;
+  const lng = place.longitude ?? place.geocodes?.main?.longitude;
+  if (typeof lat !== 'number' || typeof lng !== 'number') {
     return null;
   }
 
@@ -297,7 +309,7 @@ function transformToVenue(
   // Use Foursquare-provided distance (meters) or calculate
   const distanceKm = place.distance != null
     ? place.distance / 1000
-    : calculateDistance(userLat, userLng, place.latitude, place.longitude);
+    : calculateDistance(userLat, userLng, lat, lng);
 
   const nightlifeScore = calculateNightlifeScore(types, name);
 
@@ -309,12 +321,12 @@ function transformToVenue(
   const rating = place.rating != null ? Math.round((place.rating / 2) * 10) / 10 : null;
 
   return {
-    id: place.fsq_place_id,
-    place_id: place.fsq_place_id,
+    id: placeId,
+    place_id: placeId,
     name,
     address: place.location?.formatted_address || place.location?.address || 'Endereço não informado',
-    latitude: place.latitude,
-    longitude: place.longitude,
+    latitude: lat,
+    longitude: lng,
     type: determineVenueType(types),
     types,
     photo_url: photoUrl,
@@ -332,6 +344,35 @@ function transformToVenue(
 
 // Re-export for backward compatibility
 export { VENUE_TYPE_SCORES, getVenueTypeScore } from '../config/venueTypeScores';
+
+/**
+ * Fetch photos for a specific place from Foursquare Places API v3.
+ * Used on venue detail screen for richer photo gallery.
+ */
+export async function fetchPlacePhotos(
+  fsqId: string,
+  limit: number = 10
+): Promise<string[]> {
+  if (!FSQ_API_KEY || !fsqId) return [];
+
+  try {
+    const url = `${FSQ_BASE_URL}/places/${fsqId}/photos?limit=${limit}`;
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${FSQ_API_KEY}`,
+        Accept: 'application/json',
+        'X-Places-Api-Version': FSQ_API_VERSION,
+      },
+    });
+
+    if (!response.ok) return [];
+
+    const photos = (await response.json()) as FsqPhoto[];
+    return photos.map((p) => buildPhotoUrl(p, '600x400'));
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Search for nearby nightlife venues via Foursquare Places API v3.
