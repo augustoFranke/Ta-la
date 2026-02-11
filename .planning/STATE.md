@@ -10,16 +10,16 @@ See: `.planning/PROJECT.md` (updated 2026-02-11)
 ## Current Position
 
 Milestone: v1.1 Party Prep
-Phase: 06-party-experience (Plan 2 complete)
+Phase: 06-party-experience (Phase complete — all 3 plans done)
 Status: Executing phases
-Last activity: 2026-02-11 - Completed 06-02 presence confirmation system
+Last activity: 2026-02-11 - Completed 06-03 realtime integration
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: 1.6 min
-- Total execution time: 0.32 hours
+- Total execution time: 0.33 hours
 
 **By Phase:**
 
@@ -30,7 +30,7 @@ Last activity: 2026-02-11 - Completed 06-02 presence confirmation system
 | 3. Safety and Moderation Enforcement | 2 | 4 min | 2 min |
 | 4. Offer and Notification Controls | 2 | 4 min | 2 min |
 | 5. Tech Debt and Party Foundation | 1 | 3 min | 3 min |
-| 6. Party Experience | 2 | 4 min | 2 min |
+| 6. Party Experience | 3 | 5 min | 1.7 min |
 
 ## Accumulated Context
 
@@ -49,6 +49,7 @@ Key patterns established in v1.0:
 - Optimistic toggle with error revert for is_available on profile screen
 - Interval + AppState pattern for foreground-only periodic prompts (presence confirmation)
 - Direct Supabase UPDATE for checkout (no RPC needed, RLS sufficient)
+- [Phase 06]: Debounce realtime events at 300ms to prevent rapid-fire RPC calls
 
 ### Pending Todos
 
@@ -61,5 +62,5 @@ Key patterns established in v1.0:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 06-02-PLAN.md
+Stopped at: Completed 06-03-PLAN.md
 Resume file: None
