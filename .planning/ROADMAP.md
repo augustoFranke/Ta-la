@@ -28,7 +28,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Plans:** 1 plan
 
 Plans:
-- [ ] 05-01-PLAN.md — Dead file cleanup, is_available type, deep linking
+- [x] 05-01-PLAN.md — Dead file cleanup, is_available type, deep linking — completed 2026-02-11
 
 ### Phase 6: Party Experience
 
@@ -36,7 +36,12 @@ Plans:
 
 **Requirements:** REQ-03, REQ-04 (UI), REQ-05
 
-**Plans:** [To be planned]
+**Plans:** 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — SQL migrations (is_available, realtime publication) + availability toggle UI
+- [ ] 06-02-PLAN.md — Presence confirmation hook/modal + checkout function
+- [ ] 06-03-PLAN.md — Realtime venue subscription + discover screen integration
 
 ### Phase 7: Trust Calibration
 
@@ -54,6 +59,6 @@ Plans:
 | 2. Same-Venue Discovery | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 3. Safety and Moderation Enforcement | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 4. Offer and Notification Controls | v1.0 | 2/2 | Complete | 2026-02-10 |
-| 5. Tech Debt and Party Foundation | v1.1 | 0/1 | Planned | — |
-| 6. Party Experience | v1.1 | 0/? | Pending | — |
+| 5. Tech Debt and Party Foundation | v1.1 | 1/1 | Complete | 2026-02-11 |
+| 6. Party Experience | v1.1 | 0/3 | Pending | — |
 | 7. Trust Calibration | v1.1 | 0/? | Pending | — |
