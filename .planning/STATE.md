@@ -10,16 +10,16 @@ See: `.planning/PROJECT.md` (updated 2026-02-11)
 ## Current Position
 
 Milestone: v1.1 Party Prep
-Phase: 06-party-experience (Plan 1 complete)
+Phase: 06-party-experience (Plan 2 complete)
 Status: Executing phases
-Last activity: 2026-02-11 - Completed 06-01 availability & realtime foundation
+Last activity: 2026-02-11 - Completed 06-02 presence confirmation system
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
+- Total plans completed: 11
 - Average duration: 1.6 min
-- Total execution time: 0.30 hours
+- Total execution time: 0.32 hours
 
 **By Phase:**
 
@@ -30,7 +30,7 @@ Last activity: 2026-02-11 - Completed 06-01 availability & realtime foundation
 | 3. Safety and Moderation Enforcement | 2 | 4 min | 2 min |
 | 4. Offer and Notification Controls | 2 | 4 min | 2 min |
 | 5. Tech Debt and Party Foundation | 1 | 3 min | 3 min |
-| 6. Party Experience | 1 | 2 min | 2 min |
+| 6. Party Experience | 2 | 4 min | 2 min |
 
 ## Accumulated Context
 
@@ -47,6 +47,8 @@ Key patterns established in v1.0:
 - pt-BR error messages mapped client-side from server codes
 - Deep link hydration: useLocalSearchParams + Supabase fetch when store is empty
 - Optimistic toggle with error revert for is_available on profile screen
+- Interval + AppState pattern for foreground-only periodic prompts (presence confirmation)
+- Direct Supabase UPDATE for checkout (no RPC needed, RLS sufficient)
 
 ### Pending Todos
 
@@ -59,5 +61,5 @@ Key patterns established in v1.0:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 06-01-PLAN.md
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None
