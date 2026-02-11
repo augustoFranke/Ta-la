@@ -25,7 +25,10 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 **Requirements:** REQ-01, REQ-02, REQ-04 (DB only)
 
-**Plans:** [To be planned]
+**Plans:** 1 plan
+
+Plans:
+- [ ] 05-01-PLAN.md — Dead file cleanup, is_available type, deep linking
 
 ### Phase 6: Party Experience
 
@@ -51,6 +54,6 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 | 2. Same-Venue Discovery | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 3. Safety and Moderation Enforcement | v1.0 | 2/2 | Complete | 2026-02-10 |
 | 4. Offer and Notification Controls | v1.0 | 2/2 | Complete | 2026-02-10 |
-| 5. Tech Debt and Party Foundation | v1.1 | 0/? | Pending | — |
+| 5. Tech Debt and Party Foundation | v1.1 | 0/1 | Planned | — |
 | 6. Party Experience | v1.1 | 0/? | Pending | — |
 | 7. Trust Calibration | v1.1 | 0/? | Pending | — |

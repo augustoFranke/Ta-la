@@ -26,8 +26,8 @@ const MOCK_USER: User = {
   gender: 'masculino',
   gender_preference: 'todos',
   is_verified: true,
+  is_available: true,
   location: null,
-  push_token: null,
   last_active: new Date().toISOString(),
   created_at: new Date().toISOString(),
 };

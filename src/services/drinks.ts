@@ -101,8 +101,10 @@ const DRINK_ERROR_MESSAGES: Record<string, string> = {
   self_drink: 'Voce nao pode enviar um drink para si mesmo.',
   already_sent: 'Voce ja enviou um drink para esta pessoa neste local.',
   not_authenticated: 'Voce precisa estar logado.',
+  receiver_unavailable: 'Esta pessoa nao esta disponivel para receber drinks no momento.',
 };
 
+// Server RPC checks is_available — returns 'receiver_unavailable' if target user is unavailable
 export async function sendDrinkOffer(params: {
   receiverId: string;
   venueId: string;

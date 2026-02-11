@@ -20,6 +20,7 @@ export interface Database {
           gender: string
           gender_preference: string
           is_verified: boolean
+          is_available: boolean
           location: any | null // PostGIS point
           last_active: string
           created_at: string
@@ -34,6 +35,7 @@ export interface Database {
           gender: string
           gender_preference: string
           is_verified?: boolean
+          is_available?: boolean
           location?: any | null
           last_active?: string
           created_at?: string
@@ -48,6 +50,7 @@ export interface Database {
           gender?: string
           gender_preference?: string
           is_verified?: boolean
+          is_available?: boolean
           location?: any | null
           last_active?: string
           created_at?: string
@@ -103,6 +106,7 @@ export interface User {
   gender: Gender;
   gender_preference: GenderPreference;
   is_verified: boolean;
+  is_available: boolean;
   location: any | null;
   last_active: string;
   created_at: string;
