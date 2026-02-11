@@ -1,168 +1,202 @@
 /**
- * Google Places API Service
- * Fetches nearby nightlife venues (bars, clubs, lounges)
- * Integrates with venue metadata for multi-signal filtering
+ * Foursquare Places API Service
+ * Fetches nearby venues and applies nightlife filtering/scoring
+ * Uses the new places-api.foursquare.com endpoint
  */
 
-import type { GooglePlacesResponse, GooglePlaceResult, VenueType, Venue, VenueMetadata } from '../types/database';
-import { batchGetVenueMetadata, passesNightlifeFilter, NIGHTLIFE_SCORE_THRESHOLD } from './venueDetails';
-import { calculateNightlifeScore } from './venueScoring';
-import { isVerifiedVenue } from '../config/verifiedVenues';
+import type { VenueType, Venue } from '../types/database';
+import { isVerifiedVenue, getVerifiedVenueScore } from '../config/verifiedVenues';
 import { VENUE_TYPE_SCORES, getVenueTypeScore } from '../config/venueTypeScores';
 
-const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || '';
-const PLACES_BASE_URL = 'https://maps.googleapis.com/maps/api/place';
+const FSQ_API_KEY = process.env.EXPO_PUBLIC_FSQ_API_KEY || '';
+const FSQ_BASE_URL = 'https://places-api.foursquare.com';
+const FSQ_API_VERSION = '2025-06-17';
 
-// Venue types to search for via Google Places API
-const SEARCH_TYPES = ['bar', 'night_club', 'restaurant'];
+// Default search radius in meters
+const DEFAULT_RADIUS = 10000;
 
-// Default search radius in meters (50km to cover entire city of Dourados)
-const DEFAULT_RADIUS = 50000;
+// Foursquare category IDs for nightlife/bar/restaurant venues
+const FSQ_CATEGORIES = [
+  '13003', // Bar
+  '13065', // Night Club
+  '13014', // Cocktail Bar
+  '13029', // Lounge
+  '13032', // Pub
+  '13064', // Wine Bar
+  '13009', // Brewery
+  '13034', // Restaurant
+  '13025', // Hotel Bar
+  '13063', // Karaoke Bar
+  '13019', // Beer Garden
+  '13057', // Hookah Bar
+].join(',');
 
-// Verified venue names to search for directly (ensures they always appear)
-// These are the top nightlife spots that should always be shown
-const VERIFIED_VENUE_SEARCH_TERMS = [
-  'Barão Botequim Dourados',
-  'Bar Mattos Dourados',
-  'Bar do Lau Dourados',
-  'Vibes Bar Dourados',
-  'Dona Olinda Botequim Dourados',
-  'Eden Beer Dourados',
-  'Boutique in Chopp Dourados',
-  'Big Conveniência Dourados',
-  'Two Conveniência Dourados',
+// Whitelist of allowed nightlife venue types
+const NIGHTLIFE_TYPES = [
+  // Core nightlife
+  'bar', 'pub', 'lounge', 'night_club', 'brewery',
+  // Bar variants
+  'dive_bar', 'gastropub', 'speakeasy', 'tavern', 'beer_bar',
+  // Entertainment
+  'karaoke', 'jazz_club', 'comedy_club', 'music_venue',
+  // Restaurant (from Foursquare nightlife categories)
+  'restaurant',
+  // Additional nightlife types
+  'cocktail_bar', 'wine_bar', 'beer_garden', 'hookah_bar',
 ];
 
 // Blacklisted venue types - venues with ANY of these types are excluded
 const BLACKLISTED_TYPES = [
-  'beauty_salon',
-  'hair_care',
-  'spa',
-  'gym',
-  'physiotherapist',
-  'doctor',
-  'dentist',
-  'hospital',
-  'pharmacy',
-  'bank',
-  'atm',
-  'finance',
-  'post_office',
-  'police',
-  'school',
-  'university',
-  'library',
-  'local_government_office',
-  'car_repair',
-  'car_wash',
-  'veterinary_care',
-  'laundry',
-  'storage',
-  'store',
-  'clothing_store',
-  'home_goods_store',
-  'electronics_store',
-  'furniture_store',
-  'hardware_store',
-  'jewelry_store',
-  'pet_store',
-  'shoe_store',
-  'shopping_mall',
-  'department_store',
-  'supermarket',
-  'grocery_store',
-  'convenience_store',
-  'gas_station',
-  'bowling_alley',
-  'casino',
-  'sports_bar',
-  'fast_food_restaurant',
-  'meal_takeaway',
-  'meal_delivery',
-  // Accommodation
-  'lodging',
-  'motel',
-  'hotel',
-  'hostel',
-  'campground',
-  'rv_park',
-  'resort',
+  'beauty_salon', 'hair_care', 'spa', 'gym', 'physiotherapist',
+  'doctor', 'dentist', 'hospital', 'pharmacy', 'bank', 'atm',
+  'finance', 'post_office', 'police', 'school', 'university',
+  'library', 'local_government_office', 'car_repair', 'car_wash',
+  'veterinary_care', 'laundry', 'storage', 'store', 'clothing_store',
+  'home_goods_store', 'electronics_store', 'furniture_store',
+  'hardware_store', 'jewelry_store', 'pet_store', 'shoe_store',
+  'shopping_mall', 'department_store', 'supermarket', 'grocery_store',
+  'convenience_store', 'gas_station', 'fast_food_restaurant',
+  'meal_takeaway', 'meal_delivery', 'lodging', 'motel', 'hotel',
+  'hostel', 'campground', 'rv_park', 'resort',
 ];
 
-// Blacklist by name pattern - common chains and sports-focused venues
+// Blacklist by name pattern
 const BLACKLIST_NAME_PATTERNS = [
-  // Fast food & Chains
-  /mcdonalds?/i,
-  /burger king/i,
-  /subway/i,
-  /kfc/i,
-  /wendy'?s/i,
-  /taco bell/i,
-  /pizza hut/i,
-  /domino'?s/i,
-  /hooters/i,
-  /buffalo wild wings/i,
-  /b-?dubs/i,
-  /sports (bar|grill)/i,
-  /wing stop/i,
-  /wingstop/i,
-  /applebee'?s/i,
-  /chili'?s/i,
-  /outback/i,
-  /olive garden/i,
-  /red lobster/i,
-  /dennys?/i,
-  /ihop/i,
-
-  // Unwanted business keywords
-  /tatuagem/i,
-  /tattoo/i,
-  /sobrancelha/i,
-  /maquiagem/i,
-  /make ?up/i,
-  /barbearia/i,
-  /barber/i,
-  /cabeleireir[oa]/i,
-  /hair/i,
-  /dep[óo]sito/i,
-  /g[áa]s/i,
-  /mercado/i,
-  /drogaria/i,
-  /farm[áa]cia/i,
-  /est[ée]tica/i,
-  /banco/i,
-  /caixa ?(eletr[ôo]nico)?/i,
-  /cl[íi]nica/i,
-  /oficina/i,
-  /mecanic[ao]/i,
-  /lava ?jato/i,
-  /material de constru[çc][ãa]o/i,
-
-  // Accommodation
-  /hotel/i,
-  /pousada/i,
-  /motel/i,
-  /resort/i,
-  /\binn\b/i,
-  /hostel/i,
-  /guest ?house/i,
-  /bed ?& ?breakfast/i,
-  /\bb ?& ?b\b/i,
+  /mcdonalds?/i, /burger king/i, /subway/i, /kfc/i, /wendy'?s/i,
+  /taco bell/i, /pizza hut/i, /domino'?s/i, /applebee'?s/i,
+  /chili'?s/i, /outback/i, /olive garden/i, /dennys?/i, /ihop/i,
+  /tatuagem/i, /tattoo/i, /sobrancelha/i, /maquiagem/i, /barbearia/i,
+  /barber/i, /cabeleireir[oa]/i, /hair/i, /dep[óo]sito/i, /g[áa]s/i,
+  /mercado/i, /drogaria/i, /farm[áa]cia/i, /est[ée]tica/i, /banco/i,
+  /cl[íi]nica/i, /oficina/i, /mecanic[ao]/i, /lava ?jato/i,
+  /material de constru[çc][ãa]o/i, /hotel/i, /pousada/i, /motel/i,
+  /resort/i, /hostel/i,
 ];
 
-// Re-export for backward compatibility
-export { VENUE_TYPE_SCORES, getVenueTypeScore } from '../config/venueTypeScores';
+// Map Foursquare category names to our internal type keys
+const FSQ_CATEGORY_MAP: Record<string, string> = {
+  'bar': 'bar',
+  'cocktail bar': 'cocktail_bar',
+  'wine bar': 'wine_bar',
+  'beer bar': 'bar',
+  'beer garden': 'beer_garden',
+  'brewery': 'brewery',
+  'dive bar': 'dive_bar',
+  'hotel bar': 'bar',
+  'lounge': 'lounge',
+  'night club': 'night_club',
+  'pub': 'pub',
+  'hookah bar': 'hookah_bar',
+  'karaoke bar': 'karaoke',
+  'restaurant': 'restaurant',
+  'café': 'cafe',
+  'coffee shop': 'cafe',
+  'jazz club': 'jazz_club',
+  'comedy club': 'comedy_club',
+  'music venue': 'music_venue',
+  'speakeasy': 'speakeasy',
+  'gastropub': 'gastropub',
+};
+
+type FsqCategory = {
+  fsq_category_id: string;
+  name: string;
+  short_name?: string;
+  plural_name?: string;
+  icon?: { prefix: string; suffix: string };
+};
+
+type FsqPhoto = {
+  id: string;
+  prefix: string;
+  suffix: string;
+  width: number;
+  height: number;
+};
+
+type FsqPlace = {
+  fsq_place_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  location?: {
+    formatted_address?: string;
+    address?: string;
+    locality?: string;
+    region?: string;
+    country?: string;
+  };
+  categories?: FsqCategory[];
+  distance?: number;
+  photos?: FsqPhoto[];
+  rating?: number;
+  price?: number;
+  hours?: {
+    open_now?: boolean;
+  };
+  tel?: string;
+  website?: string;
+};
+
+type FsqSearchResponse = {
+  results?: FsqPlace[];
+};
 
 /**
- * Get photo URL for a place using photo_reference
+ * Build a photo URL from Foursquare photo prefix/suffix
  */
-export function getPhotoUrl(photoReference: string, maxWidth: number = 400): string {
-  const encodedReference = encodeURIComponent(photoReference);
-  return `${PLACES_BASE_URL}/photo?maxwidth=${maxWidth}&photoreference=${encodedReference}&key=${GOOGLE_PLACES_API_KEY}`;
+function buildPhotoUrl(photo: FsqPhoto, size: string = '400x400'): string {
+  return `${photo.prefix}${size}${photo.suffix}`;
 }
 
 /**
- * Determine venue type from Google Places types array
+ * Normalize Foursquare categories to our internal type strings
+ */
+function normalizeFsqTypes(place: FsqPlace): string[] {
+  const categories = place.categories ?? [];
+  const types: string[] = [];
+
+  for (const cat of categories) {
+    const catName = (cat.name || '').toLowerCase();
+    const mapped = FSQ_CATEGORY_MAP[catName];
+    if (mapped) {
+      types.push(mapped);
+    } else {
+      // Convert to snake_case
+      types.push(catName.replace(/\s+/g, '_'));
+    }
+  }
+
+  return Array.from(new Set(types));
+}
+
+async function fetchFsqPlaces(
+  latitude: number,
+  longitude: number,
+  radius: number
+): Promise<FsqPlace[]> {
+  const safeRadius = Math.max(100, Math.min(radius, 100000));
+  const url = `${FSQ_BASE_URL}/places/search?ll=${latitude},${longitude}&radius=${safeRadius}&categories=${FSQ_CATEGORIES}&limit=50`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${FSQ_API_KEY}`,
+      Accept: 'application/json',
+      'X-Places-Api-Version': FSQ_API_VERSION,
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Foursquare API error ${response.status}: ${text}`);
+  }
+
+  const data = (await response.json()) as FsqSearchResponse;
+  return data.results ?? [];
+}
+
+/**
+ * Determine venue type from normalized types array
  */
 function determineVenueType(types: string[]): VenueType {
   if (!types || types.length === 0) return 'establishment';
@@ -179,15 +213,15 @@ export function calculateDistance(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLon / 2) *
-    Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -197,174 +231,110 @@ export function calculateDistance(
  */
 export function formatDistance(distanceKm: number): string {
   if (distanceKm < 1) {
-    return `${Math.round(distanceKm * 1000)}m`;
+    return `${Math.round(distanceKm * 1000)} m de você`;
   }
-  return `${distanceKm.toFixed(1)}km`;
+  return `${distanceKm.toFixed(1)} km de você`;
+}
+
+/**
+ * Retained for compatibility with previous API surface.
+ */
+export function getPhotoUrl(): string {
+  return '';
 }
 
 /**
  * Check if a venue is allowed based on blacklist + scoring approach
- * Verified venues from our curated list always pass
- * Returns false if venue is blacklisted, true if it has any positive score
  */
 function isAllowedVenue(types: string[], name: string): boolean {
-  // ALWAYS allow verified venues from our curated list
   if (isVerifiedVenue(name)) {
     return true;
   }
 
-  // Check type blacklist - if ANY type is blacklisted, exclude venue
   if (types.some((type) => BLACKLISTED_TYPES.includes(type))) {
     return false;
   }
 
-  // Check name blacklist - exclude common chains and family restaurants
   if (BLACKLIST_NAME_PATTERNS.some((pattern) => pattern.test(name))) {
     return false;
   }
 
-  // Allow if any type has a positive score
-  return types.some((type) => (VENUE_TYPE_SCORES[type] ?? 0) > 0);
+  return types.some((type) => NIGHTLIFE_TYPES.includes(type));
 }
 
 /**
- * Transform Google Place result to Venue
+ * Simplified nightlife score for venue filtering.
  */
+function calculateNightlifeScore(types: string[], name: string): number {
+  const verifiedScore = getVerifiedVenueScore(name);
+  if (verifiedScore !== null) return verifiedScore;
+
+  const typeScores = types.map((t) => VENUE_TYPE_SCORES[t] ?? 20);
+  const maxTypeScore = Math.max(...typeScores, 0);
+  const score = Math.round(maxTypeScore * 0.25) + 20;
+
+  return Math.max(0, Math.min(100, score));
+}
+
 function transformToVenue(
-  place: GooglePlaceResult,
+  place: FsqPlace,
   userLat: number,
   userLng: number
-): (Venue & { distance: number }) | null {
-  // Only allow venues that pass blacklist and have positive dating score
-  if (!isAllowedVenue(place.types, place.name)) {
+): (Venue & { distance: number; nightlife_score: number }) | null {
+  const name = (place.name || '').trim();
+  if (!name) return null;
+
+  // New API returns latitude/longitude at top level
+  if (typeof place.latitude !== 'number' || typeof place.longitude !== 'number') {
     return null;
   }
-  const photoUrls = place.photos?.length
-    ? place.photos.map((photo) => getPhotoUrl(photo.photo_reference))
-    : [];
-  const photoUrl = photoUrls[0] || null;
-  const openNow = place.opening_hours?.open_now ?? null;
 
-  const distance = calculateDistance(
-    userLat,
-    userLng,
-    place.geometry.location.lat,
-    place.geometry.location.lng
-  );
+  const types = normalizeFsqTypes(place);
+  if (!isAllowedVenue(types, name)) {
+    return null;
+  }
+
+  // Use Foursquare-provided distance (meters) or calculate
+  const distanceKm = place.distance != null
+    ? place.distance / 1000
+    : calculateDistance(userLat, userLng, place.latitude, place.longitude);
+
+  const nightlifeScore = calculateNightlifeScore(types, name);
+
+  // Extract photos
+  const photos = (place.photos ?? []).map((p) => buildPhotoUrl(p, '600x400'));
+  const photoUrl = photos[0] ?? null;
+
+  // Map Foursquare rating (0-10) to 0-5 scale
+  const rating = place.rating != null ? Math.round((place.rating / 2) * 10) / 10 : null;
 
   return {
-    id: place.place_id, // Use place_id as temporary id
-    place_id: place.place_id,
-    name: place.name,
-    address: place.vicinity,
-    latitude: place.geometry.location.lat,
-    longitude: place.geometry.location.lng,
-    type: determineVenueType(place.types),
-    types: place.types, // Include all types for scoring
+    id: place.fsq_place_id,
+    place_id: place.fsq_place_id,
+    name,
+    address: place.location?.formatted_address || place.location?.address || 'Endereço não informado',
+    latitude: place.latitude,
+    longitude: place.longitude,
+    type: determineVenueType(types),
+    types,
     photo_url: photoUrl,
-    photo_urls: photoUrls,
-    rating: place.rating || null,
-    price_level: place.price_level || null,
-    open_now: openNow,
-    active_users_count: 0, // Will be populated from Supabase
+    photo_urls: photos,
+    rating,
+    price_level: place.price ?? null,
+    open_now: place.hours?.open_now ?? null,
+    active_users_count: 0,
     cached_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    distance,
+    distance: distanceKm,
+    nightlife_score: nightlifeScore,
   };
 }
 
-/**
- * Search for a specific venue using Text Search API
- * Used to find verified venues that might not appear in Nearby Search
- */
-async function searchVerifiedVenue(
-  searchTerm: string,
-  userLat: number,
-  userLng: number,
-  openNowOnly: boolean
-): Promise<(Venue & { distance: number }) | null> {
-  try {
-    const openNowParam = openNowOnly ? '&opennow=true' : '';
-    const url = `${PLACES_BASE_URL}/textsearch/json?query=${encodeURIComponent(searchTerm)}${openNowParam}&key=${GOOGLE_PLACES_API_KEY}`;
-    
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.status === 'OK' && data.results && data.results.length > 0) {
-      const place = data.results[0];
-      
-      const photoUrls = place.photos?.length
-        ? place.photos.map((photo: any) => getPhotoUrl(photo.photo_reference))
-        : [];
-      const photoUrl = photoUrls[0] || null;
-      
-      const distance = calculateDistance(
-        userLat,
-        userLng,
-        place.geometry.location.lat,
-        place.geometry.location.lng
-      );
-
-      return {
-        id: place.place_id,
-        place_id: place.place_id,
-        name: place.name,
-        address: place.formatted_address || place.vicinity || '',
-        latitude: place.geometry.location.lat,
-        longitude: place.geometry.location.lng,
-        type: determineVenueType(place.types || []),
-        types: place.types || [],
-        photo_url: photoUrl,
-        photo_urls: photoUrls,
-        rating: place.rating || null,
-        price_level: place.price_level || null,
-        open_now: place.opening_hours?.open_now ?? null,
-        active_users_count: 0,
-        cached_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        distance,
-      };
-    }
-
-    return null;
-  } catch (err) {
-    console.error(`Error searching for verified venue "${searchTerm}":`, err);
-    return null;
-  }
-}
+// Re-export for backward compatibility
+export { VENUE_TYPE_SCORES, getVenueTypeScore } from '../config/venueTypeScores';
 
 /**
- * Fetch all verified venues using Text Search API
- * These are guaranteed to appear in the results
- */
-async function fetchVerifiedVenues(
-  userLat: number,
-  userLng: number,
-  openNowOnly: boolean
-): Promise<(Venue & { distance: number })[]> {
-  // Search for all verified venues in parallel
-  const searchPromises = VERIFIED_VENUE_SEARCH_TERMS.map((term) =>
-    searchVerifiedVenue(term, userLat, userLng, openNowOnly)
-  );
-
-  const results = await Promise.all(searchPromises);
-  
-  // Filter out nulls (failed searches)
-  return results.filter((venue): venue is Venue & { distance: number } => venue !== null);
-}
-
-/**
- * Search for nearby nightlife venues with multi-signal filtering
- * 
- * Pipeline:
- * 1. Fetch verified venues using Text Search (guaranteed to appear)
- * 2. Fetch from Google Places Nearby Search (bar, night_club, restaurant)
- * 3. Merge and deduplicate results
- * 4. Apply quick blacklist filter (verified venues bypass blacklist)
- * 5. Fetch/check venue metadata from cache
- * 6. Calculate nightlife score for each venue
- * 7. Filter out venues with nightlife_score < threshold
- * 8. Sort by nightlife score (primary), distance (secondary)
+ * Search for nearby nightlife venues via Foursquare Places API v3.
  */
 export async function searchNearbyVenues(
   latitude: number,
@@ -376,113 +346,35 @@ export async function searchNearbyVenues(
     openNowOnly?: boolean;
   } = {}
 ): Promise<{ venues: (Venue & { distance: number; nightlife_score?: number })[]; error: string | null }> {
-  if (!GOOGLE_PLACES_API_KEY) {
+  if (!FSQ_API_KEY) {
     return {
       venues: [],
-      error: 'Google Places API key não configurada',
+      error: 'Foursquare API key não configurada',
     };
   }
 
   try {
-    const allVenues: (Venue & { distance: number })[] = [];
+    const places = await fetchFsqPlaces(latitude, longitude, radius);
 
-    // Step 1: Fetch verified venues first (they always appear at top)
-    // Default to true - always include verified venues
-    if (options.includeVerifiedVenues !== false) {
-      const verifiedVenues = await fetchVerifiedVenues(latitude, longitude, Boolean(options.openNowOnly));
-      allVenues.push(...verifiedVenues);
-    }
+    let venues = places
+      .map((place) => transformToVenue(place, latitude, longitude))
+      .filter((venue): venue is Venue & { distance: number; nightlife_score: number } => venue !== null);
 
-    // Step 2: Search for each venue type in parallel from Google Places
-    // Note: No opennow filter - we show all venues sorted by nightlife score
-    const openNowParam = options.openNowOnly ? '&opennow=true' : '';
-
-    const searchPromises = SEARCH_TYPES.map(async (type) => {
-      const url = `${PLACES_BASE_URL}/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=${type}${openNowParam}&key=${GOOGLE_PLACES_API_KEY}`;
-      
-      try {
-        const response = await fetch(url);
-        const data: GooglePlacesResponse = await response.json();
-
-        if (data.status === 'OK' || data.status === 'ZERO_RESULTS') {
-           return data.results
-            .map((place) => transformToVenue(place, latitude, longitude))
-            .filter((venue): venue is Venue & { distance: number } => venue !== null);
-        }
-        return [];
-      } catch (err) {
-        console.error(`Error fetching type ${type}:`, err);
-        return [];
-      }
-    });
-
-    const results = await Promise.all(searchPromises);
-    results.forEach(venues => allVenues.push(...venues));
-
-    // Step 3: Remove duplicates (same place might appear in multiple searches)
-    // Verified venues take priority (they're added first)
-    const uniqueVenues = allVenues.reduce((acc, venue) => {
+    const uniqueVenues = venues.reduce((acc, venue) => {
       if (!acc.find((v) => v.place_id === venue.place_id)) {
         acc.push(venue);
       }
       return acc;
-    }, [] as (Venue & { distance: number })[]);
+    }, [] as (Venue & { distance: number; nightlife_score: number })[]);
 
-    // Filter only open venues if required (hide open_now = null or false)
-    const filteredVenues = options.openNowOnly
-      ? uniqueVenues.filter((venue) => venue.open_now === true)
-      : uniqueVenues;
-
-    // If skipping nightlife filter, just sort by distance and return
-    if (options.skipNightlifeFilter) {
-      filteredVenues.sort((a, b) => a.distance - b.distance);
-      return {
-        venues: filteredVenues,
-        error: null,
-      };
-    }
-
-    // Step 3: Batch fetch venue metadata for nightlife scoring
-    const venueInfoForMetadata = filteredVenues.map((v) => ({
-      place_id: v.place_id,
-      name: v.name,
-      types: v.types || [v.type],
-    }));
-    const metadataMap = await batchGetVenueMetadata(venueInfoForMetadata);
-
-    // Step 4: Calculate nightlife scores and filter
-    const venuesWithScores: (Venue & { distance: number; nightlife_score: number; metadata?: VenueMetadata })[] = [];
-
-    for (const venue of filteredVenues) {
-      const metadata = metadataMap.get(venue.place_id) ?? undefined;
-      
-      // Calculate nightlife score
-      const nightlifeScore = calculateNightlifeScore({
-        types: venue.types || [venue.type],
-        name: venue.name,
-        metadata: metadata ?? null,
-      });
-
-      // Step 5: Filter by nightlife score threshold
-      if (nightlifeScore >= NIGHTLIFE_SCORE_THRESHOLD || passesNightlifeFilter(metadata ?? null)) {
-        venuesWithScores.push({
-          ...venue,
-          nightlife_score: nightlifeScore,
-          metadata,
-        });
-      }
-    }
-
-    // Step 6: Sort by nightlife score (primary), then by distance (secondary)
-    // Sort by distance (closest first) for the main list
-    venuesWithScores.sort((a, b) => a.distance - b.distance);
+    uniqueVenues.sort((a, b) => a.distance - b.distance);
 
     return {
-      venues: venuesWithScores,
+      venues: uniqueVenues,
       error: null,
     };
   } catch (error) {
-    console.error('Error fetching venues:', error);
+    console.error('Error fetching venues from Foursquare:', error);
     return {
       venues: [],
       error: 'Erro ao buscar venues. Verifique sua conexão.',
@@ -500,30 +392,28 @@ export function getVenueTypeLabel(type: VenueType): string {
     lounge: 'Lounge',
     restaurant: 'Restaurante',
     cafe: 'Café',
-    bakery: 'Padaria',
-    meal_takeaway: 'Para Levar',
-    meal_delivery: 'Delivery',
-    gym: 'Academia',
-    spa: 'Spa',
-    park: 'Parque',
-    store: 'Loja',
-    clothing_store: 'Loja de Roupas',
-    shopping_mall: 'Shopping',
-    movie_theater: 'Cinema',
-    museum: 'Museu',
-    art_gallery: 'Galeria de Arte',
-    point_of_interest: 'Local',
+    pub: 'Pub',
+    cocktail_bar: 'Bar de Coquetéis',
+    wine_bar: 'Wine Bar',
+    beer_garden: 'Beer Garden',
+    brewery: 'Cervejaria',
+    hookah_bar: 'Hookah Bar',
+    karaoke: 'Karaokê',
+    jazz_club: 'Jazz Club',
+    comedy_club: 'Comedy Club',
+    music_venue: 'Casa de Shows',
+    speakeasy: 'Speakeasy',
+    gastropub: 'Gastropub',
+    dive_bar: 'Dive Bar',
+    food_beverage: 'Comida e Bebida',
     establishment: 'Local',
-    food: 'Comida',
-    grocery_or_supermarket: 'Mercado',
-    convenience_store: 'Conveniência',
+    nightlife: 'Vida Noturna',
   };
 
   if (translations[type]) {
     return translations[type];
   }
 
-  // Fallback: capitalize snake_case -> Title Case
   return type
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
