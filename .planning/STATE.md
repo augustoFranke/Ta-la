@@ -2,16 +2,16 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-02-10)
+See: `.planning/PROJECT.md` (updated 2026-02-11)
 
 **Core value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
-**Current focus:** Planning next milestone
+**Current focus:** v1.1 Party Prep — controlled party tests at partnered venues
 
 ## Current Position
 
-Milestone: v1.0 MVP — ✅ SHIPPED 2026-02-10
-Status: Between milestones — ready for `/gsd-new-milestone`
-Last activity: 2026-02-10 - Completed v1.0 milestone (4 phases, 8 plans, 18 feat commits)
+Milestone: v1.1 Party Prep
+Status: Planning phases
+Last activity: 2026-02-11 - Started v1.1 milestone, defining requirements and roadmap
 
 ## Performance Metrics
 
@@ -45,18 +45,16 @@ Key patterns established in v1.0:
 
 ### Pending Todos
 
-None yet — planning next milestone.
+- Plan and execute v1.1 phases (5+)
 
 ### Blockers/Concerns
 
-- friends_only visibility filtering is schema-ready but not yet implemented
-- No automated tests exist for critical paths
-- Pre-existing LSP errors in venueFlags.ts, venueDetails.ts, venueScoring.ts, VenueDetailsModal.tsx
-- Realtime and reconciliation tuning for discovery scale is deferred
-- Fraud threshold calibration needs production telemetry
+- Ghost LSP errors from deleted files need cleanup (files don't exist but LSP caches errors)
+- Fraud threshold calibration needs production telemetry or party test data
+- Deep linking not yet implemented (scheme configured but no routes)
 
 ## Session Continuity
 
-Last session: 2026-02-10
-Stopped at: Completed v1.0 milestone
+Last session: 2026-02-11
+Stopped at: Planning v1.1 phases
 Resume file: None

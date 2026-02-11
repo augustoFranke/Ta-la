@@ -8,6 +8,10 @@ Ta la is a location-based social mobile app for people in Dourados, MS, Brazil t
 
 People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
 
+## Current Milestone
+
+**v1.1 Party Prep** — Prepare the app for controlled party tests ("Ta la night") at partnered venues. Invite singles, they install the app, check in, browse people, send one free drink offer as match-style interaction.
+
 ## Requirements
 
 ### Validated
@@ -32,29 +36,36 @@ People can reliably discover who is at the same venue right now, with trustworth
 
 ### Active
 
-- [ ] Improve reliability and reproducibility of DB-backed check-in/favorites flows from repository migrations
-- [ ] Add quality gates for critical flows (auth, check-in, discovery, drink relations)
-- [ ] Tighten type safety and data contracts across hooks/services/stores
-- [ ] Implement friends_only visibility filtering in get_users_at_venue (column exists, filtering deferred)
-- [ ] Add automated tests for critical paths
+- [ ] Party entry via deep link — invite link/QR → land on party venue (REQ-02)
+- [ ] Presence confirmation prompt — periodic "Ainda esta aqui?" during check-in (REQ-03)
+- [ ] Availability toggle — manual Disponivel/Indisponivel controlling drink offer reception (REQ-04)
+- [ ] Realtime discovery — Supabase Realtime for venue roster updates at party scale (REQ-05)
+- [ ] Fraud threshold calibration — review trust parameters for party context (REQ-06)
+- [ ] Tech debt cleanup — remove dead files with LSP errors, tighten types (REQ-01)
 
 ### Out of Scope
 
-- In-app chat/messaging for MVP — explicitly excluded in current scope
-- Venue vibes/dating score for MVP — deferred until core loop is stable
-- Development-build-only native workflows — constrained to Expo Go / EAS Preview approach
+- In-app chat/messaging — explicitly excluded
+- Venue vibes/dating score — deferred until core loop is stable
+- Development-build-only native workflows — constrained to Expo Go / EAS Preview
 - Always-on background location tracking — conflicts with privacy-first explicit check-in model
-- Public global map of all users — high safety/privacy risk for local community context
+- Public global map of all users — high safety/privacy risk
+- Swift Live Activities — Apple Developer Program cost
+- Location-based venue browsing fix — party uses invite link
+- friends_only visibility filtering — deferred
 
 ## Context
 
 - v1.0 MVP shipped 2026-02-10: 4 phases, 8 plans, 18 feat commits, 28 files changed, 2,400 insertions.
+- v1.1 Party Prep started 2026-02-11: preparing for controlled party tests at partnered venues.
 - Architecture is route-first with domain hooks (`src/hooks/`), Zustand stores (`src/stores/`), and service boundaries (`src/services/`).
 - Backend uses Supabase Auth + Postgres with RPC-driven check-in/discovery/offer behavior. Key RPCs: `check_in_to_place_v2`, `get_users_at_venue`, `send_drink_offer_v2`, `should_notify_user`.
 - All trust-critical operations use SECURITY DEFINER RPCs that validate auth.uid() internally.
 - Client uses Expo Router file-based routing under `app/`, with `(auth)/` and `(tabs)/` route groups.
-- No automated tests exist — codebase mapping surfaced this pre-milestone.
-- Pre-existing LSP errors in venueFlags.ts, venueDetails.ts, venueScoring.ts, VenueDetailsModal.tsx (unrelated to v1.0 work).
+- Deep link scheme `tala://` configured in app.json but no deep link routes implemented yet.
+- Settings screen fully functional (theme, location, notifications, logout).
+- User profile screen (`app/user/[id].tsx`) already has drink offer button.
+- Ghost LSP errors from deleted files (venueFlags.ts, venueDetails.ts, venueScoring.ts, VenueDetailsModal.tsx) — files don't exist on disk.
 
 ## Constraints
 
@@ -80,4 +91,4 @@ People can reliably discover who is at the same venue right now, with trustworth
 | pt-BR error/denial messages mapped client-side | Server returns codes, client maps to localized strings | ✓ Good — separation of concerns, easy to add languages later |
 
 ---
-*Last updated: 2026-02-10 after v1.0 milestone*
+*Last updated: 2026-02-11 — v1.1 Party Prep started*
