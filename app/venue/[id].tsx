@@ -14,14 +14,16 @@ import {
   Alert,
   FlatList,
   Image,
+  ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../src/theme';
 import { useVenueStore } from '../../src/stores/venueStore';
+import type { VenueWithDistance } from '../../src/stores/venueStore';
 import { getVenueTypeLabel, formatDistance } from '../../src/services/places';
 import { CheckInModal } from '../../src/components/venue/CheckInModal';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
@@ -34,6 +36,7 @@ const IMAGE_HEIGHT = 320;
 
 export default function VenueDetailsScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, spacing } = useTheme();
   const { selectedVenue: venue } = useVenueStore();
   const { checkInToPlace, isLoading: isCheckInLoading } = useCheckIn();
@@ -43,11 +46,102 @@ export default function VenueDetailsScreen() {
   const [isCheckInModalVisible, setCheckInModalVisible] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  const [isLoadingVenue, setIsLoadingVenue] = useState(false);
 
-  if (!venue) {
+  // Deep link support: fetch venue from DB when store is empty but id param is present
+  useEffect(() => {
+    if (venue || !id) return;
+
+    let cancelled = false;
+    const fetchVenueByPlaceId = async () => {
+      setIsLoadingVenue(true);
+      try {
+        const { data, error } = await supabase
+          .from('venues')
+          .select('*')
+          .eq('google_place_id', id)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (error) {
+          Alert.alert('Erro', 'Nao foi possivel carregar o local.');
+          router.back();
+          return;
+        }
+
+        if (!data) {
+          Alert.alert('Local nao encontrado', 'Este local nao esta cadastrado no app.');
+          router.back();
+          return;
+        }
+
+        const mappedVenue: VenueWithDistance = {
+          id: data.id,
+          place_id: data.google_place_id,
+          name: data.name,
+          address: data.address ?? '',
+          latitude: data.latitude,
+          longitude: data.longitude,
+          type: data.type ?? '',
+          photo_url: data.photo_url ?? null,
+          photo_urls: data.photo_urls ?? [],
+          rating: data.rating ?? null,
+          price_level: data.price_level ?? null,
+          open_now: data.open_now ?? null,
+          active_users_count: 0,
+          cached_at: data.cached_at ?? new Date().toISOString(),
+          created_at: data.created_at ?? new Date().toISOString(),
+          distance: 0,
+        };
+
+        useVenueStore.getState().setSelectedVenue(mappedVenue);
+      } catch {
+        if (!cancelled) {
+          Alert.alert('Erro', 'Nao foi possivel carregar o local.');
+          router.back();
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingVenue(false);
+        }
+      }
+    };
+
+    fetchVenueByPlaceId();
+    return () => { cancelled = true; };
+  }, [id, venue]);
+
+  // No venue, not loading, no deep link id - go back
+  if (!venue && !isLoadingVenue && !id) {
     router.back();
     return null;
   }
+
+  // Loading venue from deep link
+  if (!venue && (isLoadingVenue || id)) {
+    return (
+      <View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <StatusBar style="light" />
+        <SafeAreaView style={styles.backButtonContainer} edges={['top']}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+        </SafeAreaView>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          Carregando local...
+        </Text>
+      </View>
+    );
+  }
+
+  // At this point venue is guaranteed to exist
+  if (!venue) return null;
 
   const photoUrls = Array.isArray(venue.photo_urls) ? venue.photo_urls.filter(Boolean) : [];
   const fallbackPhotoUrls = venue.photo_url ? [venue.photo_url] : [];
@@ -365,6 +459,15 @@ export default function VenueDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 15,
+    fontWeight: '500',
   },
   scrollView: {
     flex: 1,
