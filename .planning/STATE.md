@@ -10,15 +10,16 @@ See: `.planning/PROJECT.md` (updated 2026-02-11)
 ## Current Position
 
 Milestone: v1.1 Party Prep
-Status: Planning phases
-Last activity: 2026-02-11 - Started v1.1 milestone, defining requirements and roadmap
+Phase: 05-tech-debt-and-party-foundation (Plan 1/1 complete)
+Status: Executing phases
+Last activity: 2026-02-11 - Completed 05-01 tech debt cleanup and deep linking
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 1.6 min
-- Total execution time: 0.22 hours
+- Total execution time: 0.27 hours
 
 **By Phase:**
 
@@ -28,6 +29,7 @@ Last activity: 2026-02-11 - Started v1.1 milestone, defining requirements and ro
 | 2. Same-Venue Discovery | 2 | 3 min | 1.5 min |
 | 3. Safety and Moderation Enforcement | 2 | 4 min | 2 min |
 | 4. Offer and Notification Controls | 2 | 4 min | 2 min |
+| 5. Tech Debt and Party Foundation | 1 | 3 min | 3 min |
 
 ## Accumulated Context
 
@@ -42,19 +44,20 @@ Key patterns established in v1.0:
 - Set<string> in Zustand for O(1) blocked-user lookups
 - Opt-out notification model (all enabled by default)
 - pt-BR error messages mapped client-side from server codes
+- Deep link hydration: useLocalSearchParams + Supabase fetch when store is empty
 
 ### Pending Todos
 
-- Plan and execute v1.1 phases (5+)
+- Execute remaining v1.1 phases (6+)
 
 ### Blockers/Concerns
 
-- Ghost LSP errors from deleted files need cleanup (files don't exist but LSP caches errors)
 - Fraud threshold calibration needs production telemetry or party test data
-- Deep linking not yet implemented (scheme configured but no routes)
+- Supabase SQL migration needed: ALTER TABLE users ADD COLUMN is_available BOOLEAN DEFAULT true NOT NULL
+- send_drink_offer_v2 RPC needs update to check is_available server-side
 
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Planning v1.1 phases
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
