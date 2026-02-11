@@ -4,6 +4,9 @@
 --   2. Filters by c.visibility = 'public' (private/friends_only excluded from roster)
 -- All existing logic preserved: gender preference, block exclusion, similarity scoring.
 
+-- Drop existing function first because return type is changing (added checked_in_at)
+DROP FUNCTION IF EXISTS get_users_at_venue(UUID, UUID);
+
 CREATE OR REPLACE FUNCTION get_users_at_venue(
     p_venue_id UUID,
     p_user_id UUID
