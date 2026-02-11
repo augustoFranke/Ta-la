@@ -16,6 +16,9 @@ import { Avatar } from '../../src/components/ui/Avatar';
 import { useAuth } from '../../src/hooks/useAuth';
 import { supabase } from '../../src/services/supabase';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
+import { useVenueRealtime } from '../../src/hooks/useVenueRealtime';
+import { usePresenceConfirmation } from '../../src/hooks/usePresenceConfirmation';
+import { PresenceConfirmationModal } from '../../src/components/PresenceConfirmationModal';
 import { useRouter } from 'expo-router';
 import {
   fetchDrinkRelations,
@@ -57,7 +60,7 @@ export default function DiscoverScreen() {
   const { colors, spacing, typography, isDark } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
-  const { activeCheckIn, fetchActiveCheckIn } = useCheckIn();
+  const { activeCheckIn, fetchActiveCheckIn, checkOut } = useCheckIn();
 
   const { blockedIds, isLoaded: blocksLoaded, setBlockedIds, addBlockedId } = useBlockStore();
 
@@ -95,6 +98,17 @@ export default function DiscoverScreen() {
       setIsLoading(false);
     }
   }, [userId, activeCheckIn?.venue_id]);
+
+  // Realtime: auto-refetch venue roster on check-in/out changes
+  useVenueRealtime(activeCheckIn?.venue_id ?? null, loadVenueUsers);
+
+  // Presence confirmation: periodic "Ainda esta aqui?" prompt
+  const { showPrompt, confirmPresence, denyPresence } = usePresenceConfirmation(!!activeCheckIn);
+
+  const handleDenyPresence = useCallback(async () => {
+    denyPresence();
+    await checkOut();
+  }, [denyPresence, checkOut]);
 
   const refreshDrinkRelations = useCallback(async (targetIds: string[]) => {
     if (!userId || targetIds.length === 0) {
@@ -404,6 +418,13 @@ export default function DiscoverScreen() {
           )}
         </View>
       </ScrollView>
+
+      <PresenceConfirmationModal
+        visible={showPrompt}
+        venueName={activeCheckIn?.venue_name ?? ''}
+        onConfirm={confirmPresence}
+        onDeny={handleDenyPresence}
+      />
     </SafeAreaView>
   );
 }
