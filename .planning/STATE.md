@@ -10,13 +10,13 @@ See: `.planning/PROJECT.md` (updated 2026-02-12)
 ## Current Position
 
 **Milestone:** v1.4 API Optimization & Check-in Testing
-**Phase:** 12 — API Throttling
+**Phase:** 13 — Dev Testing Tools
 **Plan:** 01 Complete
-**Status:** Phase complete — ready for Phase 13
+**Status:** Phase 13 Plan 01 complete
 
-Progress: [██████████░░░░░░░░░░] 50% (1/2 phases complete)
+Progress: [████████████████████] 100% (2/2 phases complete)
 
-Last activity: 2026-02-12 — Phase 12 API throttling complete
+Last activity: 2026-02-12 — Phase 13 dev GPS override complete
 
 ## Performance Metrics
 
@@ -38,6 +38,11 @@ Last activity: 2026-02-12 — Phase 12 API throttling complete
 - 2 phases (10-11), 2 commits
 - UI cleanup, venue photos, favorites migration, all migrations deployed
 
+**v1.4 API Optimization & Check-in Testing** (In progress 2026-02-12)
+- 2 phases (12-13), 2 plans
+- Phase 12: API throttling (limit=3, photos capped, hasFetchedRef)
+- Phase 13: Dev GPS override + dev settings screen
+
 ## Accumulated Context
 
 ### Decisions
@@ -52,6 +57,8 @@ Last activity: 2026-02-12 — Phase 12 API throttling complete
 | DROP FUNCTION before replacing return type | PostgreSQL limitation — cannot change return type in-place | Deploy fix |
 | Read lastFetched/venues.length via getState() in useCallback | Avoids stale closures without adding reactive deps that cause re-fetch loops | Phase 12 |
 | Use hasFetchedRef to guard auto-fetch effect | Simpler and immune to state timing vs. venues.length === 0 condition | Phase 12 |
+| setDevOverride updates latitude/longitude directly | Ensures all consumers see new coords immediately without extra plumbing | Phase 13 |
+| lastFetched=null as reset signal for hasFetchedRef | Watching lastFetched in useVenues avoids exposing hasFetchedRef externally and adding loop-inducing deps | Phase 13 |
 
 Key patterns established:
 - SECURITY DEFINER RPCs for trust boundaries (check-in, offers, notifications)
@@ -63,10 +70,12 @@ Key patterns established:
 - Deep link hydration: useLocalSearchParams + Supabase fetch when store is empty
 - Foursquare v3 API with explicit `fields` param for rich data (photos, rating, hours)
 - Merge + dedup pattern for combining store photos with API-fetched photos
+- __DEV__ guard pattern for dev-only store actions (no-ops in production)
+- Venue refresh chain: override change → clearVenues() → lastFetched=null → hasFetchedRef reset → auto-fetch retriggers
 
 ### Technical Debt
 
-- No dev testing tools for check-in flow — targeted in Phase 13
+None.
 
 ### Blockers
 
@@ -80,18 +89,19 @@ None.
 
 ### What Just Happened
 
-1. Phase 12: API Throttling complete — 2 tasks, 3 files changed
-2. Foursquare search throttled: limit=50 → limit=3 (API-01)
-3. Photos capped at 1 per venue via slice(0, 1) (API-02)
-4. fetchPlacePhotos removed from venue detail — uses cached photos only (API-03)
-5. hasFetchedRef guards useVenues auto-fetch against re-trigger loops (API-04)
+1. Phase 13 Plan 01: Dev GPS Override complete — 2 tasks, 5 files changed
+2. locationStore extended with devOverride/devLat/devLng, setDevOverride, clearDevOverride
+3. Dev settings screen created with lat/lng inputs, presets, toggle, status indicator
+4. Profile screen gets __DEV__-gated Dev Settings button
+5. useVenues wired to re-fetch when clearVenues() resets lastFetched to null
 
 ### What's Next
 
-Execute Phase 13: Dev Testing Tools.
+v1.4 milestone complete. Ready for next milestone.
 
 ### Context for Next Session
 
-- Check-in RPC `check_in_to_place_v2` validates 100m via PostGIS ST_DWithin — Phase 13 adds bypass for __DEV__
-- Location store in `src/stores/locationStore.ts` — Phase 13 adds dev coordinate override here
-- No existing test utilities, mock data, or dev tools — Phase 13 creates them from scratch
+- Dev GPS override accessible at /(tabs)/profile/dev-settings in __DEV__ builds
+- Activate Dourados (-22.2233, -54.8083) or São Paulo (-23.5534, -46.6913) presets to test venue discovery
+- Check-in RPC `check_in_to_place_v2` still validates 100m via PostGIS — dev bypass not yet added (future phase)
+- All dev functionality stripped from production via __DEV__ guards at action level
