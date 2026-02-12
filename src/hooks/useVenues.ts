@@ -99,6 +99,14 @@ export function useVenues(options: UseVenuesOptions = {}) {
     prevPermissionRef.current = permissionGranted;
   }, [permissionGranted, clearVenues]);
 
+  // Reset hasFetchedRef when venues are cleared (e.g. after dev override or location change)
+  // This allows the auto-fetch effect to re-trigger with new coords
+  useEffect(() => {
+    if (lastFetched === null) {
+      hasFetchedRef.current = false;
+    }
+  }, [lastFetched]);
+
   // Auto-fetch when location becomes available — runs exactly once per mount cycle
   useEffect(() => {
     if (autoFetch && latitude && longitude && !hasFetchedRef.current) {
