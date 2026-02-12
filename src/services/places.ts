@@ -182,7 +182,7 @@ async function fetchFsqPlaces(
   radius: number
 ): Promise<FsqPlace[]> {
   const safeRadius = Math.max(100, Math.min(radius, 100000));
-  const url = `${FSQ_BASE_URL}/places/search?ll=${latitude},${longitude}&radius=${safeRadius}&categories=${FSQ_CATEGORIES}&fields=${FSQ_FIELDS}&limit=50`;
+  const url = `${FSQ_BASE_URL}/places/search?ll=${latitude},${longitude}&radius=${safeRadius}&categories=${FSQ_CATEGORIES}&fields=${FSQ_FIELDS}&limit=3`;
 
   const response = await fetch(url, {
     headers: {
@@ -314,7 +314,7 @@ function transformToVenue(
   const nightlifeScore = calculateNightlifeScore(types, name);
 
   // Extract photos
-  const photos = (place.photos ?? []).map((p) => buildPhotoUrl(p, '600x400'));
+  const photos = (place.photos ?? []).slice(0, 1).map((p) => buildPhotoUrl(p, '600x400'));
   const photoUrl = photos[0] ?? null;
 
   // Map Foursquare rating (0-10) to 0-5 scale
