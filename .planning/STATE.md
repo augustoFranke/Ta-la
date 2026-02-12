@@ -11,12 +11,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-12)
 
 **Milestone:** v1.4 API Optimization & Check-in Testing
 **Phase:** 13 — Dev Testing Tools
-**Plan:** 01 Complete
-**Status:** Phase 13 Plan 01 complete
+**Plan:** 02 Complete
+**Status:** Phase 13 Plan 02 complete — v1.4 milestone complete
 
 Progress: [████████████████████] 100% (2/2 phases complete)
 
-Last activity: 2026-02-12 — Phase 13 dev GPS override complete
+Last activity: 2026-02-12 — Phase 13 check-in bypass and simulated user insertion complete
 
 ## Performance Metrics
 
@@ -59,6 +59,8 @@ Last activity: 2026-02-12 — Phase 13 dev GPS override complete
 | Use hasFetchedRef to guard auto-fetch effect | Simpler and immune to state timing vs. venues.length === 0 condition | Phase 12 |
 | setDevOverride updates latitude/longitude directly | Ensures all consumers see new coords immediately without extra plumbing | Phase 13 |
 | lastFetched=null as reset signal for hasFetchedRef | Watching lastFetched in useVenues avoids exposing hasFetchedRef externally and adding loop-inducing deps | Phase 13 |
+| Send venue coords as user position in dev bypass | Guarantees ST_DWithin passes at 0m distance with no server-side changes needed | Phase 13 |
+| Dev-test email pattern for simulated user cleanup | dev-test-*@test.local enables bulk delete via .like() without touching real user data | Phase 13 |
 
 Key patterns established:
 - SECURITY DEFINER RPCs for trust boundaries (check-in, offers, notifications)
@@ -90,10 +92,9 @@ None.
 ### What Just Happened
 
 1. Phase 13 Plan 01: Dev GPS Override complete — 2 tasks, 5 files changed
-2. locationStore extended with devOverride/devLat/devLng, setDevOverride, clearDevOverride
-3. Dev settings screen created with lat/lng inputs, presets, toggle, status indicator
-4. Profile screen gets __DEV__-gated Dev Settings button
-5. useVenues wired to re-fetch when clearVenues() resets lastFetched to null
+2. Phase 13 Plan 02: Check-in bypass + simulated user insertion — 2 tasks, 2 files changed
+3. useCheckIn sends venue coords as user position when devOverride active (guarantees ST_DWithin pass)
+4. Dev settings screen gains active venue_id display and "Simular Usuário" section with insert/cleanup
 
 ### What's Next
 
@@ -103,5 +104,7 @@ v1.4 milestone complete. Ready for next milestone.
 
 - Dev GPS override accessible at /(tabs)/profile/dev-settings in __DEV__ builds
 - Activate Dourados (-22.2233, -54.8083) or São Paulo (-23.5534, -46.6913) presets to test venue discovery
-- Check-in RPC `check_in_to_place_v2` still validates 100m via PostGIS — dev bypass not yet added (future phase)
-- All dev functionality stripped from production via __DEV__ guards at action level
+- Check-in bypass active: when devOverride is on, any venue check-in will succeed regardless of real GPS distance
+- After check-in, venue_id visible in dev-settings "Check-in Ativo" section for simulation
+- Simulate second user at venue: enter venue_id in "Simular Usuário" section, tap "Simular check-in"
+- All dev functionality stripped from production via __DEV__ guards
