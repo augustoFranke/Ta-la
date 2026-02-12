@@ -101,6 +101,21 @@ export function useCheckIn() {
           return { success: false as const, error: 'Nao foi possivel obter sua localizacao. Verifique as permissoes.' };
         }
 
+        let userLat = coords.latitude;
+        let userLng = coords.longitude;
+        let userAccuracy = coords.accuracy;
+
+        if (__DEV__) {
+          const { devOverride } = useLocationStore.getState();
+          if (devOverride) {
+            // Send venue's own coords as user position — guarantees distance check passes
+            userLat = input.latitude;
+            userLng = input.longitude;
+            userAccuracy = 5; // High accuracy
+            console.log('[DEV] Check-in bypass active — sending venue coords as user position');
+          }
+        }
+
         const { data, error: rpcError } = await supabase.rpc('check_in_to_place_v2', {
           p_place_id: input.place_id,
           p_name: input.name,
@@ -111,9 +126,9 @@ export function useCheckIn() {
           p_photo_url: input.photo_url,
           p_rating: input.rating,
           p_open_to_meeting: input.open_to_meeting,
-          p_user_lat: coords.latitude,
-          p_user_lng: coords.longitude,
-          p_user_accuracy: coords.accuracy,
+          p_user_lat: userLat,
+          p_user_lng: userLng,
+          p_user_accuracy: userAccuracy,
           p_user_location_timestamp: new Date().toISOString(),
           p_visibility: input.visibility ?? 'public',
         });
