@@ -2,35 +2,23 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-02-11)
+See: `.planning/PROJECT.md` (updated 2026-02-12)
 
 **Core value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
-**Current focus:** v1.3 Production Ready — SHIPPED
+**Current focus:** v1.4 API Optimization & Check-in Testing
 
 ## Current Position
 
-**Milestone:** v1.3 Production Ready
-**Phase:** Complete
-**Plan:** All plans executed
-**Status:** v1.3 milestone complete, all migrations deployed
+**Milestone:** v1.4 API Optimization & Check-in Testing
+**Phase:** 12 — API Throttling
+**Plan:** 01 Complete
+**Status:** Phase complete — ready for Phase 13
 
-**Progress:** 100% (2/2 phases complete)
+Progress: [██████████░░░░░░░░░░] 50% (1/2 phases complete)
 
-**Next Action:** Ready for next milestone or user testing
-
-Last activity: 2026-02-11 — v1.3 Production Ready shipped (Phases 10-11, migrations deployed)
+Last activity: 2026-02-12 — Phase 12 API throttling complete
 
 ## Performance Metrics
-
-### Milestone v1.3
-
-| Metric | Value | Status |
-|--------|-------|--------|
-| Phases | 2 (10-11) | Complete |
-| Requirements | 6 | All fulfilled |
-| Commits | 2 | Complete |
-| Files Changed | 4 | index.tsx, places.ts, [id].tsx, 030_*.sql |
-| Migrations Deployed | 11 (020-030) | All applied |
 
 ### Historical Performance
 
@@ -62,6 +50,8 @@ Last activity: 2026-02-11 — v1.3 Production Ready shipped (Phases 10-11, migra
 | Support both fsq_id and fsq_place_id | v3 API may return either field name | Phase 11 |
 | Support both geocodes.main and top-level lat/lng | Backward compatibility with both API response formats | Phase 11 |
 | DROP FUNCTION before replacing return type | PostgreSQL limitation — cannot change return type in-place | Deploy fix |
+| Read lastFetched/venues.length via getState() in useCallback | Avoids stale closures without adding reactive deps that cause re-fetch loops | Phase 12 |
+| Use hasFetchedRef to guard auto-fetch effect | Simpler and immune to state timing vs. venues.length === 0 condition | Phase 12 |
 
 Key patterns established:
 - SECURITY DEFINER RPCs for trust boundaries (check-in, offers, notifications)
@@ -76,38 +66,32 @@ Key patterns established:
 
 ### Technical Debt
 
-None identified.
+- No dev testing tools for check-in flow — targeted in Phase 13
 
 ### Blockers
 
-None. All migrations deployed, all features functional.
+None.
 
 ### Open Questions
 
-None. All 7 user-reported issues resolved.
+None.
 
 ## Session Continuity
 
 ### What Just Happened
 
-1. v1.3 Production Ready milestone completed
-2. Phase 10: Removed day pills and subtitle from home screen, created favorites migration
-3. Phase 11: Added `fields` param to Foursquare search, added `fetchPlacePhotos()` service, integrated photo fetching on venue detail screen
-4. Fixed migration 023 (DROP FUNCTION before replacing return type)
-5. All 11 pending migrations (020-030) deployed to Supabase via `supabase db push`
+1. Phase 12: API Throttling complete — 2 tasks, 3 files changed
+2. Foursquare search throttled: limit=50 → limit=3 (API-01)
+3. Photos capped at 1 per venue via slice(0, 1) (API-02)
+4. fetchPlacePhotos removed from venue detail — uses cached photos only (API-03)
+5. hasFetchedRef guards useVenues auto-fetch against re-trigger loops (API-04)
 
 ### What's Next
 
-All 4 milestones shipped. App is production-ready. Possible next steps:
-- User testing in Dourados
-- Plan v1.4 based on user feedback
-- EAS Preview build for distribution
+Execute Phase 13: Dev Testing Tools.
 
 ### Context for Next Session
 
-- All 30 migrations deployed to production Supabase
-- All 7 user-reported issues resolved
-- Foursquare API now returns photos via `fields` param
-- `fetchPlacePhotos()` available for venue detail enrichment
-- `user_favorite_places` table live with RLS policies
-- `check_in_to_place_v2`, `is_available`, realtime — all live
+- Check-in RPC `check_in_to_place_v2` validates 100m via PostGIS ST_DWithin — Phase 13 adds bypass for __DEV__
+- Location store in `src/stores/locationStore.ts` — Phase 13 adds dev coordinate override here
+- No existing test utilities, mock data, or dev tools — Phase 13 creates them from scratch

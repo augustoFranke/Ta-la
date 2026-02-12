@@ -24,14 +24,13 @@ export default function ProfileLayout() {
         }}
       />
       <Stack.Screen
-        name="edit-interests"
+        name="settings"
         options={{
-          title: 'Editar Interesses',
-          presentation: 'modal',
+          headerShown: false,
         }}
       />
       <Stack.Screen
-        name="settings"
+        name="dev-settings"
         options={{
           headerShown: false,
         }}

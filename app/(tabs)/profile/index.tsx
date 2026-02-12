@@ -146,6 +146,16 @@ export default function ProfileScreen() {
           />
         </View>
 
+        {/* Dev Settings (only visible in __DEV__ builds) */}
+        {__DEV__ && (
+          <Button
+            title="Dev Settings"
+            variant="outline"
+            onPress={() => router.push('/(tabs)/profile/dev-settings')}
+            style={styles.devSettingsButton}
+          />
+        )}
+
         {/* Version */}
         <Text style={[styles.version, { color: colors.textSecondary }]}>
           Tá lá! v1.0.0 (MVP)
@@ -210,6 +220,10 @@ const styles = StyleSheet.create({
   },
   logoutContainer: {
     marginBottom: 16,
+  },
+  devSettingsButton: {
+    alignSelf: 'stretch',
+    marginBottom: 12,
   },
   version: {
     textAlign: 'center',
