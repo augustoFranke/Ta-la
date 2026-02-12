@@ -34,15 +34,19 @@ export function useVenues(options: UseVenuesOptions = {}) {
 
   const { latitude, longitude, permissionGranted } = useLocationStore();
 
-  // Fetch venues from Google Places
+  // Fetch venues from Radar Places
   const fetchVenues = useCallback(async (force: boolean = false) => {
     if (!latitude || !longitude) {
       setError('Localização não disponível');
       return;
     }
 
+    // Read cache state directly from store to avoid stale closure issues
+    const currentLastFetched = useVenueStore.getState().lastFetched;
+    const currentVenueCount = useVenueStore.getState().venues.length;
+
     // Check if cache is still valid
-    if (!force && isVenueCacheValid(lastFetched) && venues.length > 0) {
+    if (!force && isVenueCacheValid(currentLastFetched) && currentVenueCount > 0) {
       return;
     }
 
@@ -54,7 +58,7 @@ export function useVenues(options: UseVenuesOptions = {}) {
         latitude,
         longitude,
         radius,
-        { openNowOnly: true }
+        { openNowOnly: false }
       );
 
       if (fetchError) {
@@ -73,22 +77,15 @@ export function useVenues(options: UseVenuesOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [
-    latitude,
-    longitude,
-    radius,
-    lastFetched,
-    venues.length,
-    setVenues,
-    setLoading,
-    setError,
-    setLastFetched,
-  ]);
+  }, [latitude, longitude, radius, setVenues, setLoading, setError, setLastFetched]);
 
   // Force refresh (bypass cache)
   const refreshVenues = useCallback(() => {
     return fetchVenues(true);
   }, [fetchVenues]);
+
+  // Track whether initial fetch has been done — guards against re-fetch loops
+  const hasFetchedRef = useRef(false);
 
   // Track previous permission state to detect changes
   const prevPermissionRef = useRef<boolean | null>(null);
@@ -97,16 +94,18 @@ export function useVenues(options: UseVenuesOptions = {}) {
   useEffect(() => {
     if (prevPermissionRef.current === true && !permissionGranted) {
       clearVenues();
+      hasFetchedRef.current = false;
     }
     prevPermissionRef.current = permissionGranted;
   }, [permissionGranted, clearVenues]);
 
-  // Auto-fetch when location becomes available
+  // Auto-fetch when location becomes available — runs exactly once per mount cycle
   useEffect(() => {
-    if (autoFetch && latitude && longitude && !isLoading && venues.length === 0) {
+    if (autoFetch && latitude && longitude && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
       fetchVenues(false);
     }
-  }, [autoFetch, latitude, longitude, isLoading, venues.length, fetchVenues]);
+  }, [autoFetch, latitude, longitude]);
 
   // Select a venue for check-in
   const selectVenue = useCallback((venue: typeof venues[0] | null) => {
