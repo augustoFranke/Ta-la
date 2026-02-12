@@ -1,11 +1,9 @@
-# Requirements: Tá lá! v1.2
+# Requirements: Ta la!
 
 **Defined:** 2026-02-11
 **Core Value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
 
-## v1.2 Requirements
-
-Requirements for v1.2 Venue Discovery milestone. Each maps to roadmap phases.
+## v1.2 Requirements (Complete)
 
 ### Venue Filtering
 
@@ -19,10 +17,28 @@ Requirements for v1.2 Venue Discovery milestone. Each maps to roadmap phases.
 
 ### Home Screen Polish
 
-- [ ] **HOME-01**: Improve empty state messaging when no venues found (clear call-to-action)
-- [ ] **HOME-02**: Add better error handling with retry functionality
-- [ ] **HOME-03**: Polish loading states and transitions
-- [ ] **HOME-04**: Improve location permission denial handling with clear prompts
+- [x] **HOME-01**: Improve empty state messaging when no venues found (clear call-to-action)
+- [x] **HOME-02**: Add better error handling with retry functionality
+- [x] **HOME-03**: Polish loading states and transitions
+- [x] **HOME-04**: Improve location permission denial handling with clear prompts
+
+## v1.3 Requirements (Complete)
+
+### UI Cleanup
+
+- [x] **UI-01**: Remove mini calendar / day pills from home screen
+- [x] **UI-02**: Remove "Descubra o que rola por perto" subtitle text
+
+### Photos
+
+- [x] **PHOTO-01**: Add `fields` param to Place Search to include `photos` in API response
+- [x] **PHOTO-02**: Add `fetchPlacePhotos(fsq_id)` service function for venue detail
+- [x] **PHOTO-03**: Integrate photo fetching on venue detail screen with merge/dedup
+
+### Database
+
+- [x] **DB-01**: Create migration `030_create_user_favorite_places.sql` with RLS policies
+- [x] **DB-02**: Deploy all pending migrations (020-030) via `supabase db push`
 
 ## Future Requirements
 
@@ -39,25 +55,8 @@ Deferred to future releases. Tracked but not in current roadmap.
 
 - **HOME-FUTURE-01**: Add search/filter for venues by name
 - **HOME-FUTURE-02**: Add map view toggle for venue browsing
-- **HOME-FUTURE-03**: Add favorite venues feature
-- **HOME-FUTURE-04**: Add venue photos carousel in cards
-
-## Out of Scope
-
-Explicitly excluded. Documented to prevent scope creep.
-
-| Feature | Reason |
-|---------|--------|
-| Restore nightlife scoring for filtering | Too strict, caused legitimate venues to be filtered out |
-| Add Google Places API | Foursquare already integrated and working, switching adds complexity |
-| Custom venue submission | User-generated content requires moderation infrastructure |
-| Venue reviews/ratings | Deferred until core discovery loop is validated |
-| Venue event calendar | Out of MVP scope, focus on real-time presence |
-| Advanced venue search | Basic discovery sufficient for v1.2 |
 
 ## Traceability
-
-Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -68,16 +67,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VENUE-05 | Phase 8 | Complete |
 | VENUE-06 | Phase 8 | Complete |
 | VENUE-07 | Phase 8 | Complete |
-| HOME-01 | Phase 9 | Pending |
-| HOME-02 | Phase 9 | Pending |
-| HOME-03 | Phase 9 | Pending |
-| HOME-04 | Phase 9 | Pending |
+| HOME-01 | Phase 9 | Complete |
+| HOME-02 | Phase 9 | Complete |
+| HOME-03 | Phase 9 | Complete |
+| HOME-04 | Phase 9 | Complete |
+| UI-01 | Phase 10 | Complete |
+| UI-02 | Phase 10 | Complete |
+| PHOTO-01 | Phase 11 | Complete |
+| PHOTO-02 | Phase 11 | Complete |
+| PHOTO-03 | Phase 11 | Complete |
+| DB-01 | Phase 10 | Complete |
+| DB-02 | Deploy | Complete |
 
 **Coverage:**
-- v1.2 requirements: 11 total
-- Mapped to phases: 11 ✓
+- v1.2 requirements: 11 total, 11 complete
+- v1.3 requirements: 7 total, 7 complete
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-02-11*
-*Last updated: 2026-02-11 after roadmap creation*
+*Last updated: 2026-02-11 — v1.3 Production Ready shipped*

@@ -2,14 +2,16 @@
 
 ## Milestones
 
-- ✅ **v1.0 MVP** — Phases 1-4 (shipped 2026-02-10)
-- ✅ **v1.1 Party Prep** — Phases 5-7 (shipped 2026-02-11)
-- 🚧 **v1.2 Venue Discovery** — Phases 8-9 (in progress)
+- **v1.0 MVP** — Phases 1-4 (shipped 2026-02-10)
+- **v1.1 Party Prep** — Phases 5-7 (shipped 2026-02-11)
+- **v1.2 Venue Discovery** — Phases 8-9 (shipped 2026-02-11)
+- **v1.3 Production Ready** — Phases 10-11 (shipped 2026-02-11)
+- **v1.4 API Optimization & Check-in Testing** — Phases 12-13 (in progress)
 
 ## Phases
 
 <details>
-<summary>✅ v1.0 MVP (Phases 1-4) — SHIPPED 2026-02-10</summary>
+<summary>v1.0 MVP (Phases 1-4) — SHIPPED 2026-02-10</summary>
 
 - [x] Phase 1: Check-in Trust Core (2/2 plans) — completed 2026-02-10
 - [x] Phase 2: Same-Venue Discovery (2/2 plans) — completed 2026-02-10
@@ -20,92 +22,74 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 </details>
 
-### Phase 5: Tech Debt and Party Foundation
+<details>
+<summary>v1.1 Party Prep (Phases 5-7) — SHIPPED 2026-02-11</summary>
 
-**Goal:** Clean up dead code causing LSP errors, add `is_available` column to users table, and implement deep linking so invite links route directly to venue screens.
+- [x] Phase 5: Tech Debt and Party Foundation (1/1 plans) — completed 2026-02-11
+- [x] Phase 6: Party Experience (3/3 plans) — completed 2026-02-11
+- [x] Phase 7: Trust Calibration (1/1 plans) — completed 2026-02-11
 
-**Requirements:** REQ-01, REQ-02, REQ-04 (DB only)
+</details>
 
-**Plans:** 1 plan
+<details>
+<summary>v1.2 Venue Discovery (Phases 8-9) — SHIPPED 2026-02-11</summary>
 
-Plans:
-- [x] 05-01-PLAN.md — Dead file cleanup, is_available type, deep linking — completed 2026-02-11
+- [x] Phase 8: Venue Whitelist Filtering (1/1 plans) — completed 2026-02-11
+- [x] Phase 9: Home Screen Polish (1/1 plans) — completed 2026-02-11
 
-### Phase 6: Party Experience
+</details>
 
-**Goal:** Working party flow — availability toggle UI on profile, presence confirmation prompts, and realtime discovery updates for venue roster at party scale.
+<details>
+<summary>v1.3 Production Ready (Phases 10-11) — SHIPPED 2026-02-11</summary>
 
-**Requirements:** REQ-03, REQ-04 (UI), REQ-05
+- [x] Phase 10: UI Cleanup & Favorites Migration (1/1 plans) — completed 2026-02-11
+- [x] Phase 11: Venue Photos (1/1 plans) — completed 2026-02-11
 
-**Plans:** 3 plans
-
-Plans:
-- [x] 06-01-PLAN.md — SQL migrations (is_available, realtime publication) + availability toggle UI — completed 2026-02-11
-- [x] 06-02-PLAN.md — Presence confirmation hook/modal + checkout function — completed 2026-02-11
-- [x] 06-03-PLAN.md — Realtime venue subscription + discover screen integration — completed 2026-02-11
-
-### Phase 7: Trust Calibration
-
-**Goal:** Review and document fraud threshold parameters for party context. Adjust check-in distance, freshness, and cooldown values for controlled party events.
-
-**Requirements:** REQ-06
-
-**Plans:** 1 plan
-
-Plans:
-- [x] 07-01-PLAN.md — Adjust auto-expiry and cooldown thresholds + document all trust parameters — completed 2026-02-11
+</details>
 
 ---
 
-## v1.2 Venue Discovery
+## v1.4 API Optimization & Check-in Testing
 
-**Started:** 2026-02-11
-**Goal:** Fix venue discovery by removing nightlife score filtering and implementing whitelist-only approach. Polish home screen UX with better error handling, loading states, and empty state messaging.
+**Started:** 2026-02-12
+**Goal:** Drastically reduce Foursquare API usage and enable local check-in testing on Expo Go.
 
-### Phase 8: Venue Whitelist Filtering
+### Phase 12: API Throttling
 
-**Goal:** Users can reliably discover nearby nightlife venues using whitelist-only filtering
+**Goal:** Foursquare API usage is minimized — search returns 3 venues, photos come from search cache, no redundant fetches.
 
-**Dependencies:** None (fixes existing functionality)
+**Dependencies:** None (self-contained service layer changes)
 
-**Requirements:** VENUE-01, VENUE-02, VENUE-03, VENUE-04, VENUE-05, VENUE-06, VENUE-07
-
-**Success Criteria:**
-1. User sees bars, pubs, and lounges on home screen (previously filtered out)
-2. User sees breweries, dive bars, and gastropubs in venue list
-3. User sees entertainment venues (karaoke, jazz clubs, music venues) when nearby
-4. User sees restaurants categorized as nightlife venues
-5. No venues are filtered out based on nightlife scores
-
-**Files Changed:**
-- `src/services/places.ts` (remove scoring logic, add whitelist, simplify filtering)
+**Requirements:** API-01, API-02, API-03, API-04
 
 **Plans:** 1 plan
 
 Plans:
-- [x] 08-01-PLAN.md — Add whitelist, remove scoring threshold, simplify filtering — completed 2026-02-11
-
-### Phase 9: Home Screen Polish
-
-**Goal:** Users receive clear feedback when venue discovery encounters issues
-
-**Dependencies:** Phase 8 (whitelist filtering must work first)
-
-**Requirements:** HOME-01, HOME-02, HOME-03, HOME-04
+- [ ] 12-01-PLAN.md — Throttle search, cap photos, eliminate redundant fetches
 
 **Success Criteria:**
-1. User sees helpful empty state with clear action when no venues found
-2. User can retry when location or API errors occur
-3. User experiences smooth loading transitions when browsing venues
-4. User receives clear prompts when location permissions are denied
+1. Opening the home screen triggers at most one Foursquare API call per 5-minute cache window
+2. Search response contains at most 3 venues and each venue has at most 1 photo
+3. Opening a venue detail screen makes zero additional Foursquare photo API calls — the photo shown comes from the search cache
+4. Navigating back and forth between home and venue detail does not re-trigger venue search
 
-**Files Changed:**
-- `app/(tabs)/index.tsx` (empty states, error handling, loading UI, permission prompts)
+### Phase 13: Dev Testing Tools
 
-**Plans:** 0 plans
+**Goal:** Developer can override GPS location and bypass distance checks to test check-in flow end-to-end on Expo Go without physically visiting a venue.
+
+**Dependencies:** Phase 12 (stable venue fetch behavior before adding dev overrides)
+
+**Requirements:** DEV-01, DEV-02, DEV-03, DEV-04
+
+**Success Criteria:**
+1. A dev settings screen is accessible from the profile tab (visible only when `__DEV__` is true)
+2. Entering custom latitude/longitude in dev settings causes the venue list to refresh with venues near those coordinates
+3. Developer can tap check-in on any venue from the dev-overridden list and the check-in succeeds regardless of real GPS distance
+4. Developer can insert a simulated second user at the same venue and see that user appear in the venue roster
+5. The dev settings screen and all bypass logic are absent from production builds (`__DEV__` guard confirmed)
 
 Plans:
-- [ ] TBD — Pending plan-phase execution
+- [ ] Dev settings screen + GPS override + check-in bypass + roster simulation
 
 ## Progress
 
@@ -119,4 +103,8 @@ Plans:
 | 6. Party Experience | v1.1 | 3/3 | Complete | 2026-02-11 |
 | 7. Trust Calibration | v1.1 | 1/1 | Complete | 2026-02-11 |
 | 8. Venue Whitelist Filtering | v1.2 | 1/1 | Complete | 2026-02-11 |
-| 9. Home Screen Polish | v1.2 | 0/0 | Pending | — |
+| 9. Home Screen Polish | v1.2 | 1/1 | Complete | 2026-02-11 |
+| 10. UI Cleanup & Favorites Migration | v1.3 | 1/1 | Complete | 2026-02-11 |
+| 11. Venue Photos | v1.3 | 1/1 | Complete | 2026-02-11 |
+| 12. API Throttling | v1.4 | 0/1 | Pending | — |
+| 13. Dev Testing Tools | v1.4 | 0/1 | Pending | — |
