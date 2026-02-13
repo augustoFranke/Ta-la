@@ -1,26 +1,66 @@
-import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
+import { Tabs } from 'expo-router';
 import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
 
 export default function TabsLayout() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
-    <NativeTabs tintColor={colors.primary}>
-      <NativeTabs.Trigger name="index">
-        <Label>Início</Label>
-        <Icon sf="house.fill" drawable="home" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="discover">
-        <Label>Descobrir</Label>
-        <Icon sf="location.fill" drawable="location" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="profile">
-        <Label>Perfil</Label>
-        <Icon sf="person.fill" drawable="person" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Início',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: 'Explorar',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="partners"
+        options={{
+          title: 'Parceiros',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="grid" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Minha conta',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
+        }}
+      />
+      {/* Hide discover from tab bar - kept for deep link compatibility */}
+      <Tabs.Screen
+        name="discover"
+        options={{
+          href: null,
+        }}
+      />
+    </Tabs>
   );
 }

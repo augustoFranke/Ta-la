@@ -4,6 +4,7 @@
  */
 
 import { View, Text, StyleSheet } from 'react-native';
+import type { ComponentProps } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -69,7 +70,7 @@ export default function WelcomeScreen() {
 }
 
 interface FeatureItemProps {
-  iconName: string;
+  iconName: ComponentProps<typeof Ionicons>['name'];
   title: string;
   description: string;
   colors: any;

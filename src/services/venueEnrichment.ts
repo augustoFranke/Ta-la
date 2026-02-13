@@ -1,38 +1,26 @@
-import { supabase } from './supabase';
-import { calculateDatingScore } from './venueScoring';
-import type { VibeType } from '../types/database';
+/**
+ * Venue Enrichment Service
+ * Enriches venues with active check-in counts from Supabase
+ */
 
-interface VenueEnrichmentData {
-  activeCount: number;
-  openToMeetingCount: number;
-  topVibes: VibeType[];
-  vibeCount: number;
-}
+import { supabase } from './supabase';
 
 /**
- * Enrich venues with active user counts, open_to_meeting counts, vibes, and dating scores
- * Queries check_ins and venue_vibes tables for dating-relevant data
+ * Enrich venues with active user counts and open_to_meeting counts
+ * Queries check_ins table for active check-ins within the last 4 hours
  */
 export async function enrichWithActiveUserCounts<
   T extends {
     place_id: string;
     active_users_count: number;
-    rating: number | null;
-    price_level: number | null;
-    distance: number;
   }
->(venues: T[]): Promise<(T & { open_to_meeting_count: number; top_vibes: VibeType[]; dating_score: number })[]> {
+>(venues: T[]): Promise<(T & { open_to_meeting_count: number })[]> {
   if (venues.length === 0) return [];
 
-  // Initialize default enrichment data
-  const enrichmentByPlaceId = new Map<string, VenueEnrichmentData>();
+  // Initialize default counts
+  const countsByPlaceId = new Map<string, { activeCount: number; openToMeetingCount: number }>();
   venues.forEach((v) => {
-    enrichmentByPlaceId.set(v.place_id, {
-      activeCount: 0,
-      openToMeetingCount: 0,
-      topVibes: [],
-      vibeCount: 0,
-    });
+    countsByPlaceId.set(v.place_id, { activeCount: 0, openToMeetingCount: 0 });
   });
 
   try {
@@ -46,26 +34,24 @@ export async function enrichWithActiveUserCounts<
 
     if (venueError) {
       console.error('Error fetching venue ids:', venueError);
-      return applyEnrichmentAndScore(venues, enrichmentByPlaceId);
+      return applyEnrichment(venues, countsByPlaceId);
     }
 
-    const venueIdByPlaceId = new Map<string, string>();
     const placeIdByVenueId = new Map<string, string>();
     const venueIds: string[] = [];
 
     venueRows?.forEach((row) => {
-      if (!venueIdByPlaceId.has(row.google_place_id)) {
-        venueIdByPlaceId.set(row.google_place_id, row.id);
+      if (!placeIdByVenueId.has(row.id)) {
         placeIdByVenueId.set(row.id, row.google_place_id);
         venueIds.push(row.id);
       }
     });
 
     if (venueIds.length === 0) {
-      return applyEnrichmentAndScore(venues, enrichmentByPlaceId);
+      return applyEnrichment(venues, countsByPlaceId);
     }
 
-    // Query active check-ins with open_to_meeting status (within last 4 hours)
+    // Query active check-ins (within last 4 hours)
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
 
     const { data: checkIns, error: checkInError } = await supabase
@@ -80,7 +66,7 @@ export async function enrichWithActiveUserCounts<
       checkIns.forEach((checkIn) => {
         const placeId = placeIdByVenueId.get(checkIn.venue_id);
         if (placeId) {
-          const data = enrichmentByPlaceId.get(placeId)!;
+          const data = countsByPlaceId.get(placeId)!;
           data.activeCount += 1;
           if (checkIn.open_to_meeting) {
             data.openToMeetingCount += 1;
@@ -88,90 +74,35 @@ export async function enrichWithActiveUserCounts<
         }
       });
     }
-
-    // Query venue vibes and aggregate by venue
-    const { data: vibes, error: vibeError } = await supabase
-      .from('venue_vibes')
-      .select('venue_id, vibe')
-      .in('venue_id', venueIds);
-
-    if (!vibeError && vibes) {
-      // Count vibes per venue and track which vibes are most common
-      const vibesByVenue = new Map<string, Map<string, number>>();
-
-      vibes.forEach((v) => {
-        if (!vibesByVenue.has(v.venue_id)) {
-          vibesByVenue.set(v.venue_id, new Map());
-        }
-        const vibeMap = vibesByVenue.get(v.venue_id)!;
-        vibeMap.set(v.vibe, (vibeMap.get(v.vibe) || 0) + 1);
-      });
-
-      // Get top 2 vibes for each venue
-      vibesByVenue.forEach((vibeMap, venueId) => {
-        const placeId = placeIdByVenueId.get(venueId);
-        if (placeId) {
-          const data = enrichmentByPlaceId.get(placeId)!;
-          const sortedVibes = Array.from(vibeMap.entries())
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 2)
-            .map(([vibe]) => vibe as VibeType);
-          data.topVibes = sortedVibes;
-          data.vibeCount = vibeMap.size;
-        }
-      });
-    }
   } catch (err) {
     console.error('Error enriching venues with counts:', err);
   }
 
-  return applyEnrichmentAndScore(venues, enrichmentByPlaceId);
+  return applyEnrichment(venues, countsByPlaceId);
 }
 
 /**
- * Apply enrichment data and calculate dating scores, then sort by score
+ * Apply enrichment data to venues
  */
-function applyEnrichmentAndScore<
+function applyEnrichment<
   T extends {
     place_id: string;
     active_users_count: number;
-    rating: number | null;
-    price_level: number | null;
-    distance: number;
   }
 >(
   venues: T[],
-  enrichmentByPlaceId: Map<string, VenueEnrichmentData>
-): (T & { open_to_meeting_count: number; top_vibes: VibeType[]; dating_score: number })[] {
-  const enrichedVenues = venues.map((venue) => {
-    const data = enrichmentByPlaceId.get(venue.place_id) || {
+  countsByPlaceId: Map<string, { activeCount: number; openToMeetingCount: number }>
+): (T & { open_to_meeting_count: number })[] {
+  return venues.map((venue) => {
+    const data = countsByPlaceId.get(venue.place_id) || {
       activeCount: 0,
       openToMeetingCount: 0,
-      topVibes: [],
-      vibeCount: 0,
     };
-
-    // Get venue types for scoring (use type field as fallback)
-    const types = (venue as any).types || [(venue as any).type || 'bar'];
-
-    const datingScore = calculateDatingScore({
-      types,
-      name: (venue as any).name || '',
-      rating: venue.rating,
-      priceLevel: venue.price_level,
-      distance: venue.distance,
-      openToMeetingCount: data.openToMeetingCount,
-      positiveVibeCount: data.vibeCount,
-    });
 
     return {
       ...venue,
       active_users_count: data.activeCount,
       open_to_meeting_count: data.openToMeetingCount,
-      top_vibes: data.topVibes,
-      dating_score: datingScore,
     };
   });
-
-  return enrichedVenues;
 }

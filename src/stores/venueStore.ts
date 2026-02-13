@@ -4,13 +4,11 @@
  */
 
 import { create } from 'zustand';
-import type { Venue, VibeType } from '../types/database';
+import type { Venue } from '../types/database';
 
 export interface VenueWithDistance extends Venue {
   distance: number;
   open_to_meeting_count?: number;
-  top_vibes?: VibeType[];
-  dating_score?: number;
 }
 
 interface VenueState {

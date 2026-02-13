@@ -17,7 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 import { getVenueTypeLabel, formatDistance } from '../../services/places';
 import type { VenueWithDistance } from '../../stores/venueStore';
-import { VIBE_CONFIG } from '../../types/database';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const CARD_WIDTH = SCREEN_WIDTH - 48; // 24px padding on each side
@@ -142,21 +141,6 @@ export function VenueCard({ venue, cardWidth, onPress }: VenueCardProps) {
           <Text style={styles.address} numberOfLines={1}>
             {venue.address}
           </Text>
-
-          {/* Dating vibes */}
-          {venue.top_vibes && venue.top_vibes.length > 0 && (
-            <View style={styles.vibesRow}>
-              {venue.top_vibes.slice(0, 2).map((vibe) => {
-                const config = VIBE_CONFIG[vibe];
-                return (
-                  <View key={vibe} style={styles.vibeChip}>
-                    <Ionicons name={config.icon} size={12} color="#fff" />
-                    <Text style={styles.vibeText}>{config.label}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
 
           <TouchableOpacity
             style={[
@@ -325,26 +309,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     fontSize: 14,
     marginBottom: 4,
-  },
-  vibesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  vibeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  vibeText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '500',
   },
   detailsButton: {
     paddingVertical: 14,

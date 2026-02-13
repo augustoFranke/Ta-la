@@ -37,7 +37,7 @@ export default function PhotosScreen() {
 
     // Abre seletor de imagem
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: [ImagePicker.MediaType.Images],
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [3, 4],
       quality: 0.8,

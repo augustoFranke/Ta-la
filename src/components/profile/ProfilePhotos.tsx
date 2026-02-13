@@ -60,7 +60,7 @@ export function ProfilePhotos({
 
     const allowMultiple = mode === 'replace' || mode === 'append';
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: [ImagePicker.MediaType.Images],
+      mediaTypes: ['images'],
       allowsMultipleSelection: allowMultiple,
       quality: 0.8,
       selectionLimit: allowMultiple ? 3 : 1,
@@ -76,7 +76,7 @@ export function ProfilePhotos({
         mimeType: asset.mimeType ?? null,
       }));
       const existingUrls = photos.map((photo) => photo.url);
-      const nextAssets = mode === 'append'
+      const nextAssets: Array<SelectedPhoto | string> = mode === 'append'
         ? [...existingUrls, ...assets].slice(0, 3)
         : assets;
       await onPhotosChange(nextAssets);
@@ -110,7 +110,7 @@ export function ProfilePhotos({
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: [ImagePicker.MediaType.Images],
+      mediaTypes: ['images'],
       allowsMultipleSelection: false,
       quality: 0.8,
       selectionLimit: 1,
@@ -127,7 +127,7 @@ export function ProfilePhotos({
         mimeType: asset.mimeType ?? null,
       };
 
-      const existingUrls = photos.map((photo) => photo.url);
+      const existingUrls: Array<SelectedPhoto | string> = photos.map((photo) => photo.url);
       const nextAssets = [...existingUrls];
       if (slotIndex < nextAssets.length) {
         nextAssets[slotIndex] = selected;

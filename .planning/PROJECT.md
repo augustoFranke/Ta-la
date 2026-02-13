@@ -8,9 +8,14 @@ Ta la is a location-based social mobile app for people in Dourados, MS, Brazil t
 
 People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
 
-## Current Milestone
+## Current Milestone: v1.4 API Optimization & Check-in Testing
 
-**v1.3 Production Ready** — SHIPPED. Fixed venue photos, removed unwanted UI elements, created favorites migration, deployed all pending migrations.
+**Goal:** Drastically reduce Foursquare API usage (3 venues, 1 photo each, no request loops) and enable local check-in testing on Expo Go without development builds.
+
+**Target features:**
+- Foursquare API throttling — cap venue search to 3 results, 1 photo per venue, eliminate redundant/looping requests
+- Photo caching — avoid re-fetching photos on every venue detail open
+- Dev testing mode — GPS location override and multi-user check-in simulation testable on Expo Go
 
 ## Requirements
 
@@ -93,4 +98,4 @@ People can reliably discover who is at the same venue right now, with trustworth
 | DROP FUNCTION before replacing return type | PostgreSQL cannot change return type with CREATE OR REPLACE | Good |
 
 ---
-*Last updated: 2026-02-11 — v1.3 Production Ready shipped*
+*Last updated: 2026-02-12 — v1.4 API Optimization & Check-in Testing started*

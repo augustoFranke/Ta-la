@@ -1,7 +1,6 @@
 /**
  * Venue Type Scores
- * Shared scoring constants for nightlife and dating relevance
- * Extracted to avoid circular dependencies between places.ts and venueScoring.ts
+ * Shared scoring constants for nightlife relevance and venue filtering
  */
 
 // Dating-friendly scoring by venue type (higher = better for dating)

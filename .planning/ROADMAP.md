@@ -6,7 +6,7 @@
 - **v1.1 Party Prep** — Phases 5-7 (shipped 2026-02-11)
 - **v1.2 Venue Discovery** — Phases 8-9 (shipped 2026-02-11)
 - **v1.3 Production Ready** — Phases 10-11 (shipped 2026-02-11)
-- **v1.4 API Optimization & Check-in Testing** — Phases 12-13 (in progress)
+- **v1.4 API Optimization & Check-in Testing** — Phases 12-13 (shipped 2026-02-12)
 
 ## Phases
 
@@ -65,7 +65,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Plans:** 1 plan
 
 Plans:
-- [ ] 12-01-PLAN.md — Throttle search, cap photos, eliminate redundant fetches
+- [x] 12-01-PLAN.md — Throttle search, cap photos, eliminate redundant fetches
 
 **Success Criteria:**
 1. Opening the home screen triggers at most one Foursquare API call per 5-minute cache window
@@ -88,8 +88,11 @@ Plans:
 4. Developer can insert a simulated second user at the same venue and see that user appear in the venue roster
 5. The dev settings screen and all bypass logic are absent from production builds (`__DEV__` guard confirmed)
 
+**Plans:** 2 plans
+
 Plans:
-- [ ] Dev settings screen + GPS override + check-in bypass + roster simulation
+- [x] 13-01-PLAN.md — Dev settings screen + GPS coordinate override + venue refresh wiring
+- [x] 13-02-PLAN.md — Check-in distance bypass + simulated user roster testing
 
 ## Progress
 
@@ -106,5 +109,5 @@ Plans:
 | 9. Home Screen Polish | v1.2 | 1/1 | Complete | 2026-02-11 |
 | 10. UI Cleanup & Favorites Migration | v1.3 | 1/1 | Complete | 2026-02-11 |
 | 11. Venue Photos | v1.3 | 1/1 | Complete | 2026-02-11 |
-| 12. API Throttling | v1.4 | 0/1 | Pending | — |
-| 13. Dev Testing Tools | v1.4 | 0/1 | Pending | — |
+| 12. API Throttling | v1.4 | 1/1 | Complete | 2026-02-12 |
+| 13. Dev Testing Tools | v1.4 | 2/2 | Complete | 2026-02-12 |

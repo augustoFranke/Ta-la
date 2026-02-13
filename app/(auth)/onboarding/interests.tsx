@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import type { ComponentProps } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ import { useAuthStore } from '../../../src/stores/authStore';
 
 const MIN_INTERESTS = 3;
 const MAX_INTERESTS = 10;
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 // Lista de interesses pré-definidos
 const AVAILABLE_INTERESTS = [
@@ -60,7 +62,7 @@ const AVAILABLE_INTERESTS = [
   { icon: 'sparkles', label: 'Festas' },
   { icon: 'musical-notes', label: 'Dançar' },
   { icon: 'dice', label: 'Jogos de tabuleiro' },
-];
+] as Array<{ icon: IoniconName; label: string }>;
 
 export default function InterestsScreen() {
   const router = useRouter();
