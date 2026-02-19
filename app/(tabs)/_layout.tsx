@@ -28,20 +28,20 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explorar',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="partners"
         options={{
           title: 'Parceiros',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Chat',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble" size={size} color={color} />
           ),
         }}
       />
@@ -52,13 +52,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
-        }}
-      />
-      {/* Hide discover from tab bar - kept for deep link compatibility */}
-      <Tabs.Screen
-        name="discover"
-        options={{
-          href: null,
         }}
       />
     </Tabs>
