@@ -37,10 +37,10 @@
 ### Venue UX Overhaul (VENUE-UX)
 
 - [ ] **VENUE-UX-01**: Remove venue detail page — no more `/venue/[id]` navigation
-- [ ] **VENUE-UX-02**: Check-in button lives directly on venue cards on the home screen
-- [ ] **VENUE-UX-03**: When user is >10m from venue, card shows "Voce esta longe" (disabled state)
-- [ ] **VENUE-UX-04**: When user is <=10m from venue, card shows "Fazer check-in" (enabled state)
-- [ ] **VENUE-UX-05**: Check-in flow (open_to_meeting toggle, visibility) happens via modal from venue card
+- [x] **VENUE-UX-02**: Check-in button lives directly on venue cards on the home screen
+- [x] **VENUE-UX-03**: When user is >10m from venue, card shows "Voce esta longe" (disabled state)
+- [x] **VENUE-UX-04**: When user is <=10m from venue, card shows "Fazer check-in" (enabled state)
+- [x] **VENUE-UX-05**: Check-in flow (open_to_meeting toggle, visibility) happens via modal from venue card
 - [x] **VENUE-UX-06**: Check-in proximity threshold reduced from 100m to 10m in server RPC
 
 ### Venue Data (VENUE-DATA)

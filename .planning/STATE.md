@@ -11,12 +11,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-16)
 
 **Milestone:** v2.0 MVP Relaunch
 **Phase:** 15 — Google Places API Venue UX
-**Plan:** 02 of N complete
+**Plan:** 03 of N complete
 **Status:** In progress
 
 Progress: [____________________] 0% (0/6 phases complete)
 
-Last activity: 2026-02-19 — Phase 15 Plan 02 complete: 30-day venue cache with city-radius invalidation and client-side Haversine distance recalculation
+Last activity: 2026-02-19 — Phase 15 Plan 03 complete: VenueCard rebuild with hero photo + check-in button states, CheckInModal replaced with lightweight bottom sheet
 
 ## Performance Metrics
 
@@ -68,6 +68,8 @@ Key patterns established (from v1.x):
 - [Phase 15-google-places-api-venue-ux]: Use full CREATE OR REPLACE FUNCTION body in proximity threshold migration (not ALTER) for self-contained, idempotent migration
 | Phase 15-google-places-api-venue-ux P01 | 5 | 1 tasks | 1 files |
 - [Phase 15-01]: Google Places API (New) replaces Foursquare; Field Masking excludes rating/openingHours for cost savings
+| Phase 15-google-places-api-venue-ux P03 | 12 | 2 tasks | 4 files |
+- [Phase 15-03]: Check-in always public — no visibility or open_to_meeting toggles
 
 ### Technical Debt
 
@@ -88,12 +90,13 @@ None.
 
 ### What Just Happened
 
-1. Phase 15 Plan 02 complete — 30-day venue cache with city-radius invalidation
-2. venueStore: VENUE_CACHE_DURATION → 30 days, added cachedLocation state and setCachedLocation action
-3. Added isVenueCacheStale helper (time + Haversine 2km check)
-4. useVenues: switched to isVenueCacheStale, added client-side distance recalculation via useMemo
+1. Phase 15 Plan 03 complete — VenueCard UX rebuild and CheckInModal simplification
+2. VenueCard: hero photo top, name+distance below, full-width check-in button at bottom
+3. Check-in button: 3 states based on 10m threshold and activeCheckInPlaceId
+4. CheckInModal: slide-up bottom sheet, no toggles, onConfirm() always public check-in
+5. VenueCarousel updated to pass new props; app/venue/[id].tsx updated for no-arg onConfirm
 
 ### What's Next
 
 Continue Phase 15: Google Places API Venue UX
-- Plan 03: (next plan)
+- Plan 04: (next plan)
