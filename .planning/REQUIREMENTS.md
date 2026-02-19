@@ -41,7 +41,7 @@
 - [ ] **VENUE-UX-03**: When user is >10m from venue, card shows "Voce esta longe" (disabled state)
 - [ ] **VENUE-UX-04**: When user is <=10m from venue, card shows "Fazer check-in" (enabled state)
 - [ ] **VENUE-UX-05**: Check-in flow (open_to_meeting toggle, visibility) happens via modal from venue card
-- [ ] **VENUE-UX-06**: Check-in proximity threshold reduced from 100m to 10m in server RPC
+- [x] **VENUE-UX-06**: Check-in proximity threshold reduced from 100m to 10m in server RPC
 
 ### Venue Data (VENUE-DATA)
 
@@ -59,8 +59,8 @@
 
 ### Navigation Restructure (NAV)
 
-- [ ] **NAV-01**: Remove Explorar tab entirely
-- [ ] **NAV-02**: Tab bar has 4 tabs: Inicio, Parceiros, Chat, Minha conta
+- [x] **NAV-01**: Remove Explorar tab entirely
+- [x] **NAV-02**: Tab bar has 4 tabs: Inicio, Parceiros, Chat, Minha conta
 - [ ] **NAV-03**: Parceiros tab promotes verified venues with nightlife / hookup culture focus
 - [ ] **NAV-04**: Parceiros tab shows upcoming "Tá lá" events (manually managed)
 

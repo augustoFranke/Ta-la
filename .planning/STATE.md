@@ -16,7 +16,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-16)
 
 Progress: [____________________] 0% (0/6 phases complete)
 
-Last activity: 2026-02-19 — Phase 14 Plan 02 complete: 4-tab navigation restructure, Chat placeholder, Explorar removed
+Last activity: 2026-02-19 — Phase 15 Plan 05 Task 1 complete: SQL migration for check_in_to_place_v2 proximity threshold 100m → 10m. Awaiting human to apply migration in Supabase (checkpoint:human-action).
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Key patterns established (from v1.x):
 - Google Places API (New) with Field Masking and aggressive caching
 - __DEV__ guard pattern for dev-only store actions (no-ops in production)
 - [Phase 14]: Suppress discover.tsx with href: null — Expo Router auto-discovers all files; href: null hides tab without deleting file
+- [Phase 15-google-places-api-venue-ux]: Use full CREATE OR REPLACE FUNCTION body in proximity threshold migration (not ALTER) for self-contained, idempotent migration
 
 ### Technical Debt
 
