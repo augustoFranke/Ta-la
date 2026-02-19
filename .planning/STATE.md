@@ -11,12 +11,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-16)
 
 **Milestone:** v2.0 MVP Relaunch
 **Phase:** 16 — Interaction Types (Wave & Like)
-**Plan:** 03 of 04 complete
-**Status:** In Progress
+**Plan:** 04 of 04 complete
+**Status:** Phase Complete
 
-Progress: [█___________________] 5% (0/6 phases complete)
+Progress: [████________________] 17% (1/6 phases complete)
 
-Last activity: 2026-02-19 — Phase 16 Plan 03 complete: interaction UI components (ConfirmationDialog, InteractionButtons, MatchCelebration, ReceivedInteractions)
+Last activity: 2026-02-19 — Phase 16 Plan 04 complete: wired interaction system into discover and profile screens
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Key patterns established (from v1.x):
 - [Phase 16-01]: ANY-combo matching — trigger checks reverse interaction without type filter
 - [Phase 16-01]: is_match in RPC response — query matches after trigger fires in same transaction
 - [Phase 16-03]: Interaction UI follows PresenceConfirmationModal pattern (Modal, overlay, card)
+- [Phase 16]: Drink-specific code fully replaced by interaction system on both screens
 
 ### Technical Debt
 
@@ -93,11 +94,12 @@ None.
 
 ### What Just Happened
 
-1. Phase 16 Plan 03 executed — interaction UI components
-2. Created ConfirmationDialog, InteractionButtons, MatchCelebration, ReceivedInteractions
-3. All four components in src/components/interaction/ ready for wiring
+1. Phase 16 Plan 04 executed — wired interaction system into screens
+2. Discover screen: InteractionButtons on cards, ConfirmationDialog, MatchCelebration, ReceivedInteractions, realtime
+3. Profile screen: InteractionButtons replacing drink actions, ConfirmationDialog, MatchCelebration
+4. Phase 16 complete — all 4 plans done, all INTERACT requirements met
 
 ### What's Next
 
-Phase 16 Plan 04: Wire interaction components into discover and profile screens
-- Resume file: .planning/phases/16-interaction-types-wave-like/16-04-PLAN.md
+Phase 16 complete. Plan next phase (chat/messaging or matches).
+- Suggest: `/gsd-plan-phase 17` or `/gsd-verify-work 16`

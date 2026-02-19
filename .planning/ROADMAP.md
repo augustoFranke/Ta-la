@@ -69,7 +69,7 @@ Plans:
 
 **Dependencies:** Phase 14 (clean stores)
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 16-01-PLAN.md — Database: interactions table, match trigger v2, unmatch support, send_interaction RPC, get_received_interactions RPC
@@ -180,7 +180,7 @@ Phase 18 (Profile: Instagram + Spotify) — independent, parallel
 | 12-13 | v1.4 API Optimization | Complete | 2026-02-12 |
 | 14 | 1/2 | Complete    | 2026-02-19 |
 | 15 | 5/5 | Complete    | 2026-02-19 |
-| 16 | 3/4 | In Progress|  |
+| 16 | 4/4 | Complete   | 2026-02-19 |
 | 17 | v2.0 Chat System | Pending | — |
 | 18 | v2.0 Profile Enhancements | Pending | — |
 | 19 | v2.0 Discovery Enhancements | Pending | — |
