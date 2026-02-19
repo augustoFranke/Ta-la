@@ -10,13 +10,13 @@ See: `.planning/PROJECT.md` (updated 2026-02-16)
 ## Current Position
 
 **Milestone:** v2.0 MVP Relaunch
-**Phase:** 14 — Cleanup & Navigation Restructure
-**Plan:** 02 of 03 complete
-**Status:** Milestone complete
+**Phase:** 15 — Google Places API Venue UX
+**Plan:** 02 of N complete
+**Status:** In progress
 
 Progress: [____________________] 0% (0/6 phases complete)
 
-Last activity: 2026-02-19 — Phase 15 Plan 05 Task 1 complete: SQL migration for check_in_to_place_v2 proximity threshold 100m → 10m. Awaiting human to apply migration in Supabase (checkpoint:human-action).
+Last activity: 2026-02-19 — Phase 15 Plan 02 complete: 30-day venue cache with city-radius invalidation and client-side Haversine distance recalculation
 
 ## Performance Metrics
 
@@ -66,6 +66,8 @@ Key patterns established (from v1.x):
 - __DEV__ guard pattern for dev-only store actions (no-ops in production)
 - [Phase 14]: Suppress discover.tsx with href: null — Expo Router auto-discovers all files; href: null hides tab without deleting file
 - [Phase 15-google-places-api-venue-ux]: Use full CREATE OR REPLACE FUNCTION body in proximity threshold migration (not ALTER) for self-contained, idempotent migration
+| Phase 15-google-places-api-venue-ux P01 | 5 | 1 tasks | 1 files |
+- [Phase 15-01]: Google Places API (New) replaces Foursquare; Field Masking excludes rating/openingHours for cost savings
 
 ### Technical Debt
 
@@ -86,12 +88,12 @@ None.
 
 ### What Just Happened
 
-1. Phase 14 Plan 02 complete — 4-tab navigation restructure
-2. Created app/(tabs)/chat.tsx — "Em breve" placeholder with lock icon
-3. Removed Explorar tab from _layout.tsx and deleted explore.tsx
-4. Suppressed discover.tsx with href: null (Expo Router was auto-registering it as 5th tab)
+1. Phase 15 Plan 02 complete — 30-day venue cache with city-radius invalidation
+2. venueStore: VENUE_CACHE_DURATION → 30 days, added cachedLocation state and setCachedLocation action
+3. Added isVenueCacheStale helper (time + Haversine 2km check)
+4. useVenues: switched to isVenueCacheStale, added client-side distance recalculation via useMemo
 
 ### What's Next
 
-Continue Phase 14: Cleanup & Navigation Restructure
+Continue Phase 15: Google Places API Venue UX
 - Plan 03: (next plan)

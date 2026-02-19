@@ -43,7 +43,7 @@ Plans:
 
 **Dependencies:** Phase 14 (clean foundation)
 
-**Plans:** 1/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 - [ ] 15-01-PLAN.md — Replace Foursquare with Google Places API (New) + Field Masking + nightlife filtering
@@ -179,7 +179,7 @@ Phase 18 (Profile: Instagram + Spotify) — independent, parallel
 | 10-11 | v1.3 Production Ready | Complete | 2026-02-11 |
 | 12-13 | v1.4 API Optimization | Complete | 2026-02-12 |
 | 14 | 1/2 | Complete    | 2026-02-19 |
-| 15 | 1/5 | In Progress|  |
+| 15 | 3/5 | In Progress|  |
 | 16 | v2.0 Interaction Types | Pending | — |
 | 17 | v2.0 Chat System | Pending | — |
 | 18 | v2.0 Profile Enhancements | Pending | — |

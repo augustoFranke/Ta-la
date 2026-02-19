@@ -45,11 +45,11 @@
 
 ### Venue Data (VENUE-DATA)
 
-- [ ] **VENUE-DATA-01**: Replace Foursquare integration with Google Places API (New)
-- [ ] **VENUE-DATA-02**: Implement cost-saving measures via optimized API usage
-- [ ] **VENUE-DATA-03**: Implement aggressive cache persistence to minimize redundant requests
-- [ ] **VENUE-DATA-04**: Use client-side Haversine formula for distance calculations instead of API calls
-- [ ] **VENUE-DATA-05**: Implement semantic filtering of venues to ensure "nightlife activity" focus
+- [x] **VENUE-DATA-01**: Replace Foursquare integration with Google Places API (New)
+- [x] **VENUE-DATA-02**: Implement cost-saving measures via optimized API usage
+- [x] **VENUE-DATA-03**: Implement aggressive cache persistence to minimize redundant requests
+- [x] **VENUE-DATA-04**: Use client-side Haversine formula for distance calculations instead of API calls
+- [x] **VENUE-DATA-05**: Implement semantic filtering of venues to ensure "nightlife activity" focus
 
 ### Discovery Enhancements (DISCOVER)
 
