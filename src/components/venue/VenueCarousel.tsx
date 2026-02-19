@@ -34,7 +34,9 @@ interface VenueCarouselProps {
   venues: VenueWithDistance[];
   isLoading?: boolean;
   error?: string | null;
-  onVenuePress?: (venue: VenueWithDistance) => void;
+  activeCheckInPlaceId?: string | null;
+  onCheckIn?: (venue: VenueWithDistance) => void;
+  onCheckOut?: (venue: VenueWithDistance) => void;
   onRetry?: () => void;
 }
 
@@ -42,7 +44,9 @@ export function VenueCarousel({
   venues,
   isLoading = false,
   error = null,
-  onVenuePress,
+  activeCheckInPlaceId,
+  onCheckIn,
+  onCheckOut,
   onRetry,
 }: VenueCarouselProps) {
   const { colors } = useTheme();
@@ -100,11 +104,13 @@ export function VenueCarousel({
         <VenueCard
           venue={item}
           cardWidth={resolvedCardWidth}
-          onPress={onVenuePress}
+          activeCheckInPlaceId={activeCheckInPlaceId}
+          onCheckIn={onCheckIn}
+          onCheckOut={onCheckOut}
         />
       </View>
     ),
-    [resolvedCardWidth, onVenuePress]
+    [resolvedCardWidth, activeCheckInPlaceId, onCheckIn, onCheckOut]
   );
 
   const renderPaginationDots = () => {
