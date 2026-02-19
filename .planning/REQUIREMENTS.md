@@ -1,115 +1,132 @@
 # Requirements: Ta la!
 
-**Defined:** 2026-02-12
-**Core Value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
+**Redefined:** 2026-02-16
+**Core Value:** People can discover and connect with someone they've noticed at a venue or campus — without the fear of cold approach and rejection.
+**Launch Target:** March 2026 — real event with ~50 guests.
 
-## v1.4 Requirements
+## v2.0 MVP Relaunch Requirements
 
-### API Throttling
+### Chat System (CHAT)
 
-- [ ] **API-01**: Venue search returns at most 3 venues closest to user (change `limit=50` to `limit=3`)
-- [ ] **API-02**: Each venue in search results includes at most 1 photo from the search response
-- [ ] **API-03**: Venue detail screen uses cached photo from search instead of making a separate `fetchPlacePhotos()` API call
-- [ ] **API-04**: No redundant venue search requests — cache is respected, no re-fetch loops triggered by React effect dependencies
+- [ ] **CHAT-01**: After mutual match, a chat screen is unlocked between the two users
+- [ ] **CHAT-02**: Messages are delivered in real-time via Supabase Realtime
+- [ ] **CHAT-03**: Chat list shows all active conversations with last message preview and timestamp
+- [ ] **CHAT-04**: Unread message indicator visible on chat list and tab
+- [ ] **CHAT-05**: Messages persist across sessions (stored in Supabase `messages` table)
+- [ ] **CHAT-06**: Chat has a dedicated tab in the main navigation bar
+- [ ] **CHAT-07**: Support for emojis, photos, and embedded links in messages
+- [ ] **CHAT-08**: Reading indicator: empty dot for unread messages, filled dot when read
+- [ ] **CHAT-09**: Chat header displays user name and picture; clicking opens the user's profile
 
-### Dev Testing
+### Interaction Types (INTERACT)
 
-- [ ] **DEV-01**: Developer can override GPS coordinates via a dev settings screen accessible from profile (latitude/longitude input)
-- [ ] **DEV-02**: Developer can check in at any venue regardless of distance when dev mode is active (bypass 100m server-side check)
-- [ ] **DEV-03**: Developer can simulate a second user at the same venue to test roster visibility (via Supabase SQL insert or dev RPC)
-- [ ] **DEV-04**: All dev testing tools are gated behind `__DEV__` flag and excluded from production builds
+- [ ] **INTERACT-01**: User can send a drink offer to someone at the same venue (existing, keep)
+- [ ] **INTERACT-02**: User can send a wave to someone at the same venue (low-commitment signal)
+- [ ] **INTERACT-03**: User can send a like to someone at the same venue (interest signal)
+- [ ] **INTERACT-04**: All three interaction types create a pending connection; mutual interaction from either side = match
+- [ ] **INTERACT-05**: UI clearly distinguishes the three options without adding cognitive friction
+- [ ] **INTERACT-06**: Receiver sees which type of signal was sent (drink, wave, or like)
 
-## Previous Requirements (Complete)
+### Profile Enhancements (PROFILE)
 
-<details>
-<summary>v1.2 Requirements — Complete</summary>
+- [ ] **PROFILE-01**: User can add their Instagram handle to their profile
+- [ ] **PROFILE-02**: Instagram handle is displayed on public profile and discovery cards
+- [ ] **PROFILE-03**: User can add Spotify music taste / top artists to their profile
+- [ ] **PROFILE-04**: Spotify info is displayed on public profile
 
-### Venue Filtering
+### Venue UX Overhaul (VENUE-UX)
 
-- [x] **VENUE-01**: Remove nightlife score threshold filtering from venue transformation
-- [x] **VENUE-02**: Add NIGHTLIFE_TYPES whitelist array with approved venue types
-- [x] **VENUE-03**: Simplify isAllowedVenue() to use whitelist-only approach (no scoring)
-- [x] **VENUE-04**: Include core nightlife types in whitelist (bar, pub, lounge, night_club, brewery)
-- [x] **VENUE-05**: Include bar variants in whitelist (dive_bar, gastropub, speakeasy, tavern)
-- [x] **VENUE-06**: Include entertainment venues in whitelist (karaoke, jazz_club, comedy_club, music_venue)
-- [x] **VENUE-07**: Include restaurant type in whitelist (from Foursquare nightlife categories)
+- [ ] **VENUE-UX-01**: Remove venue detail page — no more `/venue/[id]` navigation
+- [ ] **VENUE-UX-02**: Check-in button lives directly on venue cards on the home screen
+- [ ] **VENUE-UX-03**: When user is >10m from venue, card shows "Voce esta longe" (disabled state)
+- [ ] **VENUE-UX-04**: When user is <=10m from venue, card shows "Fazer check-in" (enabled state)
+- [ ] **VENUE-UX-05**: Check-in flow (open_to_meeting toggle, visibility) happens via modal from venue card
+- [ ] **VENUE-UX-06**: Check-in proximity threshold reduced from 100m to 10m in server RPC
 
-### Home Screen Polish
+### Venue Data (VENUE-DATA)
 
-- [x] **HOME-01**: Improve empty state messaging when no venues found (clear call-to-action)
-- [x] **HOME-02**: Add better error handling with retry functionality
-- [x] **HOME-03**: Polish loading states and transitions
-- [x] **HOME-04**: Improve location permission denial handling with clear prompts
+- [ ] **VENUE-DATA-01**: Replace Foursquare integration with Google Places API (New)
+- [ ] **VENUE-DATA-02**: Implement cost-saving measures via optimized API usage
+- [ ] **VENUE-DATA-03**: Implement aggressive cache persistence to minimize redundant requests
+- [ ] **VENUE-DATA-04**: Use client-side Haversine formula for distance calculations instead of API calls
+- [ ] **VENUE-DATA-05**: Implement semantic filtering of venues to ensure "nightlife activity" focus
 
-</details>
+### Discovery Enhancements (DISCOVER)
 
-<details>
-<summary>v1.3 Requirements — Complete</summary>
+- [ ] **DISCOVER-01**: "Here now" section shows users currently checked in at the venue (existing, keep)
+- [ ] **DISCOVER-02**: "Frequents" section shows users who have checked in at this venue more than once (distinct visual treatment)
+- [ ] **DISCOVER-03**: Frequents query considers historical check-ins, not just currently active ones
 
-### UI Cleanup
+### Navigation Restructure (NAV)
 
-- [x] **UI-01**: Remove mini calendar / day pills from home screen
-- [x] **UI-02**: Remove "Descubra o que rola por perto" subtitle text
+- [ ] **NAV-01**: Remove Explorar tab entirely
+- [ ] **NAV-02**: Tab bar has 4 tabs: Inicio, Parceiros, Chat, Minha conta
+- [ ] **NAV-03**: Parceiros tab promotes verified venues with nightlife / hookup culture focus
+- [ ] **NAV-04**: Parceiros tab shows upcoming "Tá lá" events (manually managed)
 
-### Photos
+### Cleanup (CLEAN)
 
-- [x] **PHOTO-01**: Add `fields` param to Place Search to include `photos` in API response
-- [x] **PHOTO-02**: Add `fetchPlacePhotos(fsq_id)` service function for venue detail
-- [x] **PHOTO-03**: Integrate photo fetching on venue detail screen with merge/dedup
+- [x] **CLEAN-01**: Remove dead code: `getPhotoUrl()`, `checkShouldNotify()`, `unblockUser()`, redundant re-export in places.ts
+- [x] **CLEAN-02**: Reset all user-scoped stores on logout (checkIn, venue, block, notification)
+- [ ] **CLEAN-03**: Remove `/venue/[id]` route and associated components after venue UX overhaul
 
-### Database
+## Existing Capabilities (Validated, No Changes Needed)
 
-- [x] **DB-01**: Create migration `030_create_user_favorite_places.sql` with RLS policies
-- [x] **DB-02**: Deploy all pending migrations (020-030) via `supabase db push`
-
-</details>
-
-## Future Requirements
-
-Deferred to future releases. Tracked but not in current roadmap.
-
-### Venue Discovery Enhancements
-
-- **VENUE-FUTURE-01**: Add distance-based sorting with user preference
-- **VENUE-FUTURE-02**: Add venue type filtering UI (show only bars, only clubs, etc.)
-- **VENUE-FUTURE-03**: Add "open now" filter toggle
-- **VENUE-FUTURE-04**: Cache venue data with smart refresh strategy
-
-### Home Screen Features
-
-- **HOME-FUTURE-01**: Add search/filter for venues by name
-- **HOME-FUTURE-02**: Add map view toggle for venue browsing
-
-### Social Features (Deferred)
-
-- **EXPLORE-FUTURE-01**: Explorar tab with category filtering and map-style browsing
-- **PARTNER-FUTURE-01**: Parceiros placeholder tab
-- **FAV-FUTURE-01**: User favorites list accessible from profile
+- [x] Email OTP auth + onboarding flow
+- [x] Server-authoritative check-in via PostGIS RPC
+- [ ] Google Places API (New) venue discovery (Pivoting from Foursquare)
+- [x] Same-venue user discovery with Supabase Realtime
+- [x] Block/report moderation
+- [x] Notification preferences
+- [x] Profile CRUD (photos, bio, occupation, interests)
+- [x] Home screen with nearby/trending venues + search
+- [x] Venue favorites
+- [x] Dark/light theme
+- [x] Presence confirmation ("Ainda esta aqui?")
+- [x] Availability toggle (Disponivel para drinks)
+- [x] Dev testing tools (GPS override, simulated users)
 
 ## Out of Scope
 
-- In-app chat/messaging — explicitly excluded
-- Venue vibes/dating score — deferred until core loop is stable
-- Always-on background location tracking — conflicts with privacy-first explicit check-in model
-- Public global map of all users — high safety/privacy risk
-- friends_only visibility filtering — deferred
+- Venue vibes/dating score algorithms
+- Always-on background location tracking
+- Public global map of all users
+- Venue partner self-serve dashboard
+- friends_only visibility filtering
+- Native development builds
+- **Venue Type Expansion**: Universities, event spaces, and festivals are out of MVP scope; these will be handled separately via event managers.
+
+## Priority for March Event
+
+**Must-have (blocks event testing):**
+1. CHAT-01 through CHAT-09 — complete chat experience
+2. VENUE-UX-01 through VENUE-UX-06 — streamlined check-in flow
+3. VENUE-DATA-01 through VENUE-DATA-05 — Google Places API integration
+4. NAV-01 through NAV-04 — clean navigation and Parceiros content
+5. CLEAN-01, CLEAN-02 — stability fixes
+
+**Should-have (improves event experience):**
+6. INTERACT-01 through INTERACT-06 — wave/like alongside drink
+7. PROFILE-01, PROFILE-02 — Instagram handle
+8. DISCOVER-02, DISCOVER-03 — frequents view
+
+**Nice-to-have (can ship post-event):**
+9. PROFILE-03, PROFILE-04 — Spotify integration
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| API-01 | Phase 12 | Pending |
-| API-02 | Phase 12 | Pending |
-| API-03 | Phase 12 | Pending |
-| API-04 | Phase 12 | Pending |
-| DEV-01 | Phase 13 | Pending |
-| DEV-02 | Phase 13 | Pending |
-| DEV-03 | Phase 13 | Pending |
-| DEV-04 | Phase 13 | Pending |
-
-**Coverage:**
-- v1.4 requirements: 8 total, 0 complete
-- Mapped: 8/8 (100%)
+| Requirement | Priority | Phase | Status |
+|-------------|----------|-------|--------|
+| CHAT-01..09 | Must-have | TBD | Pending |
+| VENUE-UX-01..06 | Must-have | TBD | Pending |
+| VENUE-DATA-01..05 | Must-have | TBD | Pending |
+| NAV-01..04 | Must-have | TBD | Pending |
+| CLEAN-01..02 | Must-have | TBD | Pending |
+| INTERACT-01..06 | Should-have | TBD | Pending |
+| PROFILE-01..02 | Should-have | TBD | Pending |
+| DISCOVER-02..03 | Should-have | TBD | Pending |
+| PROFILE-03..04 | Nice-to-have | TBD | Pending |
+| CLEAN-03 | Depends on VENUE-UX | TBD | Pending |
 
 ---
-*Last updated: 2026-02-12 — v1.4 roadmap created, phases 12-13 assigned*
+*Last updated: 2026-02-16 — v2.0 MVP Relaunch requirements defined*

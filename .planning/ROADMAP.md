@@ -21,7 +21,7 @@
 
 **Requirements:** CLEAN-01, CLEAN-02, NAV-01, NAV-02
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 14-01-PLAN.md — Remove dead code and reset user-scoped stores on logout (CLEAN-01, CLEAN-02)
@@ -178,7 +178,7 @@ Phase 18 (Profile: Instagram + Spotify) — independent, parallel
 | 8-9 | v1.2 Venue Discovery | Complete | 2026-02-11 |
 | 10-11 | v1.3 Production Ready | Complete | 2026-02-11 |
 | 12-13 | v1.4 API Optimization | Complete | 2026-02-12 |
-| 14 | v2.0 Cleanup & Nav | Pending | — |
+| 14 | 1/2 | In Progress|  |
 | 15 | v2.0 Venue UX | Pending | — |
 | 16 | v2.0 Interaction Types | Pending | — |
 | 17 | v2.0 Chat System | Pending | — |
