@@ -3,10 +3,10 @@
  * Fetches and manages nearby venues based on user location
  */
 
-import { useCallback, useEffect, useRef } from 'react';
-import { useVenueStore, isVenueCacheValid } from '../stores/venueStore';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useVenueStore, isVenueCacheStale } from '../stores/venueStore';
 import { useLocationStore } from '../stores/locationStore';
-import { searchNearbyVenues } from '../services/places';
+import { searchNearbyVenues, calculateDistance } from '../services/places';
 import { enrichWithActiveUserCounts } from '../services/venueEnrichment';
 
 interface UseVenuesOptions {
@@ -28,6 +28,7 @@ export function useVenues(options: UseVenuesOptions = {}) {
     setError,
     setLastFetched,
     setSelectedVenue,
+    setCachedLocation,
     clearVenues,
     updateVenueActiveUsers,
   } = useVenueStore();
@@ -44,9 +45,10 @@ export function useVenues(options: UseVenuesOptions = {}) {
     // Read cache state directly from store to avoid stale closure issues
     const currentLastFetched = useVenueStore.getState().lastFetched;
     const currentVenueCount = useVenueStore.getState().venues.length;
+    const currentCachedLocation = useVenueStore.getState().cachedLocation;
 
-    // Check if cache is still valid
-    if (!force && isVenueCacheValid(currentLastFetched) && currentVenueCount > 0) {
+    // Check if cache is still valid (time + city-radius)
+    if (!force && !isVenueCacheStale(currentLastFetched, currentCachedLocation, latitude, longitude) && currentVenueCount > 0) {
       return;
     }
 
@@ -71,13 +73,14 @@ export function useVenues(options: UseVenuesOptions = {}) {
 
       setVenues(venuesWithCounts);
       setLastFetched(new Date());
+      setCachedLocation({ latitude, longitude });
     } catch (err) {
       console.error('Error in fetchVenues:', err);
       setError('Erro ao buscar venues próximos');
     } finally {
       setLoading(false);
     }
-  }, [latitude, longitude, radius, setVenues, setLoading, setError, setLastFetched]);
+  }, [latitude, longitude, radius, setVenues, setLoading, setError, setLastFetched, setCachedLocation]);
 
   // Force refresh (bypass cache)
   const refreshVenues = useCallback(() => {
@@ -115,6 +118,16 @@ export function useVenues(options: UseVenuesOptions = {}) {
     }
   }, [autoFetch, latitude, longitude]);
 
+  // Recalcula distância de cada venue a partir da posição atual do usuário (client-side, Haversine)
+  // Garante que a distância exibida sempre reflita a localização atual, não a do momento do fetch
+  const venuesWithDistance = useMemo(() => {
+    if (!latitude || !longitude) return venues;
+    return venues.map((venue) => ({
+      ...venue,
+      distance: calculateDistance(latitude, longitude, venue.latitude, venue.longitude),
+    }));
+  }, [venues, latitude, longitude]);
+
   // Select a venue for check-in
   const selectVenue = useCallback((venue: typeof venues[0] | null) => {
     setSelectedVenue(venue);
@@ -122,7 +135,7 @@ export function useVenues(options: UseVenuesOptions = {}) {
 
   return {
     // State
-    venues,
+    venues: venuesWithDistance,
     isLoading,
     error,
     lastFetched,
