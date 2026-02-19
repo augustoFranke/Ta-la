@@ -24,8 +24,8 @@
 - [x] **INTERACT-02**: User can send a wave to someone at the same venue (low-commitment signal)
 - [x] **INTERACT-03**: User can send a like to someone at the same venue (interest signal)
 - [x] **INTERACT-04**: All three interaction types create a pending connection; mutual interaction from either side = match
-- [ ] **INTERACT-05**: UI clearly distinguishes the three options without adding cognitive friction
-- [ ] **INTERACT-06**: Receiver sees which type of signal was sent (drink, wave, or like)
+- [x] **INTERACT-05**: UI clearly distinguishes the three options without adding cognitive friction
+- [x] **INTERACT-06**: Receiver sees which type of signal was sent (drink, wave, or like)
 
 ### Profile Enhancements (PROFILE)
 

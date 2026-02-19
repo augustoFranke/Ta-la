@@ -11,12 +11,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-16)
 
 **Milestone:** v2.0 MVP Relaunch
 **Phase:** 16 — Interaction Types (Wave & Like)
-**Plan:** 01 of 04 complete
+**Plan:** 03 of 04 complete
 **Status:** In Progress
 
 Progress: [█___________________] 5% (0/6 phases complete)
 
-Last activity: 2026-02-19 — Phase 16 Plan 01 complete: interactions table, match trigger v2, send/get interaction RPCs, unmatch support
+Last activity: 2026-02-19 — Phase 16 Plan 03 complete: interaction UI components (ConfirmationDialog, InteractionButtons, MatchCelebration, ReceivedInteractions)
 
 ## Performance Metrics
 
@@ -55,6 +55,8 @@ Last activity: 2026-02-19 — Phase 16 Plan 01 complete: interactions table, mat
 | 3 interaction types | Options without friction; wave/like are lower commitment than drink | v2.0 planning |
 | TEXT CHECK for interaction_type | Consistent with project pattern; avoids Postgres ENUM | Phase 16 |
 | ON CONFLICT clears unmatched_at | Enables re-matching after unmatch without deleting match row | Phase 16 |
+| Drink button visually primary in InteractionButtons | Drink is highest commitment interaction; visual hierarchy guides user behavior | Phase 16 |
+| ReceivedInteractions returns null when empty | Section should only appear when there are interactions to show | Phase 16 |
 
 Key patterns established (from v1.x):
 - SECURITY DEFINER RPCs for trust boundaries (check-in, offers, notifications)
@@ -70,6 +72,7 @@ Key patterns established (from v1.x):
 - [Phase 15]: Use full CREATE OR REPLACE FUNCTION body in proximity threshold migration (not ALTER) for self-contained, idempotent migration
 - [Phase 16-01]: ANY-combo matching — trigger checks reverse interaction without type filter
 - [Phase 16-01]: is_match in RPC response — query matches after trigger fires in same transaction
+- [Phase 16-03]: Interaction UI follows PresenceConfirmationModal pattern (Modal, overlay, card)
 
 ### Technical Debt
 
@@ -90,11 +93,11 @@ None.
 
 ### What Just Happened
 
-1. Phase 16 Plan 01 executed — database foundation for interactions system
-2. Created interactions table, match trigger v2, send_interaction RPC, get_received_interactions RPC
-3. Added unmatch support via unmatched_at column on matches
+1. Phase 16 Plan 03 executed — interaction UI components
+2. Created ConfirmationDialog, InteractionButtons, MatchCelebration, ReceivedInteractions
+3. All four components in src/components/interaction/ ready for wiring
 
 ### What's Next
 
-Phase 16 Plan 02: Service layer and TypeScript types for interactions
-- Resume file: .planning/phases/16-interaction-types-wave-like/16-02-PLAN.md
+Phase 16 Plan 04: Wire interaction components into discover and profile screens
+- Resume file: .planning/phases/16-interaction-types-wave-like/16-04-PLAN.md
