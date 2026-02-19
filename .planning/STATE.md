@@ -10,13 +10,13 @@ See: `.planning/PROJECT.md` (updated 2026-02-16)
 ## Current Position
 
 **Milestone:** v2.0 MVP Relaunch
-**Phase:** 15 — Google Places API Venue UX
-**Plan:** 04 of N complete
-**Status:** In progress
+**Phase:** 16 — Interaction Types (Wave & Like)
+**Plan:** 01 of 04 complete
+**Status:** In Progress
 
-Progress: [____________________] 0% (0/6 phases complete)
+Progress: [█___________________] 5% (0/6 phases complete)
 
-Last activity: 2026-02-19 — Phase 15 Plan 04 complete: Home screen rebuilt with VenueCard vertical list, skeleton/empty/banner states; /venue/[id] route deleted (CLEAN-03)
+Last activity: 2026-02-19 — Phase 16 Plan 01 complete: interactions table, match trigger v2, send/get interaction RPCs, unmatch support
 
 ## Performance Metrics
 
@@ -53,6 +53,8 @@ Last activity: 2026-02-19 — Phase 15 Plan 04 complete: Home screen rebuilt wit
 | 10m check-in radius | Tighter proximity = higher trust that person is actually there | v2.0 planning |
 | Haversine Formula | Avoid Google Distance Matrix API costs by calculating distance locally | v2.0 planning |
 | 3 interaction types | Options without friction; wave/like are lower commitment than drink | v2.0 planning |
+| TEXT CHECK for interaction_type | Consistent with project pattern; avoids Postgres ENUM | Phase 16 |
+| ON CONFLICT clears unmatched_at | Enables re-matching after unmatch without deleting match row | Phase 16 |
 
 Key patterns established (from v1.x):
 - SECURITY DEFINER RPCs for trust boundaries (check-in, offers, notifications)
@@ -65,13 +67,9 @@ Key patterns established (from v1.x):
 - Google Places API (New) with Field Masking and aggressive caching
 - __DEV__ guard pattern for dev-only store actions (no-ops in production)
 - [Phase 14]: Suppress discover.tsx with href: null — Expo Router auto-discovers all files; href: null hides tab without deleting file
-- [Phase 15-google-places-api-venue-ux]: Use full CREATE OR REPLACE FUNCTION body in proximity threshold migration (not ALTER) for self-contained, idempotent migration
-| Phase 15-google-places-api-venue-ux P01 | 5 | 1 tasks | 1 files |
-- [Phase 15-01]: Google Places API (New) replaces Foursquare; Field Masking excludes rating/openingHours for cost savings
-| Phase 15-google-places-api-venue-ux P03 | 12 | 2 tasks | 4 files |
-- [Phase 15-03]: Check-in always public — no visibility or open_to_meeting toggles
-| Phase 15-google-places-api-venue-ux P04 | 8 | 2 tasks | 3 files |
-- [Phase 15-google-places-api-venue-ux]: Check-in always open_to_meeting: false and visibility: public — no toggles in home screen
+- [Phase 15]: Use full CREATE OR REPLACE FUNCTION body in proximity threshold migration (not ALTER) for self-contained, idempotent migration
+- [Phase 16-01]: ANY-combo matching — trigger checks reverse interaction without type filter
+- [Phase 16-01]: is_match in RPC response — query matches after trigger fires in same transaction
 
 ### Technical Debt
 
@@ -92,13 +90,11 @@ None.
 
 ### What Just Happened
 
-1. Phase 15 Plan 04 complete — Home screen rebuilt, venue detail page deleted
-2. Home screen: vertical VenueCard list, 3 skeleton cards during load, non-blocking location banner
-3. Empty state: "Nenhum lugar encontrado por aqui" with map-outline icon, no retry button
-4. CheckInModal wired: tap check-in button -> bottom sheet -> checkInToPlace(open_to_meeting: false, visibility: 'public')
-5. app/venue/[id].tsx deleted; Stack.Screen entry removed from _layout.tsx (CLEAN-03)
+1. Phase 16 Plan 01 executed — database foundation for interactions system
+2. Created interactions table, match trigger v2, send_interaction RPC, get_received_interactions RPC
+3. Added unmatch support via unmatched_at column on matches
 
 ### What's Next
 
-Continue Phase 15: Google Places API Venue UX
-- Plan 05: (next plan)
+Phase 16 Plan 02: Service layer and TypeScript types for interactions
+- Resume file: .planning/phases/16-interaction-types-wave-like/16-02-PLAN.md
