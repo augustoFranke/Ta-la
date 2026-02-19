@@ -54,6 +54,12 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="discover"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
