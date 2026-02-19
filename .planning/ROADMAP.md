@@ -7,107 +7,188 @@
 - **v1.2 Venue Discovery** — Phases 8-9 (shipped 2026-02-11)
 - **v1.3 Production Ready** — Phases 10-11 (shipped 2026-02-11)
 - **v1.4 API Optimization & Check-in Testing** — Phases 12-13 (shipped 2026-02-12)
+- **v2.0 MVP Relaunch** — Phases 14-19 (target: March 2026)
 
-## Phases
+## v2.0 MVP Relaunch
 
-<details>
-<summary>v1.0 MVP (Phases 1-4) — SHIPPED 2026-02-10</summary>
+**Started:** 2026-02-16
+**Target:** March 2026 — real event with ~50 guests
+**Goal:** Rebuild the experience around hookup-friendly dating discovery with chat, streamlined venue check-in, and multiple interaction types.
 
-- [x] Phase 1: Check-in Trust Core (2/2 plans) — completed 2026-02-10
-- [x] Phase 2: Same-Venue Discovery (2/2 plans) — completed 2026-02-10
-- [x] Phase 3: Safety and Moderation Enforcement (2/2 plans) — completed 2026-02-10
-- [x] Phase 4: Offer and Notification Controls (2/2 plans) — completed 2026-02-10
+### Phase 14: Cleanup & Navigation Restructure
 
-Full details: `.planning/milestones/v1.0-ROADMAP.md`
+**Goal:** Clean foundation — remove dead code, fix logout state leaks, restructure to 4-tab navigation.
 
-</details>
-
-<details>
-<summary>v1.1 Party Prep (Phases 5-7) — SHIPPED 2026-02-11</summary>
-
-- [x] Phase 5: Tech Debt and Party Foundation (1/1 plans) — completed 2026-02-11
-- [x] Phase 6: Party Experience (3/3 plans) — completed 2026-02-11
-- [x] Phase 7: Trust Calibration (1/1 plans) — completed 2026-02-11
-
-</details>
-
-<details>
-<summary>v1.2 Venue Discovery (Phases 8-9) — SHIPPED 2026-02-11</summary>
-
-- [x] Phase 8: Venue Whitelist Filtering (1/1 plans) — completed 2026-02-11
-- [x] Phase 9: Home Screen Polish (1/1 plans) — completed 2026-02-11
-
-</details>
-
-<details>
-<summary>v1.3 Production Ready (Phases 10-11) — SHIPPED 2026-02-11</summary>
-
-- [x] Phase 10: UI Cleanup & Favorites Migration (1/1 plans) — completed 2026-02-11
-- [x] Phase 11: Venue Photos (1/1 plans) — completed 2026-02-11
-
-</details>
-
----
-
-## v1.4 API Optimization & Check-in Testing
-
-**Started:** 2026-02-12
-**Goal:** Drastically reduce Foursquare API usage and enable local check-in testing on Expo Go.
-
-### Phase 12: API Throttling
-
-**Goal:** Foursquare API usage is minimized — search returns 3 venues, photos come from search cache, no redundant fetches.
-
-**Dependencies:** None (self-contained service layer changes)
-
-**Requirements:** API-01, API-02, API-03, API-04
-
-**Plans:** 1 plan
-
-Plans:
-- [x] 12-01-PLAN.md — Throttle search, cap photos, eliminate redundant fetches
-
-**Success Criteria:**
-1. Opening the home screen triggers at most one Foursquare API call per 5-minute cache window
-2. Search response contains at most 3 venues and each venue has at most 1 photo
-3. Opening a venue detail screen makes zero additional Foursquare photo API calls — the photo shown comes from the search cache
-4. Navigating back and forth between home and venue detail does not re-trigger venue search
-
-### Phase 13: Dev Testing Tools
-
-**Goal:** Developer can override GPS location and bypass distance checks to test check-in flow end-to-end on Expo Go without physically visiting a venue.
-
-**Dependencies:** Phase 12 (stable venue fetch behavior before adding dev overrides)
-
-**Requirements:** DEV-01, DEV-02, DEV-03, DEV-04
-
-**Success Criteria:**
-1. A dev settings screen is accessible from the profile tab (visible only when `__DEV__` is true)
-2. Entering custom latitude/longitude in dev settings causes the venue list to refresh with venues near those coordinates
-3. Developer can tap check-in on any venue from the dev-overridden list and the check-in succeeds regardless of real GPS distance
-4. Developer can insert a simulated second user at the same venue and see that user appear in the venue roster
-5. The dev settings screen and all bypass logic are absent from production builds (`__DEV__` guard confirmed)
+**Requirements:** CLEAN-01, CLEAN-02, NAV-01, NAV-02
 
 **Plans:** 2 plans
 
 Plans:
-- [x] 13-01-PLAN.md — Dev settings screen + GPS coordinate override + venue refresh wiring
-- [x] 13-02-PLAN.md — Check-in distance bypass + simulated user roster testing
+- [ ] 14-01-PLAN.md — Remove dead code and reset user-scoped stores on logout (CLEAN-01, CLEAN-02)
+- [ ] 14-02-PLAN.md — Restructure to 4-tab navigation, remove Explorar, add Chat placeholder (NAV-01, NAV-02)
+
+**Success Criteria:**
+1. No dead code functions remain in services
+2. Logout clears all stores — no stale data on re-login
+3. Tab bar shows exactly 4 tabs
+4. App builds and runs on Expo Go without errors
+
+---
+
+### Phase 15: Google Places API & Venue UX
+
+**Goal:** Pivot to Google Places API (New) with optimized caching and direct check-in from venue cards.
+
+**Requirements:** VENUE-DATA-01 through VENUE-DATA-05, VENUE-UX-01 through VENUE-UX-06, CLEAN-03
+
+**Dependencies:** Phase 14 (clean foundation)
+
+**Tasks:**
+1. Implement Google Places API (New) service with Field Masking (exclude rating, openingHours)
+2. Build aggressive caching logic (30-day persistence, city-radius check)
+3. Implement Haversine formula utility for local distance calculation
+4. Add check-in button to venue cards with distance-based state (>10m disabled, <=10m enabled)
+5. Wire CheckInModal to open from venue card tap
+6. Update server RPC proximity threshold from 100m to 10m
+7. Remove `/venue/[id]` route and related legacy code
+
+**Success Criteria:**
+1. Venue discovery uses Google Places API (New)
+2. Distance calculated locally (no API cost)
+3. User can check in directly from home screen venue card
+4. Cards show correct state based on 10m threshold
+5. No venue detail page exists in the app
+
+---
+
+### Phase 16: Interaction Types (Wave & Like)
+
+**Goal:** Users can signal interest via drink offer, wave, or like — all three create pending connections, mutual = match.
+
+**Requirements:** INTERACT-01 through INTERACT-06
+
+**Dependencies:** Phase 14 (clean stores)
+
+**Tasks:**
+1. Add `interaction_type` column to drinks table (or new interactions table) — values: 'drink', 'wave', 'like'
+2. Create server RPC for sending wave/like (similar to `send_drink_offer_v2`)
+3. Update discover screen cards with 3 interaction buttons
+4. Update user profile screen with interaction options
+5. Update drink relations logic to handle all 3 types
+6. Display received interaction type on cards and profile
+
+**Success Criteria:**
+1. User can send drink, wave, or like to another user at same venue
+2. Receiver sees which type was sent
+3. Mutual interaction (any combination) creates a match
+4. UI is clear and doesn't add cognitive friction
+
+---
+
+### Phase 17: Chat System Enhancements
+
+**Goal:** Matched users can chat in real-time with media support and clear status indicators.
+
+**Requirements:** CHAT-01 through CHAT-09
+
+**Dependencies:** Phase 16 (matches must work)
+
+**Tasks:**
+1. Create chat UI — conversation list screen + individual chat screen (4th tab)
+2. Wire Supabase Realtime subscription for message delivery
+3. Implement media support: emojis, photo uploads, and link previews
+4. Add reading indicators (empty dot -> filled dot)
+5. Add profile header to chat (click user to open profile)
+6. Add unread message indicators to tab bar and chat list
+
+**Success Criteria:**
+1. Chat is accessible via the 4th navigation tab
+2. Messages appear in real-time with support for photos and emojis
+3. Reading status is clearly visible via dot indicators
+4. User can access the other person's profile from the chat header
+5. Unread indicators correctly reflect message status
+
+---
+
+### Phase 18: Profile Enhancements
+
+**Goal:** Profiles show Instagram handle and Spotify taste — social proof and conversation starters.
+
+**Requirements:** PROFILE-01 through PROFILE-04
+
+**Dependencies:** None (can run in parallel with Phase 16/17)
+
+**Tasks:**
+1. Add `instagram_handle` and `spotify_data` columns to users table (migration)
+2. Add Instagram input to profile edit screen
+3. Display Instagram handle on public profile and discovery cards
+4. Add Spotify music taste section to profile (manual input or API integration)
+5. Display Spotify info on public profile
+
+**Success Criteria:**
+1. User can add/edit Instagram handle on their profile
+2. Instagram handle visible on discovery cards and public profile
+3. Spotify music taste editable and visible on profile
+
+---
+
+### Phase 19: Discovery Enhancements
+
+**Goal:** Discover screen shows "here now" and "frequents" sections — people who regularly visit this venue.
+
+**Requirements:** DISCOVER-01 through DISCOVER-03
+
+**Dependencies:** Phase 15 (venue UX must be stable)
+
+**Tasks:**
+1. Add "Frequents" section to discover screen below "Here now"
+2. Query historical check-ins (users with >1 check-in at this venue)
+3. Distinct visual treatment for frequents vs. currently checked-in users
+4. Interaction buttons work on frequents cards same as here-now cards
+
+**Success Criteria:**
+1. Discover screen has two sections: "Aqui agora" and "Frequenta este local"
+2. Frequents shows users who checked in >1 time (not necessarily here now)
+3. Visual distinction between the two sections is clear
+
+---
+
+## Phase Dependencies
+
+```
+Phase 14 (Cleanup & Nav)
+  |
+  +---> Phase 15 (Venue UX Overhaul)
+  |       |
+  |       +---> Phase 19 (Discovery: Frequents)
+  |
+  +---> Phase 16 (Interaction Types)
+          |
+          +---> Phase 17 (Chat System)
+
+Phase 18 (Profile: Instagram + Spotify) — independent, parallel
+```
 
 ## Progress
 
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 1. Check-in Trust Core | v1.0 | 2/2 | Complete | 2026-02-10 |
-| 2. Same-Venue Discovery | v1.0 | 2/2 | Complete | 2026-02-10 |
-| 3. Safety and Moderation Enforcement | v1.0 | 2/2 | Complete | 2026-02-10 |
-| 4. Offer and Notification Controls | v1.0 | 2/2 | Complete | 2026-02-10 |
-| 5. Tech Debt and Party Foundation | v1.1 | 1/1 | Complete | 2026-02-11 |
-| 6. Party Experience | v1.1 | 3/3 | Complete | 2026-02-11 |
-| 7. Trust Calibration | v1.1 | 1/1 | Complete | 2026-02-11 |
-| 8. Venue Whitelist Filtering | v1.2 | 1/1 | Complete | 2026-02-11 |
-| 9. Home Screen Polish | v1.2 | 1/1 | Complete | 2026-02-11 |
-| 10. UI Cleanup & Favorites Migration | v1.3 | 1/1 | Complete | 2026-02-11 |
-| 11. Venue Photos | v1.3 | 1/1 | Complete | 2026-02-11 |
-| 12. API Throttling | v1.4 | 1/1 | Complete | 2026-02-12 |
-| 13. Dev Testing Tools | v1.4 | 2/2 | Complete | 2026-02-12 |
+| Phase | Milestone | Status | Target |
+|-------|-----------|--------|--------|
+| 1-4 | v1.0 MVP | Complete | 2026-02-10 |
+| 5-7 | v1.1 Party Prep | Complete | 2026-02-11 |
+| 8-9 | v1.2 Venue Discovery | Complete | 2026-02-11 |
+| 10-11 | v1.3 Production Ready | Complete | 2026-02-11 |
+| 12-13 | v1.4 API Optimization | Complete | 2026-02-12 |
+| 14 | v2.0 Cleanup & Nav | Pending | — |
+| 15 | v2.0 Venue UX | Pending | — |
+| 16 | v2.0 Interaction Types | Pending | — |
+| 17 | v2.0 Chat System | Pending | — |
+| 18 | v2.0 Profile Enhancements | Pending | — |
+| 19 | v2.0 Discovery Enhancements | Pending | — |
+
+## March Event Readiness
+
+**Minimum viable for event:** Phases 14, 15, 16, 17
+**Enhanced experience:** + Phase 18 (Instagram), + Phase 19 (Frequents)
+
+---
+*Last updated: 2026-02-16 — v2.0 MVP Relaunch roadmap created*

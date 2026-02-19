@@ -9,16 +9,6 @@ export async function blockUser(blockerId: string, blockedId: string) {
   if (error) throw error;
 }
 
-/** Unblock a user. Service function ready for future settings UI. */
-export async function unblockUser(blockerId: string, blockedId: string) {
-  const { error } = await supabase
-    .from('blocks')
-    .delete()
-    .eq('blocker_id', blockerId)
-    .eq('blocked_id', blockedId);
-  if (error) throw error;
-}
-
 /** Submit a report. UNIQUE(reporter_id, reported_id) prevents duplicates. */
 export async function reportUser(params: {
   reporterId: string;

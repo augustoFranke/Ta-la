@@ -243,13 +243,6 @@ export function formatDistance(distanceKm: number): string {
 }
 
 /**
- * Retained for compatibility with previous API surface.
- */
-export function getPhotoUrl(): string {
-  return '';
-}
-
-/**
  * Check if a venue is allowed based on blacklist + scoring approach
  */
 function isAllowedVenue(types: string[], name: string): boolean {
@@ -341,9 +334,6 @@ function transformToVenue(
     nightlife_score: nightlifeScore,
   };
 }
-
-// Re-export for backward compatibility
-export { VENUE_TYPE_SCORES, getVenueTypeScore } from '../config/venueTypeScores';
 
 /**
  * Fetch photos for a specific place from Foursquare Places API v3.

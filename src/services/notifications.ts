@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { NotificationPreferences, NotificationCategory } from '../types/database';
+import type { NotificationPreferences } from '../types/database';
 
 /** Fetch notification preferences for a user. Returns null if no row exists. */
 export async function fetchNotificationPreferences(
@@ -26,17 +26,4 @@ export async function upsertNotificationPreferences(
       { onConflict: 'user_id' }
     );
   if (error) throw error;
-}
-
-/** Check if a user should receive a notification for a given category via server-side RPC. */
-export async function checkShouldNotify(
-  userId: string,
-  category: NotificationCategory
-): Promise<boolean> {
-  const { data, error } = await supabase.rpc('should_notify_user', {
-    p_user_id: userId,
-    p_category: category,
-  });
-  if (error) throw error;
-  return data ?? true;
 }
