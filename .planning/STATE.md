@@ -2,21 +2,21 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-02-12)
+See: `.planning/PROJECT.md` (updated 2026-02-16)
 
-**Core value:** People can reliably discover who is at the same venue right now, with trustworthy proximity-based check-in.
-**Current focus:** v1.4 API Optimization & Check-in Testing
+**Core value:** People can discover and connect with someone they've noticed at a venue or campus — without the fear of cold approach and rejection.
+**Current focus:** v2.0 MVP Relaunch
 
 ## Current Position
 
-**Milestone:** v1.4 API Optimization & Check-in Testing
-**Phase:** 13 — Dev Testing Tools
-**Plan:** 02 Complete
-**Status:** Phase 13 Plan 02 complete — v1.4 milestone complete
+**Milestone:** v2.0 MVP Relaunch
+**Phase:** 16 — Interaction Types (Wave & Like)
+**Plan:** 04 of 04 complete
+**Status:** Phase Complete
 
-Progress: [████████████████████] 100% (2/2 phases complete)
+Progress: [████________________] 17% (1/6 phases complete)
 
-Last activity: 2026-02-12 — Phase 13 check-in bypass and simulated user insertion complete
+Last activity: 2026-02-19 — Phase 16 Plan 04 complete: wired interaction system into discover and profile screens
 
 ## Performance Metrics
 
@@ -28,20 +28,15 @@ Last activity: 2026-02-12 — Phase 13 check-in bypass and simulated user insert
 
 **v1.1 Party Prep** (Shipped 2026-02-11)
 - 3 phases (5-7), 5 plans
-- Deep link party invite, presence confirmation, availability toggle, realtime discovery, tech debt cleanup
 
 **v1.2 Venue Discovery** (Shipped 2026-02-11)
 - 2 phases (8-9), 2 plans
-- Whitelist filtering, home screen polish
 
 **v1.3 Production Ready** (Shipped 2026-02-11)
 - 2 phases (10-11), 2 commits
-- UI cleanup, venue photos, favorites migration, all migrations deployed
 
-**v1.4 API Optimization & Check-in Testing** (In progress 2026-02-12)
+**v1.4 API Optimization & Check-in Testing** (Shipped 2026-02-12)
 - 2 phases (12-13), 2 plans
-- Phase 12: API throttling (limit=3, photos capped, hasFetchedRef)
-- Phase 13: Dev GPS override + dev settings screen
 
 ## Accumulated Context
 
@@ -49,20 +44,21 @@ Last activity: 2026-02-12 — Phase 13 check-in bypass and simulated user insert
 
 | Decision | Rationale | Phase |
 |----------|-----------|-------|
-| Remove nightlife scoring filter | Too strict — bars scored 35 rejected by 40 threshold | Phase 8 |
-| Use whitelist-only approach | Simpler, more maintainable, no false negatives | Phase 8 |
-| Add `fields` param to Foursquare search | Photos is "Rich Data", not returned by default | Phase 11 |
-| Support both fsq_id and fsq_place_id | v3 API may return either field name | Phase 11 |
-| Support both geocodes.main and top-level lat/lng | Backward compatibility with both API response formats | Phase 11 |
-| DROP FUNCTION before replacing return type | PostgreSQL limitation — cannot change return type in-place | Deploy fix |
-| Read lastFetched/venues.length via getState() in useCallback | Avoids stale closures without adding reactive deps that cause re-fetch loops | Phase 12 |
-| Use hasFetchedRef to guard auto-fetch effect | Simpler and immune to state timing vs. venues.length === 0 condition | Phase 12 |
-| setDevOverride updates latitude/longitude directly | Ensures all consumers see new coords immediately without extra plumbing | Phase 13 |
-| lastFetched=null as reset signal for hasFetchedRef | Watching lastFetched in useVenues avoids exposing hasFetchedRef externally and adding loop-inducing deps | Phase 13 |
-| Send venue coords as user position in dev bypass | Guarantees ST_DWithin passes at 0m distance with no server-side changes needed | Phase 13 |
-| Dev-test email pattern for simulated user cleanup | dev-test-*@test.local enables bulk delete via .like() without touching real user data | Phase 13 |
+| Preserve venues cache on logout | Venue list is not user-specific; clearing forces expensive re-fetch on next login | Phase 14 |
+| Use .getState() for store calls in signOut | signOut is a regular async function, not a React component | Phase 14 |
+| Google Places API (New) | Pivot from Foursquare for better data quality in Brazil; optimized for cost | v2.0 planning |
+| Chat in MVP | Core to hookup use case — match without chat is dead end | v2.0 planning |
+| 4-tab nav | Dedicated Chat tab improves engagement and accessibility | v2.0 planning |
+| Remove venue detail page | Reduces friction to check-in; venue info is secondary to people | v2.0 planning |
+| 10m check-in radius | Tighter proximity = higher trust that person is actually there | v2.0 planning |
+| Haversine Formula | Avoid Google Distance Matrix API costs by calculating distance locally | v2.0 planning |
+| 3 interaction types | Options without friction; wave/like are lower commitment than drink | v2.0 planning |
+| TEXT CHECK for interaction_type | Consistent with project pattern; avoids Postgres ENUM | Phase 16 |
+| ON CONFLICT clears unmatched_at | Enables re-matching after unmatch without deleting match row | Phase 16 |
+| Drink button visually primary in InteractionButtons | Drink is highest commitment interaction; visual hierarchy guides user behavior | Phase 16 |
+| ReceivedInteractions returns null when empty | Section should only appear when there are interactions to show | Phase 16 |
 
-Key patterns established:
+Key patterns established (from v1.x):
 - SECURITY DEFINER RPCs for trust boundaries (check-in, offers, notifications)
 - Server-authoritative check-in — no client-side distance gating
 - TEXT + CHECK constraint for enums (not Postgres ENUM type)
@@ -70,14 +66,21 @@ Key patterns established:
 - Opt-out notification model (all enabled by default)
 - pt-BR error messages mapped client-side from server codes
 - Deep link hydration: useLocalSearchParams + Supabase fetch when store is empty
-- Foursquare v3 API with explicit `fields` param for rich data (photos, rating, hours)
-- Merge + dedup pattern for combining store photos with API-fetched photos
+- Google Places API (New) with Field Masking and aggressive caching
 - __DEV__ guard pattern for dev-only store actions (no-ops in production)
-- Venue refresh chain: override change → clearVenues() → lastFetched=null → hasFetchedRef reset → auto-fetch retriggers
+- [Phase 14]: Suppress discover.tsx with href: null — Expo Router auto-discovers all files; href: null hides tab without deleting file
+- [Phase 15]: Use full CREATE OR REPLACE FUNCTION body in proximity threshold migration (not ALTER) for self-contained, idempotent migration
+- [Phase 16-01]: ANY-combo matching — trigger checks reverse interaction without type filter
+- [Phase 16-01]: is_match in RPC response — query matches after trigger fires in same transaction
+- [Phase 16-03]: Interaction UI follows PresenceConfirmationModal pattern (Modal, overlay, card)
+- [Phase 16]: Drink-specific code fully replaced by interaction system on both screens
 
 ### Technical Debt
 
-None.
+- 3 dead code functions to remove (Phase 14)
+- Stores not reset on logout (Phase 14)
+- 25+ hardcoded colors not using theme tokens (tracked, not blocking)
+- Database types incomplete (only `users` modeled in `src/types/database.ts`)
 
 ### Blockers
 
@@ -91,20 +94,12 @@ None.
 
 ### What Just Happened
 
-1. Phase 13 Plan 01: Dev GPS Override complete — 2 tasks, 5 files changed
-2. Phase 13 Plan 02: Check-in bypass + simulated user insertion — 2 tasks, 2 files changed
-3. useCheckIn sends venue coords as user position when devOverride active (guarantees ST_DWithin pass)
-4. Dev settings screen gains active venue_id display and "Simular Usuário" section with insert/cleanup
+1. Phase 16 Plan 04 executed — wired interaction system into screens
+2. Discover screen: InteractionButtons on cards, ConfirmationDialog, MatchCelebration, ReceivedInteractions, realtime
+3. Profile screen: InteractionButtons replacing drink actions, ConfirmationDialog, MatchCelebration
+4. Phase 16 complete — all 4 plans done, all INTERACT requirements met
 
 ### What's Next
 
-v1.4 milestone complete. Ready for next milestone.
-
-### Context for Next Session
-
-- Dev GPS override accessible at /(tabs)/profile/dev-settings in __DEV__ builds
-- Activate Dourados (-22.2233, -54.8083) or São Paulo (-23.5534, -46.6913) presets to test venue discovery
-- Check-in bypass active: when devOverride is on, any venue check-in will succeed regardless of real GPS distance
-- After check-in, venue_id visible in dev-settings "Check-in Ativo" section for simulation
-- Simulate second user at venue: enter venue_id in "Simular Usuário" section, tap "Simular check-in"
-- All dev functionality stripped from production via __DEV__ guards
+Phase 16 complete. Plan next phase (chat/messaging or matches).
+- Suggest: `/gsd-plan-phase 17` or `/gsd-verify-work 16`

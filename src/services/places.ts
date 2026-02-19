@@ -1,37 +1,47 @@
 /**
- * Foursquare Places API Service
- * Fetches nearby venues and applies nightlife filtering/scoring
- * Uses the new places-api.foursquare.com endpoint
+ * Google Places API (New) Service
+ * Fetches nearby venues using the Google Places Nearby Search endpoint.
+ * Uses Field Masking to exclude expensive fields (rating, openingHours).
  */
 
 import type { VenueType, Venue } from '../types/database';
 import { isVerifiedVenue, getVerifiedVenueScore } from '../config/verifiedVenues';
-import { VENUE_TYPE_SCORES, getVenueTypeScore } from '../config/venueTypeScores';
+import { VENUE_TYPE_SCORES } from '../config/venueTypeScores';
 
-const FSQ_API_KEY = process.env.EXPO_PUBLIC_FSQ_API_KEY || '';
-const FSQ_BASE_URL = 'https://places-api.foursquare.com';
-const FSQ_API_VERSION = '2025-06-17';
+const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || '';
+const GOOGLE_PLACES_BASE_URL = 'https://places.googleapis.com/v1';
 
 // Default search radius in meters
-const DEFAULT_RADIUS = 10000;
+const DEFAULT_RADIUS = 2000;
 
-// Response fields to request from the API (photos is Rich Data, not returned by default)
-const FSQ_FIELDS = 'fsq_id,name,geocodes,location,categories,distance,photos,rating,price,hours,tel,website';
-
-const FSQ_CATEGORIES = [
-  '13003', // Bar
-  '13065', // Night Club
-  '13014', // Cocktail Bar
-  '13029', // Lounge
-  '13032', // Pub
-  '13064', // Wine Bar
-  '13009', // Brewery
-  '13034', // Restaurant
-  '13025', // Hotel Bar
-  '13063', // Karaoke Bar
-  '13019', // Beer Garden
-  '13057', // Hookah Bar
+// Field Masking — excludes rating and openingHours (expensive fields, VENUE-DATA-02)
+const FIELD_MASK = [
+  'places.id',
+  'places.displayName',
+  'places.location',
+  'places.formattedAddress',
+  'places.photos',
+  'places.primaryType',
+  'places.types',
+  'places.priceLevel',
 ].join(',');
+
+// Types to include in Google Places search request
+const INCLUDED_TYPES = [
+  'bar',
+  'night_club',
+  'pub',
+  'lounge',
+  'cocktail_bar',
+  'wine_bar',
+  'brewery',
+  'beer_garden',
+  'karaoke',
+  'jazz_club',
+  'comedy_club',
+  'music_venue',
+  'restaurant',
+];
 
 // Whitelist of allowed nightlife venue types
 const NIGHTLIFE_TYPES = [
@@ -41,7 +51,7 @@ const NIGHTLIFE_TYPES = [
   'dive_bar', 'gastropub', 'speakeasy', 'tavern', 'beer_bar',
   // Entertainment
   'karaoke', 'jazz_club', 'comedy_club', 'music_venue',
-  // Restaurant (from Foursquare nightlife categories)
+  // Restaurant (from nightlife categories)
   'restaurant',
   // Additional nightlife types
   'cocktail_bar', 'wine_bar', 'beer_garden', 'hookah_bar',
@@ -75,130 +85,121 @@ const BLACKLIST_NAME_PATTERNS = [
   /resort/i, /hostel/i,
 ];
 
-// Map Foursquare category names to our internal type keys
-const FSQ_CATEGORY_MAP: Record<string, string> = {
+// Map Google's snake_case types to our internal type strings
+const GOOGLE_TYPE_MAP: Record<string, string> = {
   'bar': 'bar',
-  'cocktail bar': 'cocktail_bar',
-  'wine bar': 'wine_bar',
-  'beer bar': 'bar',
-  'beer garden': 'beer_garden',
-  'brewery': 'brewery',
-  'dive bar': 'dive_bar',
-  'hotel bar': 'bar',
-  'lounge': 'lounge',
-  'night club': 'night_club',
+  'night_club': 'night_club',
   'pub': 'pub',
-  'hookah bar': 'hookah_bar',
-  'karaoke bar': 'karaoke',
+  'cocktail_bar': 'cocktail_bar',
+  'wine_bar': 'wine_bar',
+  'brewery': 'brewery',
+  'beer_garden': 'beer_garden',
+  'karaoke': 'karaoke',
+  'jazz_club': 'jazz_club',
+  'comedy_club': 'comedy_club',
+  'music_venue': 'music_venue',
   'restaurant': 'restaurant',
-  'café': 'cafe',
-  'coffee shop': 'cafe',
-  'jazz club': 'jazz_club',
-  'comedy club': 'comedy_club',
-  'music venue': 'music_venue',
-  'speakeasy': 'speakeasy',
-  'gastropub': 'gastropub',
+  'lounge': 'lounge',
 };
 
-type FsqCategory = {
-  fsq_category_id: string;
-  name: string;
-  short_name?: string;
-  plural_name?: string;
-  icon?: { prefix: string; suffix: string };
+// Map Google's priceLevel enum strings to integer 0-4
+const PRICE_LEVEL_MAP: Record<string, number> = {
+  'PRICE_LEVEL_FREE': 0,
+  'PRICE_LEVEL_INEXPENSIVE': 1,
+  'PRICE_LEVEL_MODERATE': 2,
+  'PRICE_LEVEL_EXPENSIVE': 3,
+  'PRICE_LEVEL_VERY_EXPENSIVE': 4,
 };
 
-type FsqPhoto = {
+type GooglePhoto = {
+  name: string; // e.g. "places/{place_id}/photos/{photo_reference}"
+};
+
+type GooglePlace = {
   id: string;
-  prefix: string;
-  suffix: string;
-  width: number;
-  height: number;
+  displayName?: { text: string };
+  location?: { latitude: number; longitude: number };
+  formattedAddress?: string;
+  photos?: GooglePhoto[];
+  primaryType?: string;
+  types?: string[];
+  priceLevel?: string;
 };
 
-type FsqPlace = {
-  fsq_place_id?: string;
-  fsq_id?: string;
-  name: string;
-  latitude?: number;
-  longitude?: number;
-  geocodes?: {
-    main?: { latitude: number; longitude: number };
-  };
-  location?: {
-    formatted_address?: string;
-    address?: string;
-    locality?: string;
-    region?: string;
-    country?: string;
-  };
-  categories?: FsqCategory[];
-  distance?: number;
-  photos?: FsqPhoto[];
-  rating?: number;
-  price?: number;
-  hours?: {
-    open_now?: boolean;
-  };
-  tel?: string;
-  website?: string;
-};
-
-type FsqSearchResponse = {
-  results?: FsqPlace[];
+type GooglePlacesResponse = {
+  places?: GooglePlace[];
 };
 
 /**
- * Build a photo URL from Foursquare photo prefix/suffix
+ * Build a photo URL from a Google Places photo name
  */
-function buildPhotoUrl(photo: FsqPhoto, size: string = '400x400'): string {
-  return `${photo.prefix}${size}${photo.suffix}`;
+function buildPhotoUrl(photoName: string): string {
+  return `${GOOGLE_PLACES_BASE_URL}/${photoName}/media?maxWidthPx=600&key=${GOOGLE_API_KEY}`;
 }
 
 /**
- * Normalize Foursquare categories to our internal type strings
+ * Normalize Google Places types to our internal type strings
  */
-function normalizeFsqTypes(place: FsqPlace): string[] {
-  const categories = place.categories ?? [];
+function normalizeGoogleTypes(place: GooglePlace): string[] {
+  const allTypes = place.types ?? [];
+  const primary = place.primaryType;
   const types: string[] = [];
 
-  for (const cat of categories) {
-    const catName = (cat.name || '').toLowerCase();
-    const mapped = FSQ_CATEGORY_MAP[catName];
+  // Primary type first
+  if (primary) {
+    const mapped = GOOGLE_TYPE_MAP[primary];
+    if (mapped) types.push(mapped);
+    else types.push(primary);
+  }
+
+  for (const t of allTypes) {
+    if (t === primary) continue;
+    const mapped = GOOGLE_TYPE_MAP[t];
     if (mapped) {
       types.push(mapped);
     } else {
-      // Convert to snake_case
-      types.push(catName.replace(/\s+/g, '_'));
+      types.push(t);
     }
   }
 
   return Array.from(new Set(types));
 }
 
-async function fetchFsqPlaces(
+async function fetchGooglePlaces(
   latitude: number,
   longitude: number,
   radius: number
-): Promise<FsqPlace[]> {
-  const safeRadius = Math.max(100, Math.min(radius, 100000));
-  const url = `${FSQ_BASE_URL}/places/search?ll=${latitude},${longitude}&radius=${safeRadius}&categories=${FSQ_CATEGORIES}&fields=${FSQ_FIELDS}&limit=3`;
+): Promise<GooglePlace[]> {
+  const safeRadius = Math.max(100, Math.min(radius, 50000));
 
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${FSQ_API_KEY}`,
-      Accept: 'application/json',
-      'X-Places-Api-Version': FSQ_API_VERSION,
+  const body = {
+    includedTypes: INCLUDED_TYPES,
+    maxResultCount: 20,
+    locationRestriction: {
+      circle: {
+        center: { latitude, longitude },
+        radius: safeRadius,
+      },
     },
+  };
+
+  const response = await fetch(`${GOOGLE_PLACES_BASE_URL}/places:searchNearby`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': GOOGLE_API_KEY,
+      'X-Goog-FieldMask': FIELD_MASK,
+    },
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Foursquare API error ${response.status}: ${text}`);
+    throw new Error(`Google Places API error ${response.status}: ${text}`);
   }
 
-  const data = (await response.json()) as FsqSearchResponse;
-  return data.results ?? [];
+  const data = (await response.json()) as GooglePlacesResponse;
+  return data.places ?? [];
 }
 
 /**
@@ -206,7 +207,7 @@ async function fetchFsqPlaces(
  */
 function determineVenueType(types: string[]): VenueType {
   if (!types || types.length === 0) return 'establishment';
-  return types[0];
+  return types[0] as VenueType;
 }
 
 /**
@@ -243,14 +244,7 @@ export function formatDistance(distanceKm: number): string {
 }
 
 /**
- * Retained for compatibility with previous API surface.
- */
-export function getPhotoUrl(): string {
-  return '';
-}
-
-/**
- * Check if a venue is allowed based on blacklist + scoring approach
+ * Check if a venue is allowed based on blacklist + nightlife filter (VENUE-DATA-05)
  */
 function isAllowedVenue(types: string[], name: string): boolean {
   if (isVerifiedVenue(name)) {
@@ -283,57 +277,52 @@ function calculateNightlifeScore(types: string[], name: string): number {
 }
 
 function transformToVenue(
-  place: FsqPlace,
+  place: GooglePlace,
   userLat: number,
   userLng: number
 ): (Venue & { distance: number; nightlife_score: number }) | null {
-  const name = (place.name || '').trim();
+  const name = (place.displayName?.text || '').trim();
   if (!name) return null;
 
-  // Resolve place ID (v3 returns fsq_id, legacy returns fsq_place_id)
-  const placeId = place.fsq_id || place.fsq_place_id;
+  const placeId = place.id;
   if (!placeId) return null;
 
-  // Resolve coordinates (v3 returns geocodes.main, legacy returns top-level lat/lng)
-  const lat = place.latitude ?? place.geocodes?.main?.latitude;
-  const lng = place.longitude ?? place.geocodes?.main?.longitude;
+  const lat = place.location?.latitude;
+  const lng = place.location?.longitude;
   if (typeof lat !== 'number' || typeof lng !== 'number') {
     return null;
   }
 
-  const types = normalizeFsqTypes(place);
+  const types = normalizeGoogleTypes(place);
   if (!isAllowedVenue(types, name)) {
     return null;
   }
 
-  // Use Foursquare-provided distance (meters) or calculate
-  const distanceKm = place.distance != null
-    ? place.distance / 1000
-    : calculateDistance(userLat, userLng, lat, lng);
-
+  const distanceKm = calculateDistance(userLat, userLng, lat, lng);
   const nightlifeScore = calculateNightlifeScore(types, name);
 
-  // Extract photos
-  const photos = (place.photos ?? []).slice(0, 1).map((p) => buildPhotoUrl(p, '600x400'));
-  const photoUrl = photos[0] ?? null;
+  // Take at most 1 photo
+  const photoName = place.photos?.[0]?.name;
+  const photoUrl = photoName ? buildPhotoUrl(photoName) : null;
+  const photos = photoUrl ? [photoUrl] : [];
 
-  // Map Foursquare rating (0-10) to 0-5 scale
-  const rating = place.rating != null ? Math.round((place.rating / 2) * 10) / 10 : null;
+  // Map Google price level enum to integer
+  const priceLevel = place.priceLevel != null ? (PRICE_LEVEL_MAP[place.priceLevel] ?? null) : null;
 
   return {
     id: placeId,
     place_id: placeId,
     name,
-    address: place.location?.formatted_address || place.location?.address || 'Endereço não informado',
+    address: place.formattedAddress || 'Endereço não informado',
     latitude: lat,
     longitude: lng,
     type: determineVenueType(types),
     types,
     photo_url: photoUrl,
     photo_urls: photos,
-    rating,
-    price_level: place.price ?? null,
-    open_now: place.hours?.open_now ?? null,
+    rating: null, // Excluded via Field Masking (VENUE-DATA-02)
+    price_level: priceLevel,
+    open_now: null, // Excluded via Field Masking (VENUE-DATA-02)
     active_users_count: 0,
     cached_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
@@ -342,40 +331,9 @@ function transformToVenue(
   };
 }
 
-// Re-export for backward compatibility
-export { VENUE_TYPE_SCORES, getVenueTypeScore } from '../config/venueTypeScores';
-
 /**
- * Fetch photos for a specific place from Foursquare Places API v3.
- * Used on venue detail screen for richer photo gallery.
- */
-export async function fetchPlacePhotos(
-  fsqId: string,
-  limit: number = 10
-): Promise<string[]> {
-  if (!FSQ_API_KEY || !fsqId) return [];
-
-  try {
-    const url = `${FSQ_BASE_URL}/places/${fsqId}/photos?limit=${limit}`;
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${FSQ_API_KEY}`,
-        Accept: 'application/json',
-        'X-Places-Api-Version': FSQ_API_VERSION,
-      },
-    });
-
-    if (!response.ok) return [];
-
-    const photos = (await response.json()) as FsqPhoto[];
-    return photos.map((p) => buildPhotoUrl(p, '600x400'));
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Search for nearby nightlife venues via Foursquare Places API v3.
+ * Search for nearby nightlife venues via Google Places API (New).
+ * Returns venues in Google's relevance order (not sorted by distance).
  */
 export async function searchNearbyVenues(
   latitude: number,
@@ -383,21 +341,20 @@ export async function searchNearbyVenues(
   radius: number = DEFAULT_RADIUS,
   options: {
     skipNightlifeFilter?: boolean;
-    includeVerifiedVenues?: boolean;
     openNowOnly?: boolean;
   } = {}
 ): Promise<{ venues: (Venue & { distance: number; nightlife_score?: number })[]; error: string | null }> {
-  if (!FSQ_API_KEY) {
+  if (!GOOGLE_API_KEY) {
     return {
       venues: [],
-      error: 'Foursquare API key não configurada',
+      error: 'Google Places API key não configurada',
     };
   }
 
   try {
-    const places = await fetchFsqPlaces(latitude, longitude, radius);
+    const places = await fetchGooglePlaces(latitude, longitude, radius);
 
-    let venues = places
+    const venues = places
       .map((place) => transformToVenue(place, latitude, longitude))
       .filter((venue): venue is Venue & { distance: number; nightlife_score: number } => venue !== null);
 
@@ -408,14 +365,13 @@ export async function searchNearbyVenues(
       return acc;
     }, [] as (Venue & { distance: number; nightlife_score: number })[]);
 
-    uniqueVenues.sort((a, b) => a.distance - b.distance);
-
+    // Return in Google's relevance order (no distance sort)
     return {
       venues: uniqueVenues,
       error: null,
     };
   } catch (error) {
-    console.error('Error fetching venues from Foursquare:', error);
+    console.error('Error fetching venues from Google Places:', error);
     return {
       venues: [],
       error: 'Erro ao buscar venues. Verifique sua conexão.',

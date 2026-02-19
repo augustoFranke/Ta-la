@@ -24,12 +24,11 @@ import { Card } from '../../src/components/ui/Card';
 import { Button } from '../../src/components/ui/Button';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
-import {
-  fetchDrinkRelations,
-  respondDrinkOffer,
-  sendDrinkOffer,
-  type DrinkRelationState,
-} from '../../src/services/drinks';
+import { sendInteraction } from '../../src/services/interactions';
+import { InteractionButtons } from '../../src/components/interaction/InteractionButtons';
+import { ConfirmationDialog } from '../../src/components/interaction/ConfirmationDialog';
+import { MatchCelebration } from '../../src/components/interaction/MatchCelebration';
+import type { InteractionType } from '../../src/types/database';
 import { blockUser, reportUser } from '../../src/services/moderation';
 import { useBlockStore } from '../../src/stores/blockStore';
 import { type ReportReason, REPORT_REASONS } from '../../src/types/database';
@@ -64,17 +63,24 @@ export default function UserProfileScreen() {
 
   const resolvedUserId = useMemo(() => (Array.isArray(id) ? id[0] : id), [id]);
   const userId = user?.id;
+  const currentUserName = user?.name ?? 'Voce';
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
-  const [drinkState, setDrinkState] = useState<DrinkRelationState>('none');
-  const [incomingDrinkId, setIncomingDrinkId] = useState<string | null>(null);
-  const [isActionLoading, setIsActionLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState<ReportReason>('comportamento_inadequado');
   const [reportDetails, setReportDetails] = useState('');
+
+  // Interaction state
+  const [pendingInteraction, setPendingInteraction] = useState<InteractionType | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [matchData, setMatchData] = useState<{
+    matchedUserName: string;
+    matchedUserPhotoUrl: string | null;
+  } | null>(null);
+  const [sentTypes, setSentTypes] = useState<Set<InteractionType>>(new Set());
 
   const { addBlockedId } = useBlockStore();
 
@@ -115,65 +121,59 @@ export default function UserProfileScreen() {
     }
   }, [resolvedUserId]);
 
-  const fetchDrinkState = useCallback(async () => {
-    if (!userId || !resolvedUserId) return;
-    try {
-      const relations = await fetchDrinkRelations(userId, [resolvedUserId]);
-      const relation = relations[resolvedUserId];
-      setDrinkState(relation?.state ?? 'none');
-      setIncomingDrinkId(relation?.incomingDrinkId ?? null);
-    } catch (err) {
-      console.error('Erro ao carregar status de drink:', err);
-    }
-  }, [userId, resolvedUserId]);
-
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
 
   useEffect(() => {
     fetchActiveCheckIn();
-    fetchDrinkState();
-  }, [fetchActiveCheckIn, fetchDrinkState]);
+  }, [fetchActiveCheckIn]);
 
-  const handleSendDrink = useCallback(async () => {
-    if (!userId || !resolvedUserId) return;
-    if (!activeCheckIn?.venue_id) {
-      Alert.alert('Check-in necessário', 'Faça check-in para pagar um drink.');
-      return;
-    }
+  // Interaction handlers
+  const handleInteract = useCallback((type: InteractionType) => {
+    setPendingInteraction(type);
+  }, []);
 
-    setIsActionLoading(true);
+  const handleConfirmInteraction = useCallback(async () => {
+    if (!pendingInteraction || !activeCheckIn?.venue_id || !resolvedUserId) return;
+
+    setIsSending(true);
     try {
-      await sendDrinkOffer({
+      const result = await sendInteraction({
         receiverId: resolvedUserId,
         venueId: activeCheckIn.venue_id,
+        type: pendingInteraction,
       });
-      await fetchDrinkState();
-      Alert.alert('Drink enviado', 'Agora é só aguardar a resposta.');
-    } catch (err: any) {
-      Alert.alert('Erro', err?.message || 'Não foi possível enviar o drink.');
-    } finally {
-      setIsActionLoading(false);
-    }
-  }, [userId, resolvedUserId, activeCheckIn?.venue_id, fetchDrinkState]);
 
-  const handleRespondDrink = useCallback(async (action: 'accepted' | 'declined') => {
-    if (!incomingDrinkId) return;
-
-    setIsActionLoading(true);
-    try {
-      await respondDrinkOffer({
-        drinkId: incomingDrinkId,
-        action,
+      // Update sent types for button feedback
+      setSentTypes((prev) => {
+        const next = new Set(prev);
+        next.add(pendingInteraction);
+        return next;
       });
-      await fetchDrinkState();
+
+      // Check for match
+      if (result.is_match) {
+        setMatchData({
+          matchedUserName: profile?.name ?? '',
+          matchedUserPhotoUrl: photos.length > 0 ? photos[0].url : null,
+        });
+      }
     } catch (err: any) {
-      Alert.alert('Erro', err?.message || 'Não foi possível responder o drink.');
+      Alert.alert('Erro', err.message);
     } finally {
-      setIsActionLoading(false);
+      setIsSending(false);
+      setPendingInteraction(null);
     }
-  }, [incomingDrinkId, fetchDrinkState]);
+  }, [pendingInteraction, activeCheckIn?.venue_id, resolvedUserId, profile, photos]);
+
+  const handleCancelInteraction = useCallback(() => {
+    setPendingInteraction(null);
+  }, []);
+
+  const handleDismissMatch = useCallback(() => {
+    setMatchData(null);
+  }, []);
 
   const handleBlock = useCallback(async () => {
     if (!userId || !resolvedUserId) return;
@@ -282,43 +282,15 @@ export default function UserProfileScreen() {
 
             <Card style={styles.sectionCard}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Interesse</Text>
-              {drinkState === 'matched' ? (
-                <Button title="Conectados" disabled />
-              ) : drinkState === 'sent_pending' ? (
-                <Button title="Drink enviado" disabled />
-              ) : drinkState === 'received_pending' ? (
-                <View style={styles.actionRow}>
-                  <Button
-                    title="Aceitar drink"
-                    onPress={() => handleRespondDrink('accepted')}
-                    style={styles.actionButton}
-                    loading={isActionLoading}
-                    disabled={isActionLoading}
-                  />
-                  <Button
-                    title="Recusar"
-                    variant="outline"
-                    onPress={() => handleRespondDrink('declined')}
-                    style={styles.actionButton}
-                    disabled={isActionLoading}
-                  />
-                </View>
-              ) : drinkState === 'received_accepted' ? (
-                <Button
-                  title="Retribuir drink"
-                  onPress={handleSendDrink}
-                  loading={isActionLoading}
-                  disabled={isActionLoading}
-                />
-              ) : drinkState === 'sent_accepted' ? (
-                <Button title="Drink aceito" disabled />
-              ) : (
-                <Button
-                  title={activeCheckIn?.venue_id ? 'Pagar um drink' : 'Faça check-in para drink'}
-                  onPress={handleSendDrink}
-                  loading={isActionLoading}
-                  disabled={isActionLoading || !activeCheckIn?.venue_id}
-                />
+              <InteractionButtons
+                onInteract={handleInteract}
+                sentTypes={sentTypes}
+                disabled={!activeCheckIn?.venue_id}
+              />
+              {!activeCheckIn?.venue_id && (
+                <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+                  Faca check-in no mesmo local para interagir
+                </Text>
               )}
             </Card>
 
@@ -347,6 +319,27 @@ export default function UserProfileScreen() {
         )}
       </ScrollView>
 
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        visible={pendingInteraction !== null}
+        userName={profile?.name ?? ''}
+        interactionType={pendingInteraction ?? 'drink'}
+        onConfirm={handleConfirmInteraction}
+        onCancel={handleCancelInteraction}
+        loading={isSending}
+      />
+
+      {/* Match Celebration */}
+      <MatchCelebration
+        visible={matchData !== null}
+        currentUserName={currentUserName}
+        currentUserPhotoUrl={null}
+        matchedUserName={matchData?.matchedUserName ?? ''}
+        matchedUserPhotoUrl={matchData?.matchedUserPhotoUrl ?? null}
+        onDismiss={handleDismissMatch}
+      />
+
+      {/* Report Modal */}
       <Modal
         visible={reportModalVisible}
         transparent
@@ -472,6 +465,11 @@ const styles = StyleSheet.create({
   },
   sectionText: {
     fontSize: 14,
+  },
+  helperText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
   },
   chipsRow: {
     flexDirection: 'row',
