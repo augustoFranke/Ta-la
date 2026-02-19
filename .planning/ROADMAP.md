@@ -21,7 +21,7 @@
 
 **Requirements:** CLEAN-01, CLEAN-02, NAV-01, NAV-02
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 14-01-PLAN.md — Remove dead code and reset user-scoped stores on logout (CLEAN-01, CLEAN-02)
@@ -43,14 +43,14 @@ Plans:
 
 **Dependencies:** Phase 14 (clean foundation)
 
-**Tasks:**
-1. Implement Google Places API (New) service with Field Masking (exclude rating, openingHours)
-2. Build aggressive caching logic (30-day persistence, city-radius check)
-3. Implement Haversine formula utility for local distance calculation
-4. Add check-in button to venue cards with distance-based state (>10m disabled, <=10m enabled)
-5. Wire CheckInModal to open from venue card tap
-6. Update server RPC proximity threshold from 100m to 10m
-7. Remove `/venue/[id]` route and related legacy code
+**Plans:** 5 plans
+
+Plans:
+- [ ] 15-01-PLAN.md — Replace Foursquare with Google Places API (New) + Field Masking + nightlife filtering
+- [ ] 15-02-PLAN.md — 30-day aggressive cache with city-radius invalidation + client-side Haversine distance
+- [ ] 15-03-PLAN.md — Rebuild VenueCard layout + lightweight check-in bottom sheet (no toggles)
+- [ ] 15-04-PLAN.md — Home screen wiring: venue cards, skeleton, empty state, location banner, delete /venue/[id]
+- [ ] 15-05-PLAN.md — Update check_in_to_place_v2 RPC proximity threshold from 100m to 10m
 
 **Success Criteria:**
 1. Venue discovery uses Google Places API (New)
@@ -178,7 +178,7 @@ Phase 18 (Profile: Instagram + Spotify) — independent, parallel
 | 8-9 | v1.2 Venue Discovery | Complete | 2026-02-11 |
 | 10-11 | v1.3 Production Ready | Complete | 2026-02-11 |
 | 12-13 | v1.4 API Optimization | Complete | 2026-02-12 |
-| 14 | 1/2 | In Progress|  |
+| 14 | 1/2 | Complete    | 2026-02-19 |
 | 15 | v2.0 Venue UX | Pending | — |
 | 16 | v2.0 Interaction Types | Pending | — |
 | 17 | v2.0 Chat System | Pending | — |
