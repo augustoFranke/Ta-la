@@ -12,6 +12,10 @@ import {
 } from '../services/auth';
 import { supabase } from '../services/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { useCheckInStore } from '../stores/checkInStore';
+import { useBlockStore } from '../stores/blockStore';
+import { useNotificationStore } from '../stores/notificationStore';
+import { useVenueStore } from '../stores/venueStore';
 import type { User } from '../types/database';
 
 const DEV_SKIP_AUTH = __DEV__ && process.env.EXPO_PUBLIC_DEV_SKIP_AUTH === 'true';
@@ -234,6 +238,10 @@ export function useAuth() {
     setLoading(true);
     try {
       await supabaseSignOut();
+      useCheckInStore.getState().reset();
+      useBlockStore.getState().reset();
+      useNotificationStore.getState().reset();
+      useVenueStore.getState().setSelectedVenue(null);
       reset();
       return { success: true };
     } catch (error: any) {
