@@ -11,12 +11,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-16)
 
 **Milestone:** v2.0 MVP Relaunch
 **Phase:** 14 — Cleanup & Navigation Restructure
-**Plan:** 01 of 03 complete
+**Plan:** 02 of 03 complete
 **Status:** Executing Phase 14
 
 Progress: [____________________] 0% (0/6 phases complete)
 
-Last activity: 2026-02-19 — Phase 14 Plan 01 complete: dead code removal and logout store reset
+Last activity: 2026-02-19 — Phase 14 Plan 02 complete: 4-tab navigation restructure, Chat placeholder, Explorar removed
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Key patterns established (from v1.x):
 - Deep link hydration: useLocalSearchParams + Supabase fetch when store is empty
 - Google Places API (New) with Field Masking and aggressive caching
 - __DEV__ guard pattern for dev-only store actions (no-ops in production)
+- [Phase 14]: Suppress discover.tsx with href: null — Expo Router auto-discovers all files; href: null hides tab without deleting file
 
 ### Technical Debt
 
@@ -84,13 +85,12 @@ None.
 
 ### What Just Happened
 
-1. Phase 14 Plan 01 complete — dead code removal and logout store reset
-2. Removed getPhotoUrl, checkShouldNotify, unblockUser from services
-3. Removed redundant VENUE_TYPE_SCORES/getVenueTypeScore re-export from places.ts
-4. signOut now resets checkIn, block, notification stores and clears selectedVenue
+1. Phase 14 Plan 02 complete — 4-tab navigation restructure
+2. Created app/(tabs)/chat.tsx — "Em breve" placeholder with lock icon
+3. Removed Explorar tab from _layout.tsx and deleted explore.tsx
+4. Suppressed discover.tsx with href: null (Expo Router was auto-registering it as 5th tab)
 
 ### What's Next
 
 Continue Phase 14: Cleanup & Navigation Restructure
-- Plan 02: Remove Explorar tab
-- Plan 03: Restructure to 4-tab navigation (Inicio, Parceiros, Chat, Minha conta)
+- Plan 03: (next plan)
