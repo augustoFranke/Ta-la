@@ -158,6 +158,33 @@ export const NOTIFICATION_CATEGORIES: readonly { value: NotificationCategory; la
   { value: 'venue_offers', label: 'Ofertas do local' },
 ] as const;
 
+// Interaction types
+export type InteractionType = 'drink' | 'wave' | 'like';
+
+export interface Interaction {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  venue_id: string;
+  interaction_type: InteractionType;
+  created_at: string;
+}
+
+export interface ReceivedInteraction {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_photo_url: string | null;
+  interaction_type: InteractionType;
+  created_at: string;
+}
+
+export const INTERACTION_LABELS: Record<InteractionType, string> = {
+  drink: 'um drink',
+  wave: 'uma onda',
+  like: 'uma curtida',
+};
+
 // Venue types
 export type VenueType = string;
 
