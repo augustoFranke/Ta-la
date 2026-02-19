@@ -69,13 +69,13 @@ Plans:
 
 **Dependencies:** Phase 14 (clean stores)
 
-**Tasks:**
-1. Add `interaction_type` column to drinks table (or new interactions table) — values: 'drink', 'wave', 'like'
-2. Create server RPC for sending wave/like (similar to `send_drink_offer_v2`)
-3. Update discover screen cards with 3 interaction buttons
-4. Update user profile screen with interaction options
-5. Update drink relations logic to handle all 3 types
-6. Display received interaction type on cards and profile
+**Plans:** 4 plans
+
+Plans:
+- [ ] 16-01-PLAN.md — Database: interactions table, match trigger v2, unmatch support, send_interaction RPC, get_received_interactions RPC
+- [ ] 16-02-PLAN.md — Service layer: TypeScript types, interactions service, useInteractionRealtime hook
+- [ ] 16-03-PLAN.md — UI components: ConfirmationDialog, InteractionButtons, MatchCelebration, ReceivedInteractions
+- [ ] 16-04-PLAN.md — Screen wiring: discover screen + user profile with full interaction flow
 
 **Success Criteria:**
 1. User can send drink, wave, or like to another user at same venue
@@ -179,7 +179,7 @@ Phase 18 (Profile: Instagram + Spotify) — independent, parallel
 | 10-11 | v1.3 Production Ready | Complete | 2026-02-11 |
 | 12-13 | v1.4 API Optimization | Complete | 2026-02-12 |
 | 14 | 1/2 | Complete    | 2026-02-19 |
-| 15 | 5/5 | Complete   | 2026-02-19 |
+| 15 | 5/5 | Complete    | 2026-02-19 |
 | 16 | v2.0 Interaction Types | Pending | — |
 | 17 | v2.0 Chat System | Pending | — |
 | 18 | v2.0 Profile Enhancements | Pending | — |
