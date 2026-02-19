@@ -11,12 +11,12 @@ See: `.planning/PROJECT.md` (updated 2026-02-16)
 
 **Milestone:** v2.0 MVP Relaunch
 **Phase:** 15 — Google Places API Venue UX
-**Plan:** 03 of N complete
+**Plan:** 04 of N complete
 **Status:** In progress
 
 Progress: [____________________] 0% (0/6 phases complete)
 
-Last activity: 2026-02-19 — Phase 15 Plan 03 complete: VenueCard rebuild with hero photo + check-in button states, CheckInModal replaced with lightweight bottom sheet
+Last activity: 2026-02-19 — Phase 15 Plan 04 complete: Home screen rebuilt with VenueCard vertical list, skeleton/empty/banner states; /venue/[id] route deleted (CLEAN-03)
 
 ## Performance Metrics
 
@@ -70,6 +70,8 @@ Key patterns established (from v1.x):
 - [Phase 15-01]: Google Places API (New) replaces Foursquare; Field Masking excludes rating/openingHours for cost savings
 | Phase 15-google-places-api-venue-ux P03 | 12 | 2 tasks | 4 files |
 - [Phase 15-03]: Check-in always public — no visibility or open_to_meeting toggles
+| Phase 15-google-places-api-venue-ux P04 | 8 | 2 tasks | 3 files |
+- [Phase 15-google-places-api-venue-ux]: Check-in always open_to_meeting: false and visibility: public — no toggles in home screen
 
 ### Technical Debt
 
@@ -90,13 +92,13 @@ None.
 
 ### What Just Happened
 
-1. Phase 15 Plan 03 complete — VenueCard UX rebuild and CheckInModal simplification
-2. VenueCard: hero photo top, name+distance below, full-width check-in button at bottom
-3. Check-in button: 3 states based on 10m threshold and activeCheckInPlaceId
-4. CheckInModal: slide-up bottom sheet, no toggles, onConfirm() always public check-in
-5. VenueCarousel updated to pass new props; app/venue/[id].tsx updated for no-arg onConfirm
+1. Phase 15 Plan 04 complete — Home screen rebuilt, venue detail page deleted
+2. Home screen: vertical VenueCard list, 3 skeleton cards during load, non-blocking location banner
+3. Empty state: "Nenhum lugar encontrado por aqui" with map-outline icon, no retry button
+4. CheckInModal wired: tap check-in button -> bottom sheet -> checkInToPlace(open_to_meeting: false, visibility: 'public')
+5. app/venue/[id].tsx deleted; Stack.Screen entry removed from _layout.tsx (CLEAN-03)
 
 ### What's Next
 
 Continue Phase 15: Google Places API Venue UX
-- Plan 04: (next plan)
+- Plan 05: (next plan)

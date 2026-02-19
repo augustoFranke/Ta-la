@@ -36,7 +36,7 @@
 
 ### Venue UX Overhaul (VENUE-UX)
 
-- [ ] **VENUE-UX-01**: Remove venue detail page — no more `/venue/[id]` navigation
+- [x] **VENUE-UX-01**: Remove venue detail page — no more `/venue/[id]` navigation
 - [x] **VENUE-UX-02**: Check-in button lives directly on venue cards on the home screen
 - [x] **VENUE-UX-03**: When user is >10m from venue, card shows "Voce esta longe" (disabled state)
 - [x] **VENUE-UX-04**: When user is <=10m from venue, card shows "Fazer check-in" (enabled state)
@@ -68,7 +68,7 @@
 
 - [x] **CLEAN-01**: Remove dead code: `getPhotoUrl()`, `checkShouldNotify()`, `unblockUser()`, redundant re-export in places.ts
 - [x] **CLEAN-02**: Reset all user-scoped stores on logout (checkIn, venue, block, notification)
-- [ ] **CLEAN-03**: Remove `/venue/[id]` route and associated components after venue UX overhaul
+- [x] **CLEAN-03**: Remove `/venue/[id]` route and associated components after venue UX overhaul
 
 ## Existing Capabilities (Validated, No Changes Needed)
 
