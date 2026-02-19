@@ -20,12 +20,13 @@ import { useVenueRealtime } from '../../src/hooks/useVenueRealtime';
 import { usePresenceConfirmation } from '../../src/hooks/usePresenceConfirmation';
 import { PresenceConfirmationModal } from '../../src/components/PresenceConfirmationModal';
 import { useRouter } from 'expo-router';
-import {
-  fetchDrinkRelations,
-  respondDrinkOffer,
-  sendDrinkOffer,
-  type DrinkRelation,
-} from '../../src/services/drinks';
+import { sendInteraction, fetchReceivedInteractions } from '../../src/services/interactions';
+import { useInteractionRealtime } from '../../src/hooks/useInteractionRealtime';
+import { InteractionButtons } from '../../src/components/interaction/InteractionButtons';
+import { ConfirmationDialog } from '../../src/components/interaction/ConfirmationDialog';
+import { MatchCelebration } from '../../src/components/interaction/MatchCelebration';
+import { ReceivedInteractions } from '../../src/components/interaction/ReceivedInteractions';
+import type { InteractionType, ReceivedInteraction } from '../../src/types/database';
 import { blockUser, fetchBlockedIds } from '../../src/services/moderation';
 import { useBlockStore } from '../../src/stores/blockStore';
 
@@ -69,10 +70,23 @@ export default function DiscoverScreen() {
   const [searchResults, setSearchResults] = useState<BasicUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [drinkRelations, setDrinkRelations] = useState<Record<string, DrinkRelation>>({});
-  const [actionTargetId, setActionTargetId] = useState<string | null>(null);
+
+  // Interaction state
+  const [pendingInteraction, setPendingInteraction] = useState<{
+    type: InteractionType;
+    userId: string;
+    userName: string;
+  } | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [matchData, setMatchData] = useState<{
+    matchedUserName: string;
+    matchedUserPhotoUrl: string | null;
+  } | null>(null);
+  const [receivedInteractions, setReceivedInteractions] = useState<ReceivedInteraction[]>([]);
+  const [sentInteractions, setSentInteractions] = useState<Record<string, Set<InteractionType>>>({});
 
   const userId = user?.id;
+  const currentUserName = user?.name ?? 'Voce';
 
   const loadVenueUsers = useCallback(async () => {
     if (!userId || !activeCheckIn?.venue_id) {
@@ -99,8 +113,26 @@ export default function DiscoverScreen() {
     }
   }, [userId, activeCheckIn?.venue_id]);
 
+  // Load received interactions
+  const loadReceivedInteractions = useCallback(async () => {
+    if (!userId || !activeCheckIn?.venue_id) {
+      setReceivedInteractions([]);
+      return;
+    }
+
+    try {
+      const data = await fetchReceivedInteractions(userId, activeCheckIn.venue_id);
+      setReceivedInteractions(data);
+    } catch (err) {
+      console.error('Erro ao carregar interacoes recebidas:', err);
+    }
+  }, [userId, activeCheckIn?.venue_id]);
+
   // Realtime: auto-refetch venue roster on check-in/out changes
   useVenueRealtime(activeCheckIn?.venue_id ?? null, loadVenueUsers);
+
+  // Realtime: auto-refetch received interactions on new interaction events
+  useInteractionRealtime(activeCheckIn?.venue_id ?? null, loadReceivedInteractions);
 
   // Presence confirmation: periodic "Ainda esta aqui?" prompt
   const { showPrompt, confirmPresence, denyPresence } = usePresenceConfirmation(!!activeCheckIn);
@@ -110,20 +142,58 @@ export default function DiscoverScreen() {
     await checkOut();
   }, [denyPresence, checkOut]);
 
-  const refreshDrinkRelations = useCallback(async (targetIds: string[]) => {
-    if (!userId || targetIds.length === 0) {
-      setDrinkRelations({});
-      return;
-    }
+  // Interaction handlers
+  const handleInteract = useCallback((type: InteractionType, userProfile: { id: string; name: string }) => {
+    setPendingInteraction({ type, userId: userProfile.id, userName: userProfile.name });
+  }, []);
 
-    const uniqueIds = Array.from(new Set(targetIds));
+  const handleConfirmInteraction = useCallback(async () => {
+    if (!pendingInteraction || !activeCheckIn?.venue_id) return;
+
+    setIsSending(true);
     try {
-      const next = await fetchDrinkRelations(userId, uniqueIds);
-      setDrinkRelations(next);
-    } catch (err) {
-      console.error('Erro ao carregar status de drinks:', err);
+      const result = await sendInteraction({
+        receiverId: pendingInteraction.userId,
+        venueId: activeCheckIn.venue_id,
+        type: pendingInteraction.type,
+      });
+
+      // Update sent interactions for button feedback
+      setSentInteractions((prev) => {
+        const existing = prev[pendingInteraction.userId] ?? new Set<InteractionType>();
+        const next = new Set(existing);
+        next.add(pendingInteraction.type);
+        return { ...prev, [pendingInteraction.userId]: next };
+      });
+
+      // Check for match
+      if (result.is_match) {
+        // Find the user's photo from venue users or search results
+        const allUsers = [...venueUsers, ...searchResults];
+        const matchedUser = allUsers.find((u) => u.id === pendingInteraction.userId);
+        setMatchData({
+          matchedUserName: pendingInteraction.userName,
+          matchedUserPhotoUrl: null, // photos not in BasicUser/VenueUser; Avatar uses name fallback
+        });
+      }
+
+      // Refresh received interactions
+      await loadReceivedInteractions();
+    } catch (err: any) {
+      Alert.alert('Erro', err.message);
+    } finally {
+      setIsSending(false);
+      setPendingInteraction(null);
     }
-  }, [userId]);
+  }, [pendingInteraction, activeCheckIn?.venue_id, venueUsers, searchResults, loadReceivedInteractions]);
+
+  const handleCancelInteraction = useCallback(() => {
+    setPendingInteraction(null);
+  }, []);
+
+  const handleDismissMatch = useCallback(() => {
+    setMatchData(null);
+  }, []);
 
   const performSearch = useCallback(async () => {
     if (!userId || searchQuery.trim().length < 2) {
@@ -153,78 +223,6 @@ export default function DiscoverScreen() {
     }
   }, [userId, searchQuery]);
 
-  useEffect(() => {
-    fetchActiveCheckIn();
-  }, [fetchActiveCheckIn]);
-
-  useEffect(() => {
-    if (!userId) return;
-    fetchBlockedIds(userId).then(setBlockedIds).catch(console.error);
-  }, [userId, setBlockedIds]);
-
-  useEffect(() => {
-    loadVenueUsers();
-  }, [loadVenueUsers]);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      performSearch();
-    }, 300);
-
-    return () => clearTimeout(handler);
-  }, [performSearch]);
-
-  useEffect(() => {
-    const targetIds = [
-      ...venueUsers.map((profile) => profile.id),
-      ...searchResults.map((profile) => profile.id),
-    ];
-    refreshDrinkRelations(targetIds);
-  }, [venueUsers, searchResults, refreshDrinkRelations]);
-
-  const handleSendDrink = useCallback(async (targetId: string) => {
-    if (!userId) return;
-    if (!activeCheckIn?.venue_id) {
-      Alert.alert('Check-in necessário', 'Faça check-in para pagar um drink.');
-      return;
-    }
-
-    setActionTargetId(targetId);
-    try {
-      await sendDrinkOffer({
-        receiverId: targetId,
-        venueId: activeCheckIn.venue_id,
-      });
-      await refreshDrinkRelations([targetId]);
-      Alert.alert('Drink enviado', 'Agora é só aguardar a resposta.');
-    } catch (err: any) {
-      Alert.alert('Erro', err?.message || 'Não foi possível enviar o drink.');
-    } finally {
-      setActionTargetId(null);
-    }
-  }, [userId, activeCheckIn?.venue_id, refreshDrinkRelations]);
-
-  const handleRespondDrink = useCallback(async (targetId: string, action: 'accepted' | 'declined') => {
-    const relation = drinkRelations[targetId];
-    if (!relation?.incomingDrinkId) return;
-
-    setActionTargetId(targetId);
-    try {
-      await respondDrinkOffer({
-        drinkId: relation.incomingDrinkId,
-        action,
-      });
-      await refreshDrinkRelations([targetId]);
-      if (action === 'accepted') {
-        Alert.alert('Drink aceito', 'Se vocês dois aceitarem, a conexão será confirmada.');
-      }
-    } catch (err: any) {
-      Alert.alert('Erro', err?.message || 'Não foi possível responder o drink.');
-    } finally {
-      setActionTargetId(null);
-    }
-  }, [drinkRelations, refreshDrinkRelations]);
-
   const handleBlockFromCard = useCallback(async (targetId: string, targetName: string) => {
     if (!userId) return;
     Alert.alert(
@@ -239,7 +237,6 @@ export default function DiscoverScreen() {
             try {
               await blockUser(userId, targetId);
               addBlockedId(targetId);
-              // Optimistic removal from current lists
               setVenueUsers(prev => prev.filter(u => u.id !== targetId));
               setSearchResults(prev => prev.filter(u => u.id !== targetId));
             } catch (err: any) {
@@ -251,15 +248,37 @@ export default function DiscoverScreen() {
     );
   }, [userId, addBlockedId]);
 
+  useEffect(() => {
+    fetchActiveCheckIn();
+  }, [fetchActiveCheckIn]);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetchBlockedIds(userId).then(setBlockedIds).catch(console.error);
+  }, [userId, setBlockedIds]);
+
+  useEffect(() => {
+    loadVenueUsers();
+  }, [loadVenueUsers]);
+
+  useEffect(() => {
+    loadReceivedInteractions();
+  }, [loadReceivedInteractions]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      performSearch();
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [performSearch]);
+
   const renderUserCard = (profile: BasicUser, ageOverride?: number, checkedInAt?: string) => {
     const age = typeof ageOverride === 'number'
       ? ageOverride
       : profile.birth_date
       ? Math.floor((Date.now() - new Date(profile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
       : null;
-
-    const relation = drinkRelations[profile.id]?.state ?? 'none';
-    const isBusy = actionTargetId === profile.id;
 
     return (
       <Card key={profile.id} style={styles.card}>
@@ -294,60 +313,11 @@ export default function DiscoverScreen() {
             onPress={() => router.push(`/user/${profile.id}`)}
             style={styles.cardButton}
           />
-          {relation === 'matched' ? (
-            <View style={styles.cardActionColumn}>
-              <Button title="Conectados" disabled style={styles.cardButton} />
-            </View>
-          ) : relation === 'sent_pending' ? (
-            <View style={styles.cardActionColumn}>
-              <Button title="Drink enviado" disabled style={styles.cardButton} />
-              <Text style={[styles.stateHelper, { color: colors.textSecondary }]}>Aguardando resposta</Text>
-            </View>
-          ) : relation === 'received_pending' ? (
-            <View style={styles.cardActionGroup}>
-              <Button
-                title="Aceitar drink"
-                onPress={() => handleRespondDrink(profile.id, 'accepted')}
-                style={styles.cardButton}
-                loading={isBusy}
-                disabled={isBusy}
-              />
-              <Button
-                title="Recusar"
-                variant="outline"
-                onPress={() => handleRespondDrink(profile.id, 'declined')}
-                style={styles.cardButton}
-                disabled={isBusy}
-              />
-            </View>
-          ) : relation === 'received_accepted' ? (
-            <Button
-              title="Retribuir drink"
-              onPress={() => handleSendDrink(profile.id)}
-              style={styles.cardButton}
-              loading={isBusy}
-              disabled={isBusy}
-            />
-          ) : relation === 'sent_accepted' ? (
-            <Button title="Drink aceito" disabled style={styles.cardButton} />
-          ) : activeCheckIn?.venue_id ? (
-            <Button
-              title="Pagar um drink"
-              onPress={() => handleSendDrink(profile.id)}
-              style={styles.cardButton}
-              loading={isBusy}
-              disabled={isBusy}
-            />
-          ) : (
-            <View style={styles.cardActionColumn}>
-              <Button
-                title="Faca check-in primeiro"
-                disabled
-                style={styles.cardButton}
-              />
-              <Text style={[styles.stateHelper, { color: colors.textSecondary }]}>Necessario check-in ativo para drinks</Text>
-            </View>
-          )}
+          <InteractionButtons
+            onInteract={(type) => handleInteract(type, profile)}
+            sentTypes={sentInteractions[profile.id]}
+            disabled={!activeCheckIn?.venue_id}
+          />
           <TouchableOpacity
             onPress={() => handleBlockFromCard(profile.id, profile.name)}
             style={styles.blockIconButton}
@@ -391,6 +361,12 @@ export default function DiscoverScreen() {
           </View>
         ) : null}
 
+        {/* Quem te curtiu — above venue users */}
+        <ReceivedInteractions
+          interactions={receivedInteractions}
+          onInteractBack={(senderId) => router.push(`/user/${senderId}`)}
+        />
+
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Pessoas no mesmo local</Text>
           {!activeCheckIn ? (
@@ -419,6 +395,27 @@ export default function DiscoverScreen() {
         </View>
       </ScrollView>
 
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        visible={pendingInteraction !== null}
+        userName={pendingInteraction?.userName ?? ''}
+        interactionType={pendingInteraction?.type ?? 'drink'}
+        onConfirm={handleConfirmInteraction}
+        onCancel={handleCancelInteraction}
+        loading={isSending}
+      />
+
+      {/* Match Celebration */}
+      <MatchCelebration
+        visible={matchData !== null}
+        currentUserName={currentUserName}
+        currentUserPhotoUrl={null}
+        matchedUserName={matchData?.matchedUserName ?? ''}
+        matchedUserPhotoUrl={matchData?.matchedUserPhotoUrl ?? null}
+        onDismiss={handleDismissMatch}
+      />
+
+      {/* Presence Confirmation */}
       <PresenceConfirmationModal
         visible={showPrompt}
         venueName={activeCheckIn?.venue_name ?? ''}
@@ -497,25 +494,12 @@ const styles = StyleSheet.create({
   },
   cardActions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 8,
-  },
-  cardActionGroup: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  cardActionColumn: {
-    flex: 1,
-    minWidth: 120,
-    gap: 4,
-  },
-  stateHelper: {
-    fontSize: 11,
-    textAlign: 'center',
   },
   cardButton: {
     flex: 1,
-    minWidth: 120,
+    minWidth: 100,
   },
   blockIconButton: {
     padding: 8,
