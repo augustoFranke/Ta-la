@@ -231,6 +231,32 @@ export interface Match {
   confirmed_at: string | null;
 }
 
+// Chat match: match enriched with partner info for display in chat list
+export interface ChatMatch {
+  match_id: string;
+  partner_id: string;
+  partner_name: string;
+  partner_photo_url: string | null;
+  matched_at: string;
+  last_message: string | null;
+  last_message_at: string | null;
+  unread_count: number;
+}
+
+// Message types (Spec 007)
+export type MessageType = 'text' | 'photo' | 'voice';
+export type MessageStatus = 'pending' | 'sent' | 'failed';
+
+export interface Message {
+  id: string;
+  match_id: string;
+  sender_id: string;
+  content: string;          // text body or media URL
+  type: MessageType;
+  status: MessageStatus;
+  created_at: string;
+}
+
 // Favoritos
 export interface UserFavoritePlace {
   id: string;
