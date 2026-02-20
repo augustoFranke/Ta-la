@@ -23,6 +23,14 @@ interface VenueCardProps {
   activeCheckInPlaceId?: string | null;
   onCheckIn?: (venue: VenueWithDistance) => void;
   onCheckOut?: (venue: VenueWithDistance) => void;
+  /** True when the user is not authenticated (guest mode) */
+  isGuest?: boolean;
+  /** True when the user's profile is verified (spec 003) */
+  isVerified?: boolean;
+  /** Called when a guest attempts a restricted action — route to account creation */
+  onGuestAction?: () => void;
+  /** Called when an unverified user taps check-in — route to verification wizard */
+  onVerifyProfile?: () => void;
 }
 
 export function VenueCard({
@@ -31,6 +39,10 @@ export function VenueCard({
   activeCheckInPlaceId,
   onCheckIn,
   onCheckOut,
+  isGuest = false,
+  isVerified = false,
+  onGuestAction,
+  onVerifyProfile,
 }: VenueCardProps) {
   const { colors } = useTheme();
   const [heroPhotoIndex, setHeroPhotoIndex] = useState(0);
@@ -56,11 +68,26 @@ export function VenueCard({
     });
   }, [availablePhotos.length]);
 
+  // CTA state logic (Spec 003 + 004):
+  // 1. Already checked in → "Sair"
+  // 2. Too far → "Você está longe" (disabled)
+  // 3. In range + guest → "Fazer check-in" (routes to account creation)
+  // 4. In range + unverified → "Verificar perfil para fazer check-in" (routes to wizard)
+  // 5. In range + verified → "Fazer check-in"
+  const isInRange = !isTooFar;
+  const needsVerification = isInRange && !isGuest && !isVerified;
+
   const handleButtonPress = () => {
     if (isAlreadyCheckedIn) {
       onCheckOut?.(venue);
-    } else if (!isTooFar) {
-      onCheckIn?.(venue);
+    } else if (isInRange) {
+      if (isGuest) {
+        onGuestAction?.();
+      } else if (!isVerified) {
+        onVerifyProfile?.();
+      } else {
+        onCheckIn?.(venue);
+      }
     }
   };
 
@@ -68,19 +95,27 @@ export function VenueCard({
     ? 'Sair'
     : isTooFar
     ? 'Você está longe'
+    : needsVerification
+    ? 'Verificar perfil para fazer check-in'
     : 'Fazer check-in';
 
   const buttonBackground = isAlreadyCheckedIn
     ? colors.error
     : isTooFar
     ? colors.border
+    : needsVerification
+    ? colors.card
     : colors.primary;
 
   const buttonTextColor = isAlreadyCheckedIn
     ? '#fff'
     : isTooFar
     ? colors.textSecondary
+    : needsVerification
+    ? colors.primary
     : colors.onPrimary;
+
+  const buttonBorderColor = needsVerification ? colors.primary : 'transparent';
 
   const heroHeight = HERO_HEIGHT;
 
@@ -138,7 +173,7 @@ export function VenueCard({
         )}
 
         <TouchableOpacity
-          style={[styles.checkInButton, { backgroundColor: buttonBackground }]}
+          style={[styles.checkInButton, { backgroundColor: buttonBackground, borderColor: buttonBorderColor, borderWidth: needsVerification ? 1.5 : 0 }]}
           onPress={handleButtonPress}
           disabled={isTooFar}
           activeOpacity={0.8}

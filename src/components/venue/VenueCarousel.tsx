@@ -38,6 +38,10 @@ interface VenueCarouselProps {
   onCheckIn?: (venue: VenueWithDistance) => void;
   onCheckOut?: (venue: VenueWithDistance) => void;
   onRetry?: () => void;
+  isGuest?: boolean;
+  isVerified?: boolean;
+  onGuestAction?: () => void;
+  onVerifyProfile?: () => void;
 }
 
 export function VenueCarousel({
@@ -48,6 +52,10 @@ export function VenueCarousel({
   onCheckIn,
   onCheckOut,
   onRetry,
+  isGuest = false,
+  isVerified = false,
+  onGuestAction,
+  onVerifyProfile,
 }: VenueCarouselProps) {
   const { colors } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -107,10 +115,14 @@ export function VenueCarousel({
           activeCheckInPlaceId={activeCheckInPlaceId}
           onCheckIn={onCheckIn}
           onCheckOut={onCheckOut}
+          isGuest={isGuest}
+          isVerified={isVerified}
+          onGuestAction={onGuestAction}
+          onVerifyProfile={onVerifyProfile}
         />
       </View>
     ),
-    [resolvedCardWidth, activeCheckInPlaceId, onCheckIn, onCheckOut]
+    [resolvedCardWidth, activeCheckInPlaceId, onCheckIn, onCheckOut, isGuest, isVerified, onGuestAction, onVerifyProfile]
   );
 
   const renderPaginationDots = () => {
