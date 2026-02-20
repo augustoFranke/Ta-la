@@ -24,6 +24,17 @@ export interface Database {
           location: any | null // PostGIS point
           last_active: string
           created_at: string
+          phone: string | null
+          legal_name: string | null
+          document_type: string | null
+          document_number: string | null
+          sex: string | null
+          gender_identity: string | null
+          partner_preference: string | null
+          verification_status: string
+          rejection_reason: string | null
+          rejection_details: string | null
+          verification_completed_at: string | null
         }
         Insert: {
           id?: string
@@ -39,6 +50,17 @@ export interface Database {
           location?: any | null
           last_active?: string
           created_at?: string
+          phone?: string | null
+          legal_name?: string | null
+          document_type?: string | null
+          document_number?: string | null
+          sex?: string | null
+          gender_identity?: string | null
+          partner_preference?: string | null
+          verification_status?: string
+          rejection_reason?: string | null
+          rejection_details?: string | null
+          verification_completed_at?: string | null
         }
         Update: {
           id?: string
@@ -54,6 +76,17 @@ export interface Database {
           location?: any | null
           last_active?: string
           created_at?: string
+          phone?: string | null
+          legal_name?: string | null
+          document_type?: string | null
+          document_number?: string | null
+          sex?: string | null
+          gender_identity?: string | null
+          partner_preference?: string | null
+          verification_status?: string
+          rejection_reason?: string | null
+          rejection_details?: string | null
+          verification_completed_at?: string | null
         }
       }
     }
@@ -64,6 +97,37 @@ export interface Database {
 export type Gender = 'masculino' | 'feminino' | 'outro';
 export type GenderPreference = 'masculino' | 'feminino' | 'todos';
 export type CheckInVisibility = 'public' | 'friends_only' | 'private';
+
+// Profile verification types (Spec 003)
+export type VerificationStatus = 'incomplete' | 'pending_verification' | 'verified' | 'rejected';
+export type RejectionReason = 'photo_quality' | 'document_invalid' | 'face_mismatch' | 'other';
+export type DocumentType = 'cpf' | 'rg' | 'cnh';
+export type Sex = 'masculino' | 'feminino' | 'outro';
+export type PartnerPreference = 'homens' | 'mulheres' | 'todos';
+
+export const SEX_OPTIONS: readonly { value: Sex; label: string }[] = [
+  { value: 'masculino', label: 'Homem' },
+  { value: 'feminino', label: 'Mulher' },
+  { value: 'outro', label: 'Outro' },
+] as const;
+
+export const PARTNER_PREFERENCE_OPTIONS: readonly { value: PartnerPreference; label: string }[] = [
+  { value: 'homens', label: 'Homens' },
+  { value: 'mulheres', label: 'Mulheres' },
+  { value: 'todos', label: 'Todos' },
+] as const;
+
+export const REJECTION_REASON_LABELS: Record<RejectionReason, string> = {
+  photo_quality: 'Qualidade da foto insuficiente',
+  document_invalid: 'Documento invalido',
+  face_mismatch: 'Rosto nao corresponde ao documento',
+  other: 'Outro motivo',
+};
+
+// Minimum photo count required (Spec 003 / Policy 15)
+export const MIN_PHOTOS = 4;
+export const MAX_PHOTOS = 4;
+export const MAIN_PHOTO_SLOT = 0;
 
 export type ReportReason =
   | 'comportamento_inadequado'
@@ -110,6 +174,18 @@ export interface User {
   location: any | null;
   last_active: string;
   created_at: string;
+  // Profile verification fields (Spec 003)
+  phone?: string | null;
+  legal_name?: string | null;
+  document_type?: DocumentType | null;
+  document_number?: string | null;
+  sex?: Sex | null;
+  gender_identity?: string | null;
+  partner_preference?: PartnerPreference | null;
+  verification_status?: VerificationStatus;
+  rejection_reason?: RejectionReason | null;
+  rejection_details?: string | null;
+  verification_completed_at?: string | null;
 }
 
 export interface OnboardingData {
@@ -121,7 +197,60 @@ export interface OnboardingData {
   gender_preference: GenderPreference;
   photos: string[];
   interests: string[];
+  // Extended fields (Spec 003)
+  phone?: string;
+  legal_name?: string;
+  document_type?: DocumentType;
+  document_number?: string;
+  sex?: Sex;
+  gender_identity?: string;
+  partner_preference?: PartnerPreference;
 }
+
+// Verification attempt tracking (Spec 003)
+export interface VerificationAttempt {
+  id: string;
+  user_id: string;
+  attempt_type: 'phone_otp' | 'face_validation' | 'document_submission';
+  status: 'success' | 'failure';
+  failure_reason?: string | null;
+  created_at: string;
+}
+
+// Phone OTP state (Spec 003)
+export interface PhoneOtpState {
+  phone: string;
+  attempts: number;
+  max_attempts: number;
+  expires_at: string | null;
+  locked_until: string | null;
+  last_sent_at: string | null;
+}
+
+// Face validation state (Spec 003)
+export interface FaceValidationState {
+  attempts_today: number;
+  max_attempts_per_day: number;
+  last_attempt_at: string | null;
+  next_available_at: string | null;
+}
+
+// Profile audit event (Spec 009)
+export interface ProfileAuditEvent {
+  id: string;
+  user_id: string;
+  field_changed: string;
+  old_value: string | null;
+  new_value: string | null;
+  verification_impact: boolean;
+  created_at: string;
+}
+
+// Identity-critical fields that trigger re-verification (Policy 10)
+export const IDENTITY_CRITICAL_FIELDS: readonly string[] = [
+  'legal_name',
+  'document_number',
+] as const;
 
 // Photo from photos table
 export interface Photo {

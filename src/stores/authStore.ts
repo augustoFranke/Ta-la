@@ -36,6 +36,7 @@ interface AuthState {
   setOnboardingBio: (data: { name: string; birth_date: string; bio: string; occupation: string }) => void;
   setOnboardingInterests: (interests: string[]) => void;
   setOnboardingPreferences: (data: { gender: Gender; gender_preference: GenderPreference }) => void;
+  setOnboardingPhone: (phone: string) => void;
   clearOnboarding: () => void;
 
   // Reset completo
@@ -92,6 +93,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         gender: data.gender,
         gender_preference: data.gender_preference,
       },
+    })),
+
+  setOnboardingPhone: (phone) =>
+    set((state) => ({
+      onboardingData: { ...state.onboardingData, phone },
     })),
 
   clearOnboarding: () => set({ onboardingData: initialOnboardingData }),

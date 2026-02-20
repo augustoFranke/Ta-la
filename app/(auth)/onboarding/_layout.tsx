@@ -1,6 +1,6 @@
 /**
  * Layout para fluxo de onboarding
- * Stack navigator com indicador de progresso
+ * Ordem: photos → bio → interests → preferences → phone → permissions
  */
 
 import { Stack } from 'expo-router';
@@ -15,13 +15,15 @@ export default function OnboardingLayout() {
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
         animation: 'slide_from_right',
-        gestureEnabled: false, // Impede voltar por gesto durante onboarding
+        gestureEnabled: false,
       }}
     >
       <Stack.Screen name="photos" />
       <Stack.Screen name="bio" />
       <Stack.Screen name="interests" />
       <Stack.Screen name="preferences" />
+      <Stack.Screen name="phone" />
+      <Stack.Screen name="permissions" />
     </Stack>
   );
 }
