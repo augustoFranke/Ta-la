@@ -1,6 +1,6 @@
 /**
  * Tela de upload de fotos do onboarding
- * Mínimo 1 foto, máximo 3
+ * Spec 003: 4 fotos obrigatórias (1 principal + 3 anti-phishing)
  */
 
 import { useState } from 'react';
@@ -15,8 +15,7 @@ import { Button } from '../../../src/components/ui/Button';
 import { OnboardingProgress } from '../../../src/components/common/OnboardingProgress';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/services/supabase';
-
-const MIN_PHOTOS = 1;
+import { MIN_PHOTOS, MAX_PHOTOS } from '../../../src/types/database';
 
 export default function PhotosScreen() {
   const router = useRouter();
@@ -27,14 +26,12 @@ export default function PhotosScreen() {
   const [uploading, setUploading] = useState(false);
 
   const pickImage = async (index: number) => {
-    // Solicita permissão
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permissão necessária', 'Precisamos de acesso à sua galeria para adicionar fotos');
       return;
     }
 
-    // Abre seletor de imagem
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -43,16 +40,21 @@ export default function PhotosScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      const newPhotos = [...photos];
+      const newUri = result.assets[0].uri;
 
-      if (index < photos.length) {
-        // Substitui foto existente
-        newPhotos[index] = result.assets[0].uri;
-      } else {
-        // Adiciona nova foto
-        newPhotos.push(result.assets[0].uri);
+      // Reject duplicate photos (Spec 003)
+      const otherPhotos = photos.filter((_, i) => i !== index);
+      if (otherPhotos.includes(newUri)) {
+        Alert.alert('Foto duplicada', 'Cada foto deve ser única. Escolha uma imagem diferente.');
+        return;
       }
 
+      const newPhotos = [...photos];
+      if (index < photos.length) {
+        newPhotos[index] = newUri;
+      } else {
+        newPhotos.push(newUri);
+      }
       setPhotos(newPhotos);
     }
   };
@@ -63,32 +65,22 @@ export default function PhotosScreen() {
 
   const uploadPhotos = async (): Promise<string[]> => {
     if (!session?.user?.id) throw new Error('Usuário não autenticado');
-
     const uploadedUrls: string[] = [];
 
     for (let i = 0; i < photos.length; i++) {
       const uri = photos[i];
       const fileName = `${session.user.id}/${Date.now()}_${i}.jpg`;
 
-      // Converte URI para blob
       const response = await fetch(uri);
       const blob = await response.blob();
 
-      // Upload para Supabase Storage
       const { data, error } = await supabase.storage
         .from('avatars')
-        .upload(fileName, blob, {
-          contentType: 'image/jpeg',
-          upsert: true,
-        });
+        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
 
       if (error) throw error;
 
-      // Obtém URL pública
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(data.path);
-
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(data.path);
       uploadedUrls.push(urlData.publicUrl);
     }
 
@@ -97,22 +89,19 @@ export default function PhotosScreen() {
 
   const handleNext = async () => {
     if (photos.length < MIN_PHOTOS) {
-      Alert.alert('Foto necessária', 'Adicione pelo menos uma foto para continuar');
+      Alert.alert(
+        'Fotos insuficientes',
+        `Adicione ${MIN_PHOTOS} fotos para continuar: 1 foto principal e 3 fotos adicionais.`
+      );
       return;
     }
 
     setUploading(true);
     try {
-      // Upload das fotos para o Storage
       const uploadedUrls = await uploadPhotos();
-
-      // Salva URLs no store
       setOnboardingPhotos(uploadedUrls);
-
-      // Navega para próxima tela
       router.push('/(auth)/onboarding/bio');
-    } catch (error: any) {
-      console.error('Erro ao fazer upload:', error);
+    } catch {
       Alert.alert('Erro', 'Não foi possível salvar as fotos. Tente novamente.');
     } finally {
       setUploading(false);
@@ -121,6 +110,8 @@ export default function PhotosScreen() {
 
   const renderPhotoSlot = (index: number) => {
     const photo = photos[index];
+    const isMain = index === 0;
+    const label = isMain ? 'Principal' : `Foto ${index + 1}`;
 
     return (
       <TouchableOpacity
@@ -129,12 +120,11 @@ export default function PhotosScreen() {
           styles.photoSlot,
           {
             backgroundColor: colors.card,
-            borderColor: colors.border,
+            borderColor: photo ? colors.primary : colors.border,
           },
-          index === 0 && styles.mainPhoto,
+          isMain && styles.mainPhoto,
         ]}
         onPress={() => pickImage(index)}
-        onLongPress={() => photo && removePhoto(index)}
         activeOpacity={0.7}
       >
         {photo ? (
@@ -149,50 +139,53 @@ export default function PhotosScreen() {
           </>
         ) : (
           <>
-            <Ionicons name="add" size={36} color={colors.textSecondary} />
-            {index === 0 && (
-              <Text style={[styles.mainLabel, { color: colors.textSecondary }]}>Principal</Text>
-            )}
+            <Ionicons name="add" size={32} color={colors.textSecondary} />
+            <Text style={[styles.slotLabel, { color: colors.textSecondary, fontSize: typography.sizes.xs }]}>
+              {label}
+            </Text>
           </>
         )}
       </TouchableOpacity>
     );
   };
 
+  const filledCount = photos.length;
+  const remaining = MIN_PHOTOS - filledCount;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      {/* Progresso */}
       <OnboardingProgress currentStep={1} />
 
-      {/* Header */}
       <View style={[styles.header, { paddingHorizontal: spacing.lg }]}>
         <Text style={[styles.title, { color: colors.text, fontSize: typography.sizes.xl }]}>
           Adicione suas fotos
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontSize: typography.sizes.md }]}>
-          Escolha até 3 fotos que mostrem quem você é. A primeira será sua foto principal.
+          São necessárias 4 fotos: 1 foto principal e 3 fotos adicionais para verificação anti-phishing.
         </Text>
       </View>
 
-      {/* Grid de fotos */}
+      {/* Grid 2x2 para 4 fotos */}
       <View style={[styles.photosGrid, { paddingHorizontal: spacing.lg }]}>
-        <View style={styles.mainPhotoContainer}>{renderPhotoSlot(0)}</View>
-        <View style={styles.secondaryPhotos}>
+        <View style={styles.gridRow}>
+          {renderPhotoSlot(0)}
           {renderPhotoSlot(1)}
+        </View>
+        <View style={styles.gridRow}>
           {renderPhotoSlot(2)}
+          {renderPhotoSlot(3)}
         </View>
       </View>
 
-      {/* Dica */}
-      <View style={[styles.tipContainer, { paddingHorizontal: spacing.lg }]}>
-        <Text style={[styles.tip, { color: colors.textSecondary, fontSize: typography.sizes.sm }]}>
-          Dica: Fotos com seu rosto visível aumentam suas chances de match!
+      <View style={[styles.counterContainer, { paddingHorizontal: spacing.lg }]}>
+        <Text style={[styles.counter, { color: remaining > 0 ? colors.textSecondary : colors.primary }]}>
+          {filledCount}/{MAX_PHOTOS} fotos adicionadas
+          {remaining > 0 ? ` — faltam ${remaining}` : ''}
         </Text>
       </View>
 
-      {/* Botão */}
       <View style={[styles.buttonContainer, { padding: spacing.lg }]}>
         {uploading ? (
           <View style={styles.uploadingContainer}>
@@ -205,7 +198,7 @@ export default function PhotosScreen() {
           <Button
             title="Continuar"
             onPress={handleNext}
-            disabled={photos.length < MIN_PHOTOS}
+            disabled={filledCount < MIN_PHOTOS}
           />
         )}
       </View>
@@ -214,12 +207,10 @@ export default function PhotosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     paddingTop: 24,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   title: {
     fontWeight: '700',
@@ -229,22 +220,18 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   photosGrid: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  gridRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 24,
-  },
-  mainPhotoContainer: {
-    flex: 1,
   },
   mainPhoto: {
-    aspectRatio: 3 / 4,
-  },
-  secondaryPhotos: {
     flex: 1,
-    gap: 12,
   },
   photoSlot: {
-    width: '100%',
+    flex: 1,
     aspectRatio: 3 / 4,
     borderRadius: 16,
     borderWidth: 2,
@@ -258,9 +245,9 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
-  mainLabel: {
-    fontSize: 12,
+  slotLabel: {
     marginTop: 4,
+    fontWeight: '500',
   },
   removeButton: {
     position: 'absolute',
@@ -272,12 +259,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  tipContainer: {
-    marginBottom: 24,
+  counterContainer: {
+    marginBottom: 16,
   },
-  tip: {
+  counter: {
     textAlign: 'center',
-    fontStyle: 'italic',
+    fontSize: 14,
   },
   buttonContainer: {
     marginTop: 'auto',

@@ -197,7 +197,7 @@ export function useProfile(options: UseProfileOptions = {}) {
 
     setIsLoading(true);
     try {
-      const limitedAssets = assets.slice(0, 3);
+      const limitedAssets = assets.slice(0, 4); // Spec 003: 4 photos required
       const uploadedUrls: string[] = [];
 
       for (let i = 0; i < limitedAssets.length; i++) {
