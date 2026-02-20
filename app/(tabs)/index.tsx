@@ -21,11 +21,16 @@ import { useLocationStore } from '../../src/stores/locationStore';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
 import { VenueCarousel } from '../../src/components/venue/VenueCarousel';
 import { CheckInModal } from '../../src/components/venue/CheckInModal';
+import { useNotificationStore } from '../../src/stores/notificationStore';
+import { fetchNotifications } from '../../src/services/notifications';
+import { useRouter } from 'expo-router';
 import type { VenueWithDistance } from '../../src/stores/venueStore';
 
 export default function HomeScreen() {
   const { colors, spacing, isDark } = useTheme();
   const { user } = useAuth();
+  const router = useRouter();
+  const { unreadCount, setNotifications } = useNotificationStore();
   const {
     latitude,
     longitude,
@@ -58,6 +63,12 @@ export default function HomeScreen() {
     fetchActiveCheckIn();
   }, [fetchActiveCheckIn]);
 
+  // Load notifications to populate unread badge on bell icon
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchNotifications(user.id).then(setNotifications).catch(() => {});
+  }, [user?.id, setNotifications]);
+
   const isLoading = isVenuesLoading || isLocationLoading || !hasLocation;
 
   return (
@@ -78,8 +89,18 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
-        <TouchableOpacity style={[styles.notifButton, { backgroundColor: colors.card }]}>
+        <TouchableOpacity
+          style={[styles.notifButton, { backgroundColor: colors.card }]}
+          onPress={() => router.push('/notifications')}
+        >
           <Ionicons name="notifications-outline" size={22} color={colors.text} />
+          {unreadCount > 0 && (
+            <View style={[styles.notifBadge, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.notifBadgeText, { color: colors.onPrimary }]}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -173,6 +194,22 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+  },
+  notifBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
   },
   // Location error banner
   banner: {
