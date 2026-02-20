@@ -386,6 +386,25 @@ export interface Message {
   created_at: string;
 }
 
+// In-app notification item (Spec 008)
+export type NotificationEventType =
+  | 'mutual_like'
+  | 'offer_accepted'
+  | 'offer_rejected'
+  | 'like_received';
+
+export interface NotificationItem {
+  id: string;
+  user_id: string;
+  event_type: NotificationEventType;
+  /** Human-readable message body (pt-BR) */
+  body: string;
+  /** Deep-link route, e.g. '/chat/match-id' or '/user/user-id' */
+  deep_link: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
 // Favoritos
 export interface UserFavoritePlace {
   id: string;
