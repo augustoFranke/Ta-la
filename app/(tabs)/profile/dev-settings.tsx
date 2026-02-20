@@ -1,10 +1,12 @@
 /**
  * Tela de Dev Settings
- * Permite simular coordenadas GPS para testar venue discovery sem estar no local
- * Visível apenas em builds __DEV__
+ * Permite simular coordenadas GPS para testar venue discovery sem estar no local.
+ * Visível APENAS em builds com DEV bypass ativo (IS_DEV_BYPASS=true).
+ * Em produção: renderiza tela em branco — nunca é alcançável via navegação.
  */
 
 import { useState } from 'react';
+import { DevBypassGuard } from '../../../src/guards';
 import {
   View,
   Text,
@@ -28,7 +30,7 @@ const PRESETS = [
   { label: 'São Paulo - Vila Madalena', lat: -23.5534, lng: -46.6913 },
 ];
 
-export default function DevSettingsScreen() {
+function DevSettingsContent() {
   const { colors, spacing, typography, isDark } = useTheme();
 
   const { devOverride, devLat, devLng, setDevOverride, clearDevOverride } = useLocationStore();
@@ -400,6 +402,18 @@ export default function DevSettingsScreen() {
 
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * Default export — wraps content in DevBypassGuard so it renders only
+ * when IS_DEV_BYPASS=true. In production builds this renders null.
+ */
+export default function DevSettingsScreen() {
+  return (
+    <DevBypassGuard>
+      <DevSettingsContent />
+    </DevBypassGuard>
   );
 }
 
