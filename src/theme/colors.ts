@@ -1,6 +1,9 @@
+/** Default primary color per Spec 010 §4 */
+export const DEFAULT_PRIMARY_COLOR = '#aeee5b';
+
 export const colors = {
   light: {
-    primary: '#95d84a',
+    primary: DEFAULT_PRIMARY_COLOR,
     onPrimary: '#000000',
     background: '#ffffff',
     text: '#000000',
@@ -11,7 +14,7 @@ export const colors = {
     success: '#34c759',
   },
   dark: {
-    primary: '#c1ff72',
+    primary: DEFAULT_PRIMARY_COLOR,
     onPrimary: '#000000',
     background: '#121212',
     text: '#ffffff',

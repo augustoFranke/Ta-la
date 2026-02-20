@@ -77,6 +77,25 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 /**
+ * Permanently deletes the current user's account (Spec 010 §4).
+ *
+ * Calls the `delete_account` RPC which:
+ * - Removes the user from venue presence, chats, matches, and discoverability
+ * - Removes or anonymizes personal data per LGPD
+ * - Emits an auditable deletion event
+ * - Invalidates all active sessions
+ *
+ * The caller must call signOut() after this succeeds to clear local state.
+ */
+export async function deleteAccount(): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase.rpc('delete_account');
+  if (error) return { success: false, error: error.message };
+  // Invalidate the local Supabase session immediately
+  await supabase.auth.signOut();
+  return { success: true };
+}
+
+/**
  * Listener para mudanças no estado de autenticação
  * @param callback - Função chamada quando o estado muda
  * @returns Função para cancelar o listener
