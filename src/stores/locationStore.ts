@@ -1,9 +1,22 @@
 import { create } from 'zustand';
 import * as Location from 'expo-location';
 
+/** Location freshness threshold — locations older than this are considered stale for check-in eligibility. */
+export const LOCATION_FRESHNESS_MS = 120 * 1000; // 120 seconds
+
+/** Minimum accuracy required to be eligible for check-in. */
+export const LOCATION_MAX_ACCURACY_M = 50; // 50 metres
+
+/** Check-in venue radius. */
+export const CHECKIN_RADIUS_M = 100; // 100 metres
+
 interface LocationState {
   latitude: number | null;
   longitude: number | null;
+  /** GPS accuracy in metres. Null until first fix obtained. */
+  accuracy: number | null;
+  /** Unix timestamp (ms) of the last GPS reading. */
+  locationTimestamp: number | null;
   errorMsg: string | null;
   permissionGranted: boolean;
   isLoading: boolean;
@@ -28,11 +41,19 @@ interface LocationState {
   // Dev override actions (no-ops in production)
   setDevOverride: (lat: number, lng: number) => void;
   clearDevOverride: () => void;
+
+  // Helpers
+  /** Returns true if the stored location is fresh enough for check-in eligibility. */
+  isLocationFresh: () => boolean;
+  /** Returns true if accuracy is good enough for check-in. */
+  isAccuracyGood: () => boolean;
 }
 
 export const useLocationStore = create<LocationState>((set, get) => ({
   latitude: null,
   longitude: null,
+  accuracy: null,
+  locationTimestamp: null,
   errorMsg: null,
   permissionGranted: false,
   isLoading: false,
@@ -46,6 +67,18 @@ export const useLocationStore = create<LocationState>((set, get) => ({
   setPermission: (permissionGranted) => set({ permissionGranted }),
   setLoading: (isLoading) => set({ isLoading }),
 
+  isLocationFresh: () => {
+    const { locationTimestamp } = get();
+    if (locationTimestamp === null) return false;
+    return Date.now() - locationTimestamp <= LOCATION_FRESHNESS_MS;
+  },
+
+  isAccuracyGood: () => {
+    const { accuracy } = get();
+    if (accuracy === null) return false;
+    return accuracy <= LOCATION_MAX_ACCURACY_M;
+  },
+
   setDevOverride: (lat: number, lng: number) => {
     if (!__DEV__) return;
     set({
@@ -54,6 +87,8 @@ export const useLocationStore = create<LocationState>((set, get) => ({
       devLng: lng,
       latitude: lat,
       longitude: lng,
+      accuracy: 5,
+      locationTimestamp: Date.now(),
     });
   },
 
@@ -72,13 +107,13 @@ export const useLocationStore = create<LocationState>((set, get) => ({
 
       set({
         permissionGranted: granted,
-        errorMsg: granted ? null : 'Permissão de localização negada'
+        errorMsg: granted ? null : 'Permissão de localização negada',
       });
       return granted;
-    } catch (error: any) {
+    } catch (error: unknown) {
       set({
-        errorMsg: error.message,
-        permissionGranted: false
+        errorMsg: error instanceof Error ? error.message : 'Erro ao solicitar permissão',
+        permissionGranted: false,
       });
       return false;
     } finally {
@@ -92,10 +127,10 @@ export const useLocationStore = create<LocationState>((set, get) => ({
       const granted = status === 'granted';
       set({ permissionGranted: granted, errorMsg: null });
       return granted;
-    } catch (error: any) {
+    } catch (error: unknown) {
       set({
         permissionGranted: false,
-        errorMsg: error?.message || 'Erro ao verificar permissões'
+        errorMsg: error instanceof Error ? error.message : 'Erro ao verificar permissões',
       });
       return false;
     }
@@ -106,7 +141,8 @@ export const useLocationStore = create<LocationState>((set, get) => ({
 
     // Short-circuit when dev override is active
     if (__DEV__ && devOverride && devLat !== null && devLng !== null) {
-      set({ latitude: devLat, longitude: devLng });
+      const now = Date.now();
+      set({ latitude: devLat, longitude: devLng, accuracy: 5, locationTimestamp: now });
       return {
         latitude: devLat,
         longitude: devLng,
@@ -132,11 +168,13 @@ export const useLocationStore = create<LocationState>((set, get) => ({
 
       set({
         latitude: location.coords.latitude,
-        longitude: location.coords.longitude
+        longitude: location.coords.longitude,
+        accuracy: location.coords.accuracy ?? null,
+        locationTimestamp: location.timestamp ?? Date.now(),
       });
       return location.coords;
-    } catch (error: any) {
-      set({ errorMsg: error.message });
+    } catch (error: unknown) {
+      set({ errorMsg: error instanceof Error ? error.message : 'Erro ao obter localização' });
       return null;
     } finally {
       set({ isLoading: false });
@@ -148,5 +186,5 @@ export const useLocationStore = create<LocationState>((set, get) => ({
     const granted = await syncPermission();
     if (!granted) return null;
     return getCurrentLocation();
-  }
+  },
 }));
