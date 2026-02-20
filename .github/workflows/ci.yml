@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main, 'rewrite/**']
+
+jobs:
+  # ─── Quality Gate ──────────────────────────────────────────────────────────
+  quality:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+  # ─── DEV Bypass Guard (CRITICAL — must never fail on main/prod) ────────────
+  bypass-guard:
+    name: Production Bypass Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Assert dev bypass is disabled for production
+        # Run without EXPO_PUBLIC_IS_DEV_BYPASS set — simulates production environment.
+        # This step will FAIL (exit 1) if bypass would be enabled in production.
+        run: node scripts/check-bypass.js production
+        env:
+          # Explicitly ensure the bypass var is NOT set.
+          # Remove it if it's accidentally inherited from CI environment secrets.
+          EXPO_PUBLIC_IS_DEV_BYPASS: ''
+
+      - name: Assert no bypass flag in source code (defense-in-depth)
+        # Ensure no hardcoded bypass=true appears in non-config files.
+        # We allow it only in src/config/devBypass.ts, src/config/buildConfig.ts,
+        # and scripts/check-bypass.js itself.
+        run: |
+          BYPASS_HITS=$(grep -r "isDevBypass\s*=\s*true\|IS_DEV_BYPASS\s*=\s*true" \
+            --include="*.ts" --include="*.tsx" --include="*.js" \
+            --exclude-dir=node_modules \
+            --exclude="buildConfig.ts" \
+            --exclude="devBypass.ts" \
+            --exclude="check-bypass.js" \
+            . 2>/dev/null | grep -v "src/config/" | grep -v "scripts/" || true)
+          if [ -n "$BYPASS_HITS" ]; then
+            echo "FAIL: Found hardcoded bypass=true outside allowed config files:"
+            echo "$BYPASS_HITS"
+            exit 1
+          fi
+          echo "PASS: No hardcoded bypass=true found outside config files."
+
+  # ─── Tests ─────────────────────────────────────────────────────────────────
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: [quality]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+        env:
+          EXPO_PUBLIC_IS_DEV_BYPASS: ''
+          EXPO_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54321'
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key'
