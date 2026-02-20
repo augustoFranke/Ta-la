@@ -1,12 +1,13 @@
-# Ta la! (Expo + Supabase)
+# Tá lá!
 
-## Current stack
+Social mobile app for Dourados, MS, Brazil. Built with Expo + Supabase.
 
-- Expo SDK 54
-- React Native 0.81
-- Expo Router (file-based routing in `app/`)
+## Stack
+
+- Expo SDK 54 + React Native 0.81
+- Expo Router (file-based routing)
 - Zustand
-- Supabase
+- Supabase (Auth + Postgres + RPC + Realtime + Storage)
 - TypeScript
 
 ## Prerequisites
@@ -15,11 +16,35 @@
 - npm 10+
 - Expo Go (iOS/Android) to run on a physical device
 
-## Quality and run commands
+## Environment variables
 
-- `npm test`: runs all required checks at the current project level (`lint` + `typecheck`)
-- `npm run test:project`: same flow as `npm test`
-- `npm run lint`: project linting via Expo
-- `npm run typecheck`: TypeScript type validation (`tsc --noEmit`)
-- `npm start`: starts the local Expo dev server
-- `npm run web`: starts the web preview
+Copy `.env.example` to `.env.local` and fill in:
+
+```
+EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_ANON_KEY=
+EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=
+EXPO_PUBLIC_DEV_SKIP_AUTH=       # optional, dev only
+```
+
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `npm start` | Start Expo dev server (Expo Go / EAS Preview) |
+| `npm run web` | Start web preview |
+| `npm run android` | Run Android native target |
+| `npm run ios` | Run iOS native target |
+| `npm run lint` | ESLint via Expo |
+| `npm run typecheck` | TypeScript check (`tsc --noEmit`) |
+| `npm test` | Lint + typecheck (required before PR) |
+
+## Docs
+
+| File | Contents |
+|------|----------|
+| `docs/REPO_MAP.md` | Full repository map, routes, hooks, services, stores, migrations |
+| `docs/ARCHITECTURE.md` | Current architecture, layering rules, data flow |
+| `docs/DECISIONS/` | Architecture Decision Records (why choices were made) |
+| `.specify/memory/constitution.md` | Project rules, constraints, and coding standards |
+| `specs/` | Feature specifications and contracts |
