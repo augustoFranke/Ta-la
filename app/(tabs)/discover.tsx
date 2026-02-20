@@ -29,6 +29,7 @@ import { ReceivedInteractions } from '../../src/components/interaction/ReceivedI
 import type { InteractionType, ReceivedInteraction } from '../../src/types/database';
 import { blockUser, fetchBlockedIds } from '../../src/services/moderation';
 import { useBlockStore } from '../../src/stores/blockStore';
+import { orderFeed, type FeedProfile, type ViewerProfile, type Sex, type PartnerPreference } from '../../src/services/feedOrdering';
 
 type VenueUser = {
   id: string;
@@ -37,6 +38,8 @@ type VenueUser = {
   occupation: string | null;
   age: number;
   checked_in_at: string;
+  /** Returned by get_users_at_venue RPC when gender is included in the result set. */
+  gender?: string;
 };
 
 type BasicUser = {
@@ -326,7 +329,42 @@ export default function DiscoverScreen() {
     );
   };
 
-  const venueUsersList = useMemo(() => venueUsers, [venueUsers]);
+  // Apply feed ordering algorithm (Spec 006): hard filter → score → seeded shuffle
+  const venueUsersList = useMemo(() => {
+    if (!user || venueUsers.length === 0) return venueUsers;
+
+    const birthMs = user.birth_date ? new Date(user.birth_date).getTime() : null;
+    const viewerAge = birthMs
+      ? Math.floor((Date.now() - birthMs) / (365.25 * 24 * 60 * 60 * 1000))
+      : 25;
+
+    const viewer: ViewerProfile = {
+      id: user.id,
+      bio: user.bio,
+      age: viewerAge,
+      sex: (user.gender as Sex) ?? 'outro',
+      partner_preference: (user.gender_preference as PartnerPreference) ?? 'todos',
+    };
+
+    const candidates: FeedProfile[] = venueUsers.map((u) => ({
+      id: u.id,
+      name: u.name,
+      bio: u.bio,
+      age: u.age,
+      // gender from RPC result; fall back to 'outro' so hard filter passes when unknown
+      sex: (u.gender as Sex) ?? 'outro',
+      partner_preference: 'todos' as PartnerPreference,
+      checked_in_at: u.checked_in_at,
+    }));
+
+    const seed = activeCheckIn?.id ?? 'default';
+    const ordered = orderFeed(viewer, candidates, seed);
+    const orderedIdx = new Map(ordered.map((c, i) => [c.id, i]));
+
+    return venueUsers
+      .filter((u) => orderedIdx.has(u.id))
+      .sort((a, b) => (orderedIdx.get(a.id) ?? 999) - (orderedIdx.get(b.id) ?? 999));
+  }, [venueUsers, user, activeCheckIn?.id]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
