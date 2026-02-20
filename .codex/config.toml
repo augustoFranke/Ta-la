@@ -1,0 +1,10 @@
+model = "gpt-5.3-codex"
+model_reasoning_effort = "high"
+[projects."/Users/augustodoregofranke/Developer/Ta la"]
+trust_level = "trusted"
+
+[projects."/Users/augustodoregofranke"]
+trust_level = "trusted"
+
+[projects."/Users/augustodoregofranke/Developer/College/DesktopII"]
+trust_level = "trusted"

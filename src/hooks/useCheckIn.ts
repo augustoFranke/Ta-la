@@ -34,7 +34,7 @@ type CheckInV2Response = {
 
 export function useCheckIn() {
   const { session } = useAuthStore();
-  const { activeCheckIn, isLoading, error, denialReason, setActiveCheckIn, setLoading, setError, setDenialReason, setLastConfirmedAt } = useCheckInStore();
+  const { activeCheckIn, isLoading, error, denialReason, setActiveCheckIn, setLoading, setError, setDenialReason } = useCheckInStore();
 
   const fetchActiveCheckIn = useCallback(async () => {
     if (!session?.user?.id) {

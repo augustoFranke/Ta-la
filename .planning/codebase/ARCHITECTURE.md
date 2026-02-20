@@ -9,13 +9,13 @@
 **Key Characteristics:**
 - Expo Router drives screen composition from `app/` while business logic lives under `src/` (`app/_layout.tsx`, `app/(tabs)/index.tsx`, `app/(auth)/login.tsx`).
 - Custom hooks orchestrate async flows and aggregate state from Zustand stores plus service calls (`src/hooks/useAuth.ts`, `src/hooks/useVenues.ts`, `src/hooks/useCheckIn.ts`, `src/hooks/useProfile.ts`).
-- Services are explicit boundary modules for external systems (Supabase, Radar Places), keeping transport and mapping logic out of UI files (`src/services/supabase.ts`, `src/services/auth.ts`, `src/services/places.ts`, `src/services/venueEnrichment.ts`, `src/services/drinks.ts`).
+- Services are explicit boundary modules for external systems (Supabase, Google Places API New), keeping transport and mapping logic out of UI files (`src/services/supabase.ts`, `src/services/auth.ts`, `src/services/places.ts`, `src/services/venueEnrichment.ts`, `src/services/drinks.ts`).
 
 ## Layers
 
 **Navigation & Screen Layer:**
 - Purpose: Define route tree, screen transitions, and route guards.
-- Location: `app/` (root at `app/_layout.tsx`, groups in `app/(auth)/`, `app/(tabs)/`, dynamic routes in `app/venue/[id].tsx` and `app/user/[id].tsx`).
+- Location: `app/` (root at `app/_layout.tsx`, groups in `app/(auth)/`, `app/(tabs)/`, dynamic routes in `app/user/[id].tsx`).
 - Contains: Expo Router layouts, tab stacks, screen-level UI composition, local screen state.
 - Depends on: Hooks and shared UI components from `src/`.
 - Used by: End users through route resolution from `expo-router/entry` (`package.json`).
@@ -37,9 +37,9 @@
 **Service & Integration Layer:**
 - Purpose: Encapsulate all database/API side effects and response transformation.
 - Location: `src/services/`.
-- Contains: Supabase client bootstrap (`src/services/supabase.ts`), auth helpers (`src/services/auth.ts`), Radar Places fetch + filtering + mapping (`src/services/places.ts`), Supabase enrichment joins (`src/services/venueEnrichment.ts`), drink/match relation resolution (`src/services/drinks.ts`).
+- Contains: Supabase client bootstrap (`src/services/supabase.ts`), auth helpers (`src/services/auth.ts`), Google Places API (New) fetch + strict Field Masking + mapping (`src/services/places.ts`), Supabase enrichment joins (`src/services/venueEnrichment.ts`), drink/match relation resolution (`src/services/drinks.ts`).
 - Depends on: Runtime env vars and remote APIs.
-- Used by: Hooks and a few direct screen calls (`app/(tabs)/discover.tsx`, `app/venue/[id].tsx`, `app/user/[id].tsx`).
+- Used by: Hooks and a few direct screen calls (`app/(tabs)/discover.tsx`, `app/user/[id].tsx`).
 
 **Presentation & Design System Layer:**
 - Purpose: Provide reusable themed primitives and feature components.
@@ -66,12 +66,12 @@
 **Nearby Venue Discovery:**
 
 1. `app/(tabs)/index.tsx` triggers location bootstrap through `src/stores/locationStore.ts` and consumes `useVenues()`.
-2. `src/hooks/useVenues.ts` calls `searchNearbyVenues()` in `src/services/places.ts` and enriches results with `enrichWithActiveUserCounts()` in `src/services/venueEnrichment.ts`.
-3. Results are cached in `src/stores/venueStore.ts`; UI renders via `src/components/venue/VenueCarousel.tsx` and detail route `app/venue/[id].tsx`.
+2. `src/hooks/useVenues.ts` calls `searchNearbyVenues()` in `src/services/places.ts` (Google Places API New) and enriches results with `enrichWithActiveUserCounts()` in `src/services/venueEnrichment.ts`.
+3. Results are cached in `src/stores/venueStore.ts` with aggressive persistence; UI renders via `src/components/venue/VenueCarousel.tsx` directly on the home screen.
 
 **Check-in and Discover People:**
 
-1. `app/venue/[id].tsx` submits check-in intent through `useCheckIn().checkInToPlace()` in `src/hooks/useCheckIn.ts`.
+1. User submits check-in intent through `useCheckIn().checkInToPlace()` directly from a venue card on the home screen.
 2. Hook invokes Supabase RPC `check_in_to_place` and refreshes active check-in from `check_ins` table.
 3. `app/(tabs)/discover.tsx` reads active check-in and loads users in the same venue via Supabase RPC `get_users_at_venue` (defined in `supabase/migrations/011_create_functions.sql`), then resolves drink state through `src/services/drinks.ts`.
 
@@ -93,7 +93,7 @@
 
 **Provider Adapters:**
 - Purpose: Normalize third-party payloads into app domain models.
-- Examples: Radar place mapping in `src/services/places.ts` (`transformToVenue`), count enrichment in `src/services/venueEnrichment.ts`.
+- Examples: Google Places mapping in `src/services/places.ts` (`transformToVenue`), count enrichment in `src/services/venueEnrichment.ts`.
 - Pattern: Service functions return typed domain-oriented objects consumed by hooks/stores.
 
 **Feature Component Modules:**
@@ -121,7 +121,7 @@
 **Main Product Entry:**
 - Location: `app/(tabs)/index.tsx`.
 - Triggers: Authenticated + onboarded users.
-- Responsibilities: Kick off location + venue discovery and navigate to venue details.
+- Responsibilities: Kick off location + venue discovery via home screen cards.
 
 **Data Definition Entry:**
 - Location: `supabase/migrations/` (ordered SQL files).
@@ -144,4 +144,4 @@
 
 ---
 
-*Architecture analysis: 2026-02-10*
+*Architecture analysis: 2026-02-16*

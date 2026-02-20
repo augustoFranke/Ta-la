@@ -55,6 +55,10 @@ export function useVenues(options: UseVenuesOptions = {}) {
     setLoading(true);
     setError(null);
 
+    if (__DEV__) {
+      console.warn(`[useVenues] Cache miss — calling Places API (force=${force}, lat=${latitude}, lng=${longitude})`);
+    }
+
     try {
       const { venues: fetchedVenues, error: fetchError } = await searchNearbyVenues(
         latitude,
@@ -106,17 +110,27 @@ export function useVenues(options: UseVenuesOptions = {}) {
   // This allows the auto-fetch effect to re-trigger with new coords
   useEffect(() => {
     if (lastFetched === null) {
+      if (__DEV__ && hasFetchedRef.current) {
+        console.warn('[useVenues] Cache cleared — fetch guard reset. Next coordinate update will trigger a Places API call.');
+      }
       hasFetchedRef.current = false;
     }
   }, [lastFetched]);
 
-  // Auto-fetch when location becomes available — runs exactly once per mount cycle
+  // Auto-fetch when location becomes available — debounced to prevent rapid GPS updates
+  // from stacking API calls during the brief window when cache is cold
   useEffect(() => {
-    if (autoFetch && latitude && longitude && !hasFetchedRef.current) {
-      hasFetchedRef.current = true;
-      fetchVenues(false);
-    }
-  }, [autoFetch, latitude, longitude]);
+    if (!autoFetch || !latitude || !longitude || hasFetchedRef.current) return;
+
+    const timer = setTimeout(() => {
+      if (!hasFetchedRef.current) {
+        hasFetchedRef.current = true;
+        fetchVenues(false);
+      }
+    }, 1500); // 1.5s debounce — wait for GPS to settle before calling Places API
+
+    return () => clearTimeout(timer);
+  }, [autoFetch, latitude, longitude, fetchVenues]);
 
   // Recalcula distância de cada venue a partir da posição atual do usuário (client-side, Haversine)
   // Garante que a distância exibida sempre reflita a localização atual, não a do momento do fetch

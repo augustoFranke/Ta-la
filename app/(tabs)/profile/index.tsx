@@ -21,7 +21,7 @@ import {
 import { Button } from '../../../src/components/ui/Button';
 
 export default function ProfileScreen() {
-  const { colors, spacing, typography, isDark } = useTheme();
+  const { colors, spacing, isDark } = useTheme();
   const router = useRouter();
   const { setUser } = useAuthStore();
 

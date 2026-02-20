@@ -16,7 +16,6 @@ import { OnboardingProgress } from '../../../src/components/common/OnboardingPro
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/services/supabase';
 
-const MAX_PHOTOS = 3;
 const MIN_PHOTOS = 1;
 
 export default function PhotosScreen() {
@@ -122,7 +121,6 @@ export default function PhotosScreen() {
 
   const renderPhotoSlot = (index: number) => {
     const photo = photos[index];
-    const isEmpty = !photo;
 
     return (
       <TouchableOpacity

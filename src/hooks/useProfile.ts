@@ -190,7 +190,7 @@ export function useProfile(options: UseProfileOptions = {}) {
   }, [session?.user?.id, user, setUser]);
 
   // Update photos (replaces all photos)
-  const updatePhotos = useCallback(async (assets: Array<PhotoUploadItem | string>) => {
+  const updatePhotos = useCallback(async (assets: (PhotoUploadItem | string)[]) => {
     if (!session?.user?.id) {
       return { success: false, error: 'Usuário não autenticado' };
     }

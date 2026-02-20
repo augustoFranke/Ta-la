@@ -62,7 +62,7 @@ const AVAILABLE_INTERESTS = [
   { icon: 'sparkles', label: 'Festas' },
   { icon: 'musical-notes', label: 'Dançar' },
   { icon: 'dice', label: 'Jogos de tabuleiro' },
-] as Array<{ icon: IoniconName; label: string }>;
+] as { icon: IoniconName; label: string }[];
 
 export default function InterestsScreen() {
   const router = useRouter();

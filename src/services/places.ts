@@ -26,31 +26,32 @@ const FIELD_MASK = [
   'places.priceLevel',
 ].join(',');
 
-// Types to include in Google Places search request
+// Types to include in Google Places search request (must be Table A types)
+// See: https://developers.google.com/maps/documentation/places/web-service/place-types
 const INCLUDED_TYPES = [
   'bar',
   'night_club',
   'pub',
-  'lounge',
+  'lounge_bar',       // replaces 'lounge' (not a valid Table A type)
   'cocktail_bar',
   'wine_bar',
   'brewery',
   'beer_garden',
   'karaoke',
-  'jazz_club',
   'comedy_club',
-  'music_venue',
+  'live_music_venue',  // replaces 'music_venue' (not a valid Table A type)
   'restaurant',
+  // jazz_club removed — not a valid Table A type, covered by night_club + live_music_venue
 ];
 
 // Whitelist of allowed nightlife venue types
 const NIGHTLIFE_TYPES = [
   // Core nightlife
-  'bar', 'pub', 'lounge', 'night_club', 'brewery',
+  'bar', 'pub', 'lounge', 'lounge_bar', 'night_club', 'brewery',
   // Bar variants
   'dive_bar', 'gastropub', 'speakeasy', 'tavern', 'beer_bar',
   // Entertainment
-  'karaoke', 'jazz_club', 'comedy_club', 'music_venue',
+  'karaoke', 'jazz_club', 'comedy_club', 'live_music_venue', 'music_venue',
   // Restaurant (from nightlife categories)
   'restaurant',
   // Additional nightlife types
@@ -97,9 +98,11 @@ const GOOGLE_TYPE_MAP: Record<string, string> = {
   'karaoke': 'karaoke',
   'jazz_club': 'jazz_club',
   'comedy_club': 'comedy_club',
+  'live_music_venue': 'music_venue',  // map Google's type to our internal name
   'music_venue': 'music_venue',
   'restaurant': 'restaurant',
   'lounge': 'lounge',
+  'lounge_bar': 'lounge',            // map Google's type to our internal name
 };
 
 // Map Google's priceLevel enum strings to integer 0-4
@@ -171,6 +174,13 @@ async function fetchGooglePlaces(
   radius: number
 ): Promise<GooglePlace[]> {
   const safeRadius = Math.max(100, Math.min(radius, 50000));
+
+  if (__DEV__) {
+    console.warn(
+      `[Places API] BILLING: Calling Google Places searchNearby ` +
+      `(lat=${latitude.toFixed(4)}, lng=${longitude.toFixed(4)}, radius=${safeRadius}m)`
+    );
+  }
 
   const body = {
     includedTypes: INCLUDED_TYPES,

@@ -63,15 +63,47 @@ export default function DevSettingsScreen() {
       return;
     }
 
-    setDevOverride(lat, lng);
-    useVenueStore.getState().clearVenues();
-    console.log(`[DevSettings] Override ativado: lat=${lat}, lng=${lng}`);
+    const currentVenues = useVenueStore.getState().venues.length;
+    const proceed = () => {
+      setDevOverride(lat, lng);
+      useVenueStore.getState().clearVenues();
+      console.warn(`[DevSettings] Override ativado: lat=${lat}, lng=${lng} — cache cleared, Places API will be called`);
+    };
+
+    if (currentVenues > 0) {
+      Alert.alert(
+        'Limpar cache de venues?',
+        `Isso vai descartar ${currentVenues} venues em cache e disparar uma nova chamada à Google Places API.`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Continuar', style: 'destructive', onPress: proceed },
+        ]
+      );
+    } else {
+      proceed();
+    }
   };
 
   const handleDeactivate = () => {
-    clearDevOverride();
-    useVenueStore.getState().clearVenues();
-    console.log('[DevSettings] Override desativado — restaurando GPS real');
+    const currentVenues = useVenueStore.getState().venues.length;
+    const proceed = () => {
+      clearDevOverride();
+      useVenueStore.getState().clearVenues();
+      console.warn('[DevSettings] Override desativado — cache cleared, Places API will be called with real GPS');
+    };
+
+    if (currentVenues > 0) {
+      Alert.alert(
+        'Limpar cache de venues?',
+        `Isso vai descartar ${currentVenues} venues em cache e disparar uma nova chamada à Google Places API ao restaurar GPS real.`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Continuar', style: 'destructive', onPress: proceed },
+        ]
+      );
+    } else {
+      proceed();
+    }
   };
 
   const applyPreset = (preset: typeof PRESETS[0]) => {
@@ -337,7 +369,7 @@ export default function DevSettingsScreen() {
               />
             </View>
             <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-              Cole o venue_id do banco de dados. Você pode encontrar no campo "Check-in Ativo" acima após fazer check-in.
+              Cole o venue_id do banco de dados. Você pode encontrar no campo &quot;Check-in Ativo&quot; acima após fazer check-in.
             </Text>
 
             <TouchableOpacity

@@ -1,17 +1,15 @@
 /**
  * Tela Home
- * Header com avatar + saudação, vertical list of VenueCards, skeleton loading, empty state, location banner
+ * Header com avatar + saudação, horizontal venue carousel, location banner
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Alert,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -21,13 +19,9 @@ import { useAuth } from '../../src/hooks/useAuth';
 import { useVenues } from '../../src/hooks/useVenues';
 import { useLocationStore } from '../../src/stores/locationStore';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
-import { VenueCard } from '../../src/components/venue/VenueCard';
-import { VenueCardSkeleton } from '../../src/components/venue/VenueCardSkeleton';
+import { VenueCarousel } from '../../src/components/venue/VenueCarousel';
 import { CheckInModal } from '../../src/components/venue/CheckInModal';
 import type { VenueWithDistance } from '../../src/stores/venueStore';
-
-const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth - 32; // 16px margin each side
 
 export default function HomeScreen() {
   const { colors, spacing, isDark } = useTheme();
@@ -51,15 +45,18 @@ export default function HomeScreen() {
 
   const [checkInVenue, setCheckInVenue] = useState<VenueWithDistance | null>(null);
 
+  // Bootstrap location exactly once — avoids re-triggering on coordinate changes
+  const hasBootstrappedRef = useRef(false);
   useEffect(() => {
-    if (!latitude || !longitude) {
+    if (!hasBootstrappedRef.current && !latitude && !longitude) {
+      hasBootstrappedRef.current = true;
       bootstrap();
     }
   }, [latitude, longitude, bootstrap]);
 
   useEffect(() => {
     fetchActiveCheckIn();
-  }, []);
+  }, [fetchActiveCheckIn]);
 
   const isLoading = isVenuesLoading || isLocationLoading || !hasLocation;
 
@@ -67,70 +64,46 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={[styles.header, { paddingHorizontal: spacing.lg }]}>
-          <View style={styles.headerLeft}>
-            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.avatarText, { color: colors.onPrimary }]}>
-                {(user?.name || 'U')[0].toUpperCase()}
-              </Text>
-            </View>
-            <View>
-              <Text style={[styles.greeting, { color: colors.text }]}>
-                Olá, {user?.name?.split(' ')[0] || 'Usuário'}
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity style={[styles.notifButton, { backgroundColor: colors.card }]}>
-            <Ionicons name="notifications-outline" size={22} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Location error banner (non-blocking) */}
-        {(!permissionGranted || error) && (
-          <View style={[styles.banner, { backgroundColor: colors.card }]}>
-            <Ionicons name="alert-circle-outline" size={20} color="#FF9800" />
-            <Text style={[styles.bannerText, { color: colors.text }]}>
-              {!permissionGranted
-                ? 'Localização desativada. Ative para ver locais próximos.'
-                : error}
+      {/* Header */}
+      <View style={[styles.header, { paddingHorizontal: spacing.lg }]}>
+        <View style={styles.headerLeft}>
+          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.avatarText, { color: colors.onPrimary }]}>
+              {(user?.name || 'U')[0].toUpperCase()}
             </Text>
           </View>
-        )}
-
-        {/* Venue list area */}
-        <View style={styles.listContainer}>
-          {isLoading ? (
-            // Skeleton loading state
-            <>
-              <VenueCardSkeleton cardWidth={CARD_WIDTH} />
-              <VenueCardSkeleton cardWidth={CARD_WIDTH} />
-              <VenueCardSkeleton cardWidth={CARD_WIDTH} />
-            </>
-          ) : venues.length === 0 && !error ? (
-            // Empty state
-            <View style={styles.emptyState}>
-              <Ionicons name="map-outline" size={64} color={colors.textSecondary} />
-              <Text style={[styles.emptyText, { color: colors.text }]}>
-                Nenhum lugar encontrado por aqui
-              </Text>
-            </View>
-          ) : (
-            // Venue cards
-            venues.map((venue) => (
-              <VenueCard
-                key={venue.place_id}
-                venue={venue}
-                cardWidth={CARD_WIDTH}
-                activeCheckInPlaceId={activeCheckIn?.place_id ?? null}
-                onCheckIn={(v) => setCheckInVenue(v)}
-                onCheckOut={async () => { await checkOut(); }}
-              />
-            ))
-          )}
+          <View>
+            <Text style={[styles.greeting, { color: colors.text }]}>
+              Olá, {user?.name?.split(' ')[0] || 'Usuário'}
+            </Text>
+          </View>
         </View>
-      </ScrollView>
+        <TouchableOpacity style={[styles.notifButton, { backgroundColor: colors.card }]}>
+          <Ionicons name="notifications-outline" size={22} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Location error banner (non-blocking) */}
+      {(!permissionGranted || error) && (
+        <View style={[styles.banner, { backgroundColor: colors.card }]}>
+          <Ionicons name="alert-circle-outline" size={20} color="#FF9800" />
+          <Text style={[styles.bannerText, { color: colors.text }]}>
+            {!permissionGranted
+              ? 'Localização desativada. Ative para ver locais próximos.'
+              : error}
+          </Text>
+        </View>
+      )}
+
+      {/* Venue carousel */}
+      <VenueCarousel
+        venues={venues}
+        isLoading={isLoading}
+        error={error}
+        activeCheckInPlaceId={activeCheckIn?.place_id ?? null}
+        onCheckIn={(v) => setCheckInVenue(v)}
+        onCheckOut={async () => { await checkOut(); }}
+      />
 
       <CheckInModal
         visible={checkInVenue !== null}
@@ -165,12 +138,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 32,
   },
   // Header
   header: {
@@ -221,21 +188,5 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     lineHeight: 18,
-  },
-  // Venue list
-  listContainer: {
-    paddingHorizontal: 16,
-    gap: 16,
-  },
-  // Empty state
-  emptyState: {
-    alignItems: 'center',
-    paddingTop: 60,
-    gap: 16,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
   },
 });

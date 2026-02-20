@@ -11,10 +11,14 @@
   - Usage examples: auth OTP in `src/services/auth.ts`, profile/check-in/drinks queries in `src/hooks/useAuth.ts`, `src/hooks/useProfile.ts`, `src/hooks/useCheckIn.ts`, `src/services/drinks.ts`
 
 **Places/Geospatial Discovery:**
-- Radar Places API - nearby venue search for nightlife discovery in `src/services/places.ts`
+- Google Places API (New) - nearby venue search for nightlife discovery in `src/services/places.ts`
   - SDK/Client: direct `fetch` HTTP calls in `src/services/places.ts`
-  - Auth: `EXPO_PUBLIC_RADAR_PUBLISHABLE_KEY` from `src/services/places.ts`
-  - Endpoint usage: `https://api.radar.io/v1/search/places` called in `src/services/places.ts`
+  - Auth: API Key configured in `src/services/places.ts`
+  - Endpoint usage: `https://places.googleapis.com/v1/places:searchNearby` called in `src/services/places.ts`
+  - Cost control: Field Masking (exclude `rating`, `openingHours`) and aggressive client-side caching (30 days).
+
+**Image Caching:**
+- `react-native-fast-image` - Used for persistent and efficient venue/profile photo caching to reduce API costs and improve performance.
 
 **Device Platform Services:**
 - Expo Location - foreground permission and coordinates via `src/stores/locationStore.ts`

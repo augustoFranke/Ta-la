@@ -41,8 +41,9 @@
 
 **Critical:**
 - `@supabase/supabase-js` `^2.90.1` - database/auth/storage client initialized in `src/services/supabase.ts` and used across `src/services/auth.ts`, `src/hooks/useProfile.ts`, `src/hooks/useCheckIn.ts`
-- `expo-location` `~19.0.8` - geolocation permission and coordinate retrieval in `src/stores/locationStore.ts` and permission UX in `app/(tabs)/profile/settings.tsx`
-- `expo-router` `^6.0.21` - app navigation/layout orchestration in `app/_layout.tsx`, `app/(auth)/_layout.tsx`, `app/(tabs)/_layout.tsx`
+- `expo-location` `~19.0.8` - geolocation permission and coordinate retrieval in `src/stores/locationStore.ts`
+- `expo-router` `^6.0.21` - app navigation/layout orchestration in `app/_layout.tsx`
+- `react-native-fast-image` - high-performance image caching for venue and profile photos
 
 **Infrastructure:**
 - `@react-native-async-storage/async-storage` `^2.2.0` - persisted Supabase auth session storage in `src/services/supabase.ts`

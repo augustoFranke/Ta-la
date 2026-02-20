@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -12,7 +12,6 @@ import { useTheme } from '../../../src/theme';
 import { Button } from '../../../src/components/ui/Button';
 import { OnboardingProgress } from '../../../src/components/common/OnboardingProgress';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { useAuth } from '../../../src/hooks/useAuth';
 import type { Gender, GenderPreference } from '../../../src/types/database';
 
 interface OptionButtonProps {

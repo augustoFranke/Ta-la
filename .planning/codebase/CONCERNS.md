@@ -1,8 +1,10 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-02-10
+**Analysis Date:** 2026-02-13
 
-## Tech Debt
+## Previous Analysis (2026-02-10)
+
+### Tech Debt
 
 **Monolithic screen components:**
 - Issue: Large page components mix data access, business rules, and UI rendering in single files.
@@ -131,4 +133,106 @@
 
 ---
 
-*Concerns audit: 2026-02-10*
+## New Findings (2026-02-13)
+
+## Unused Code / Dead Code
+
+### `src/services/places.ts`
+- **Issue:** `getPhotoUrl()` function on line 248 is exported but never imported or called anywhere in the codebase
+- **Impact:** Dead code, unnecessary bundle size
+- **Fix:** Remove the function
+
+### `src/services/notifications.ts`
+- **Issue:** `checkShouldNotify()` function on line 32 is exported but never used
+- **Impact:** Dead code, unused API surface
+- **Fix:** Remove the function or implement notification sending logic
+
+### `src/services/moderation.ts`
+- **Issue:** `unblockUser()` function on line 13 is exported but not imported anywhere
+- **Impact:** Dead code
+- **Fix:** Either implement unblock UI or remove the function
+
+### Redundant Re-export in `src/services/places.ts`
+- **Issue:** Line 346 re-exports `VENUE_TYPE_SCORES` and `getVenueTypeScore` from config, but these are already imported at the top of the file (lines 8-9)
+- **Impact:** Confusing import structure
+- **Fix:** Remove the re-export on line 346
+
+---
+
+## Unfinished Implementations
+
+### Placeholder Screens
+
+**`app/(tabs)/partners.tsx` (46 lines)**
+- **Issue:** Complete placeholder screen showing "Em produção"
+- **Impact:** User confusion, incomplete UI
+- **Fix:** Either implement partners feature or remove from tab navigation
+
+**`app/(tabs)/explore.tsx` (46 lines)**
+- **Issue:** Complete placeholder screen showing "Em produção"  
+- **Impact:** User confusion, incomplete UI
+- **Fix:** Either implement explore feature or remove from tab navigation
+
+---
+
+## Magic Numbers / Hardcoded Values
+
+### Hardcoded Colors Not Using Theme
+
+Multiple components use hardcoded color values instead of theme tokens:
+
+**`src/components/venue/VenueCard.tsx`:**
+- Line 42: `color: venue.open_now ? '#1b6b2b' : '#7a1b1b'` - open/closed status colors
+- Line 57: `#FFD700` - star rating color
+- Lines 110, 119: `#fff` - icon colors in badge
+- Lines 202, 250, 258, 266, 274, 295: Various hardcoded colors
+
+**`src/components/venue/CheckInModal.tsx`:**
+- Lines 82, 96, 104: `#e91e63` - heart, toggle, sparkles colors
+
+**`app/venue/[id].tsx`:**
+- Line 267: `#FFD700` - star color
+- Line 318: `#fff` - back arrow
+- Line 331: `#fff` - image indicator  
+- Line 412: `#e91e63` - heart icon
+
+**`app/(tabs)/index.tsx`:**
+- Line 276: `#FF6B35` - flame icon color
+
+**Impact:** Inconsistent styling, breaks dark mode for these elements, harder to maintain
+
+---
+
+## Dev-Only Code (Bundle Impact)
+
+### `app/(tabs)/profile/dev-settings.tsx`
+- **Issue:** Entire file (472 lines) is gated behind `__DEV__` (line 319)
+- **Impact:** Bloated production bundle despite never running
+- **Fix:** Use expo-router's environment-based routing to exclude from production builds
+
+---
+
+## Summary: Dirt Score
+
+**Dirt Score: 4.5/10**
+
+### Justification:
+- **Low dirt (positive):** No TODO/FIXME comments, no obvious security issues, TypeScript types are well-defined, previous analysis captured significant architectural debt
+- **Medium dirt:**
+  - 3 dead code functions that should be removed
+  - 2 placeholder screens taking up navigation slots
+  - 25+ hardcoded color values breaking theme consistency
+  - Re-export redundancy in places.ts
+  - Dev-only code shipped in production bundle
+- **Acceptable:** Large files are functional complexity, previous concerns document captures higher-priority issues
+
+### Priority Cleanup:
+1. **High:** Remove dead code functions (`getPhotoUrl`, `checkShouldNotify`, `unblockUser`)
+2. **High:** Remove redundant re-export in places.ts
+3. **Medium:** Decide on placeholder screens (implement or remove from nav)
+4. **Medium:** Extract hardcoded colors to theme/constants
+5. **Low:** Consider excluding dev-settings from production builds
+
+---
+
+*Concerns audit: 2026-02-13*

@@ -28,10 +28,9 @@ import { sendInteraction } from '../../src/services/interactions';
 import { InteractionButtons } from '../../src/components/interaction/InteractionButtons';
 import { ConfirmationDialog } from '../../src/components/interaction/ConfirmationDialog';
 import { MatchCelebration } from '../../src/components/interaction/MatchCelebration';
-import type { InteractionType } from '../../src/types/database';
+import { REPORT_REASONS, type InteractionType, type ReportReason } from '../../src/types/database';
 import { blockUser, reportUser } from '../../src/services/moderation';
 import { useBlockStore } from '../../src/stores/blockStore';
-import { type ReportReason, REPORT_REASONS } from '../../src/types/database';
 
 type UserProfile = {
   id: string;
@@ -114,7 +113,7 @@ export default function UserProfileScreen() {
         .select('id, user_id, tag')
         .eq('user_id', resolvedUserId);
       setInterests((interestsData ?? []) as Interest[]);
-    } catch (err: any) {
+    } catch {
       Alert.alert('Erro', 'Não foi possível carregar o perfil.');
     } finally {
       setIsLoading(false);
@@ -191,7 +190,7 @@ export default function UserProfileScreen() {
               addBlockedId(resolvedUserId);
               Alert.alert('Usuario bloqueado', 'Voce nao vera mais este usuario.');
               router.back();
-            } catch (err: any) {
+            } catch {
               Alert.alert('Erro', 'Nao foi possivel bloquear este usuario.');
             }
           },
@@ -213,7 +212,7 @@ export default function UserProfileScreen() {
       setReportReason('comportamento_inadequado');
       setReportDetails('');
       Alert.alert('Denuncia enviada', 'Obrigado por ajudar a manter a comunidade segura.');
-    } catch (err: any) {
+    } catch {
       Alert.alert('Erro', 'Nao foi possivel enviar a denuncia.');
     }
   }, [userId, resolvedUserId, reportReason, reportDetails]);

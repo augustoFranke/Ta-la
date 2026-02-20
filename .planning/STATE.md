@@ -12,7 +12,7 @@ See: `.planning/PROJECT.md` (updated 2026-02-16)
 **Milestone:** v2.0 MVP Relaunch
 **Phase:** 16 — Interaction Types (Wave & Like)
 **Plan:** 04 of 04 complete
-**Status:** Phase Complete
+**Status:** Milestone complete
 
 Progress: [████________________] 17% (1/6 phases complete)
 

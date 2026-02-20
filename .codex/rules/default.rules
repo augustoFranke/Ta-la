@@ -1,0 +1,7 @@
+prefix_rule(pattern=["git", "fetch", "--all", "--prune"], decision="allow")
+prefix_rule(pattern=["git", "ls-remote", "--heads", "origin"], decision="allow")
+prefix_rule(pattern=[".specify/scripts/bash/create-new-feature.sh", "--json", "--number", "1", "--short-name", "document-project-baseline", "The current project has"], decision="allow")
+prefix_rule(pattern=["npm", "run", "lint"], decision="allow")
+prefix_rule(pattern=["bun", "remove", "-g", "opencode"], decision="allow")
+prefix_rule(pattern=["bun", "remove", "-g", "opencode-ai"], decision="allow")
+prefix_rule(pattern=["rm", "-rf", "~/.config/opencode", "~/.local/share/opencode", "~/.cache/opencode", "~/Library/Application Support/ai.opencode.desktop", "~/Library/Preferences/ai.opencode.desktop.plist", "~/Library/Caches/Homebrew/opencode--*.zip", "~/Library/Caches/Homebrew/downloads/*opencode*"], decision="allow")

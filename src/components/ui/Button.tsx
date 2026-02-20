@@ -4,7 +4,6 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
-  ViewStyle,
   TextStyle,
   TouchableOpacityProps,
 } from 'react-native';

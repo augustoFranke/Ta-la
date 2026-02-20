@@ -63,7 +63,7 @@ export default function DiscoverScreen() {
   const router = useRouter();
   const { activeCheckIn, fetchActiveCheckIn, checkOut } = useCheckIn();
 
-  const { blockedIds, isLoaded: blocksLoaded, setBlockedIds, addBlockedId } = useBlockStore();
+  const { blockedIds, setBlockedIds, addBlockedId } = useBlockStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [venueUsers, setVenueUsers] = useState<VenueUser[]>([]);
@@ -111,7 +111,7 @@ export default function DiscoverScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, activeCheckIn?.venue_id]);
+  }, [userId, activeCheckIn?.venue_id, blockedIds]);
 
   // Load received interactions
   const loadReceivedInteractions = useCallback(async () => {
@@ -168,9 +168,6 @@ export default function DiscoverScreen() {
 
       // Check for match
       if (result.is_match) {
-        // Find the user's photo from venue users or search results
-        const allUsers = [...venueUsers, ...searchResults];
-        const matchedUser = allUsers.find((u) => u.id === pendingInteraction.userId);
         setMatchData({
           matchedUserName: pendingInteraction.userName,
           matchedUserPhotoUrl: null, // photos not in BasicUser/VenueUser; Avatar uses name fallback
@@ -185,7 +182,7 @@ export default function DiscoverScreen() {
       setIsSending(false);
       setPendingInteraction(null);
     }
-  }, [pendingInteraction, activeCheckIn?.venue_id, venueUsers, searchResults, loadReceivedInteractions]);
+  }, [pendingInteraction, activeCheckIn?.venue_id, loadReceivedInteractions]);
 
   const handleCancelInteraction = useCallback(() => {
     setPendingInteraction(null);
@@ -221,7 +218,7 @@ export default function DiscoverScreen() {
     } finally {
       setIsSearching(false);
     }
-  }, [userId, searchQuery]);
+  }, [userId, searchQuery, blockedIds]);
 
   const handleBlockFromCard = useCallback(async (targetId: string, targetName: string) => {
     if (!userId) return;
@@ -239,7 +236,7 @@ export default function DiscoverScreen() {
               addBlockedId(targetId);
               setVenueUsers(prev => prev.filter(u => u.id !== targetId));
               setSearchResults(prev => prev.filter(u => u.id !== targetId));
-            } catch (err: any) {
+            } catch {
               Alert.alert('Erro', 'Nao foi possivel bloquear este usuario.');
             }
           },

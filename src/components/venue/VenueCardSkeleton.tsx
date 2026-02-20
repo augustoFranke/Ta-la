@@ -6,16 +6,17 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { useTheme } from '../../theme';
-import { CARD_WIDTH, CARD_HEIGHT } from './VenueCard';
+
+const SKELETON_HEIGHT = 320;
 
 interface VenueCardSkeletonProps {
   cardWidth?: number;
 }
 
 export function VenueCardSkeleton({ cardWidth }: VenueCardSkeletonProps) {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
   const shimmerAnim = useRef(new Animated.Value(0)).current;
-  const resolvedWidth = cardWidth ?? CARD_WIDTH;
+  const resolvedWidth = cardWidth ?? 300;
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -72,7 +73,7 @@ export function VenueCardSkeleton({ cardWidth }: VenueCardSkeletonProps) {
 
 const styles = StyleSheet.create({
   container: {
-    height: CARD_HEIGHT,
+    height: SKELETON_HEIGHT,
     borderRadius: 24,
     overflow: 'hidden',
   },

@@ -31,7 +31,7 @@ export interface SelectedPhoto {
 interface ProfilePhotosProps {
   photos: Photo[];
   isEditable?: boolean;
-  onPhotosChange?: (assets: Array<SelectedPhoto | string>) => Promise<{ success: boolean; error?: string }>;
+  onPhotosChange?: (assets: (SelectedPhoto | string)[]) => Promise<{ success: boolean; error?: string }>;
   isLoading?: boolean;
 }
 
@@ -76,7 +76,7 @@ export function ProfilePhotos({
         mimeType: asset.mimeType ?? null,
       }));
       const existingUrls = photos.map((photo) => photo.url);
-      const nextAssets: Array<SelectedPhoto | string> = mode === 'append'
+      const nextAssets: (SelectedPhoto | string)[] = mode === 'append'
         ? [...existingUrls, ...assets].slice(0, 3)
         : assets;
       await onPhotosChange(nextAssets);
@@ -127,7 +127,7 @@ export function ProfilePhotos({
         mimeType: asset.mimeType ?? null,
       };
 
-      const existingUrls: Array<SelectedPhoto | string> = photos.map((photo) => photo.url);
+      const existingUrls: (SelectedPhoto | string)[] = photos.map((photo) => photo.url);
       const nextAssets = [...existingUrls];
       if (slotIndex < nextAssets.length) {
         nextAssets[slotIndex] = selected;

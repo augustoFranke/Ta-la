@@ -1,4 +1,4 @@
-export { VenueCard, CARD_WIDTH, CARD_HEIGHT } from './VenueCard';
+export { VenueCard } from './VenueCard';
 export { VenueCarousel } from './VenueCarousel';
 export { VenueCardSkeleton } from './VenueCardSkeleton';
 export { CheckInModal } from './CheckInModal';

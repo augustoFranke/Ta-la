@@ -145,13 +145,6 @@ export function VenueCarousel({
 
     // Instagram-style sliding dots
     const dotTotalWidth = DOT_SIZE + DOT_GAP;
-    const centerOffset = Math.floor(MAX_VISIBLE_DOTS / 2);
-    const maxStartIdx = totalDots - MAX_VISIBLE_DOTS;
-
-    // Calculate visible window
-    let visibleStart = currentIndex - centerOffset;
-    visibleStart = Math.max(0, Math.min(visibleStart, maxStartIdx));
-    const visibleEnd = visibleStart + MAX_VISIBLE_DOTS - 1;
 
     // Width of the visible area
     // Use full width for all dots including gap prevents clipping

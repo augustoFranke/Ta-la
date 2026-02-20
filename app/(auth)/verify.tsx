@@ -14,7 +14,7 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '../../src/theme';
@@ -24,10 +24,9 @@ import { useAuth } from '../../src/hooks/useAuth';
 const CODE_LENGTH = 6;
 
 export default function VerifyScreen() {
-  const router = useRouter();
   const { email } = useLocalSearchParams<{ email: string }>();
   const { colors, spacing, typography, isDark } = useTheme();
-  const { verifyOTP, sendOTP, isLoading, needsOnboarding } = useAuth();
+  const { verifyOTP, sendOTP, isLoading } = useAuth();
 
   const [code, setCode] = useState('');
   const [countdown, setCountdown] = useState(60);

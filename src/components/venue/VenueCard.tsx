@@ -10,15 +10,12 @@ import {
   ImageBackground,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 import type { VenueWithDistance } from '../../stores/venueStore';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-export const CARD_WIDTH = SCREEN_WIDTH - 48; // 24px padding on each side
-export const CARD_HEIGHT = 320;
+const HERO_HEIGHT = 208;
 
 interface VenueCardProps {
   venue: VenueWithDistance;
@@ -85,7 +82,7 @@ export function VenueCard({
     ? colors.textSecondary
     : colors.onPrimary;
 
-  const heroHeight = Math.round(CARD_HEIGHT * 0.65);
+  const heroHeight = HERO_HEIGHT;
 
   const heroContent = (
     <View style={{ height: heroHeight }}>
@@ -108,7 +105,7 @@ export function VenueCard({
   );
 
   return (
-    <View style={[styles.container, { width: cardWidth ?? CARD_WIDTH }]}>
+    <View style={[styles.container, { width: cardWidth, backgroundColor: colors.card }]}>
       {/* Hero photo — top 65% */}
       {heroPhotoUrl ? (
         <ImageBackground
@@ -157,10 +154,8 @@ export function VenueCard({
 
 const styles = StyleSheet.create({
   container: {
-    height: CARD_HEIGHT,
     borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: '#1a1a1a',
   },
   heroImage: {
     borderTopLeftRadius: 24,
@@ -192,16 +187,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomContent: {
-    flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 14,
+    paddingTop: 10,
+    paddingBottom: 12,
     gap: 6,
   },
   venueName: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '700',
-    lineHeight: 26,
+    lineHeight: 22,
   },
   distanceRow: {
     flexDirection: 'row',
@@ -212,10 +206,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   checkInButton: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 'auto',
+    marginTop: 8,
   },
   checkInButtonText: {
     fontSize: 16,

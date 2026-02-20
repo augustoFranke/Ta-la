@@ -1,0 +1,76 @@
+---
+description: "GSD (Get Shit Done) command router. Activate when the user mentions any GSD command: gsd, plan-phase, execute-phase, new-project, new-milestone, complete-milestone, progress, resume-work, pause-work, quick, help, map-codebase, discuss-phase, research-phase, list-phase-assumptions, add-phase, insert-phase, remove-phase, add-todo, check-todos, verify-work, audit-milestone, plan-milestone-gaps, settings, set-profile, update, debug, reapply-patches"
+alwaysApply: false
+---
+
+# GSD Command Router
+
+You have access to the GSD (Get Shit Done) project planning and execution framework. When the user invokes a GSD command, follow this process:
+
+## Recognizing GSD Commands
+
+The user may invoke commands in any of these formats:
+- `gsd:command-name` or `/gsd:command-name`
+- `gsd command-name`
+- Just the command name if context is clear (e.g., "plan phase 1", "progress", "execute phase 3")
+
+## How to Execute a GSD Command
+
+1. **Read the command file** from `/Users/augustodoregofranke/.cursor/skills/gsd/commands/{command-name}.md`
+2. **Read the workflow file** referenced in the `<execution_context>` tags (these are in `/Users/augustodoregofranke/.cursor/get-shit-done/workflows/`)
+3. **Read any additional referenced files** (templates, references, agents) mentioned in the command or workflow
+4. **Execute the workflow** step by step, following all gates and checkpoints
+5. **Use `gsd-tools.js`** at `/Users/augustodoregofranke/.cursor/get-shit-done/bin/gsd-tools.js` for initialization and commits as specified in workflows
+
+## Available Commands
+
+| Command | File | Purpose |
+|---------|------|---------|
+| `gsd:new-project` | `new-project.md` | Initialize new project |
+| `gsd:map-codebase` | `map-codebase.md` | Analyze existing codebase |
+| `gsd:discuss-phase` | `discuss-phase.md` | Gather phase context |
+| `gsd:research-phase` | `research-phase.md` | Research phase implementation |
+| `gsd:list-phase-assumptions` | `list-phase-assumptions.md` | Surface assumptions |
+| `gsd:plan-phase` | `plan-phase.md` | Create detailed execution plan |
+| `gsd:execute-phase` | `execute-phase.md` | Execute all plans in a phase |
+| `gsd:quick` | `quick.md` | Quick ad-hoc task execution |
+| `gsd:progress` | `progress.md` | Check status and route to next action |
+| `gsd:resume-work` | `resume-work.md` | Resume from previous session |
+| `gsd:pause-work` | `pause-work.md` | Create context handoff |
+| `gsd:debug` | `debug.md` | Systematic debugging |
+| `gsd:add-phase` | `add-phase.md` | Add phase to roadmap |
+| `gsd:insert-phase` | `insert-phase.md` | Insert urgent work as decimal phase |
+| `gsd:remove-phase` | `remove-phase.md` | Remove future phase |
+| `gsd:new-milestone` | `new-milestone.md` | Start new milestone |
+| `gsd:complete-milestone` | `complete-milestone.md` | Archive completed milestone |
+| `gsd:add-todo` | `add-todo.md` | Capture idea as todo |
+| `gsd:check-todos` | `check-todos.md` | List and work on todos |
+| `gsd:verify-work` | `verify-work.md` | Validate features via UAT |
+| `gsd:audit-milestone` | `audit-milestone.md` | Audit milestone completion |
+| `gsd:plan-milestone-gaps` | `plan-milestone-gaps.md` | Close audit gaps |
+| `gsd:settings` | `settings.md` | Configure workflow toggles |
+| `gsd:set-profile` | `set-profile.md` | Switch model profile |
+| `gsd:update` | `update.md` | Update GSD version |
+| `gsd:reapply-patches` | `reapply-patches.md` | Reapply local modifications |
+| `gsd:help` | `help.md` | Show command reference |
+
+## Key Paths
+
+- Skill commands: `/Users/augustodoregofranke/.cursor/skills/gsd/commands/`
+- Core library: `/Users/augustodoregofranke/.cursor/get-shit-done/`
+- Workflows: `/Users/augustodoregofranke/.cursor/get-shit-done/workflows/`
+- Templates: `/Users/augustodoregofranke/.cursor/get-shit-done/templates/`
+- References: `/Users/augustodoregofranke/.cursor/get-shit-done/references/`
+- Agents: `/Users/augustodoregofranke/.cursor/agents/`
+- Tools: `/Users/augustodoregofranke/.cursor/get-shit-done/bin/gsd-tools.js`
+
+## Project Planning Directory
+
+All GSD artifacts live in `.planning/` in the project root:
+- `PROJECT.md` — Project vision
+- `ROADMAP.md` — Current phase breakdown
+- `STATE.md` — Project memory and context
+- `REQUIREMENTS.md` — Scoped requirements
+- `config.json` — Workflow mode and gates
+- `phases/` — Phase plans and summaries
+- `codebase/` — Codebase analysis (brownfield)
