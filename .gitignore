@@ -125,3 +125,4 @@ coverage/
 # GSD PLANNING (LOCAL-ONLY)
 # ======================================
 .planning/
+node_modules
