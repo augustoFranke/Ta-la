@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/theme';
 import { useProfile } from '../../../src/hooks/useProfile';
+import { useAuth } from '../../../src/hooks/useAuth';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/services/supabase';
 import {
@@ -20,7 +21,35 @@ import {
 } from '../../../src/components/profile';
 import { Button } from '../../../src/components/ui/Button';
 
+// Guest profile view — shown when not authenticated (Spec 001)
+function GuestProfileScreen() {
+  const router = useRouter();
+  const { colors, spacing, isDark } = useTheme();
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <View style={[styles.guestContainer, { paddingHorizontal: spacing.lg }]}>
+        <View style={[styles.guestAvatar, { backgroundColor: colors.card }]}>
+          <Ionicons name="person" size={48} color={colors.textSecondary} />
+        </View>
+        <Text style={[styles.guestTitle, { color: colors.text }]}>
+          Bem-vindo ao Tá lá!
+        </Text>
+        <Text style={[styles.guestSubtitle, { color: colors.textSecondary }]}>
+          Crie sua conta para encontrar pessoas nos mesmos lugares que você.
+        </Text>
+        <Button
+          title="Cadastre-se e crie seu perfil"
+          onPress={() => router.push('/(auth)/welcome')}
+        />
+      </View>
+    </SafeAreaView>
+  );
+}
+
 export default function ProfileScreen() {
+  const { isAuthenticated } = useAuth();
   const { colors, spacing, isDark } = useTheme();
   const router = useRouter();
   const { setUser } = useAuthStore();
@@ -63,6 +92,11 @@ export default function ProfileScreen() {
       Alert.alert('Erro', 'Nao foi possivel atualizar sua disponibilidade.');
     }
   };
+
+  // Spec 001: guests see only a CTA, no editable profile controls
+  if (!isAuthenticated) {
+    return <GuestProfileScreen />;
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -229,5 +263,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     marginBottom: 16,
+  },
+  // Guest profile styles
+  guestContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  guestAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  guestTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  guestSubtitle: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 8,
   },
 });
