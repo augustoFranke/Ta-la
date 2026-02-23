@@ -163,10 +163,6 @@ export default function ProfileScreen() {
       : ['transparent', 'rgba(255,255,255,0.45)', bgColor]
   ) as [string, string, string];
 
-  // Stats derived from data
-  const statPhotos = photos.length;
-  const statInterests = interests.length;
-
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
       {/* Light status bar so it reads over the photo */}
@@ -223,7 +219,7 @@ export default function ProfileScreen() {
       {/* ── Main scrollable content ─────────────────────────────────────── */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: 64 + insets.bottom }}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
@@ -276,30 +272,22 @@ export default function ProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Editar perfil"
               >
-                <Ionicons name="pencil" size={15} color="#fff" />
+                <Ionicons name="create-sharp" size={17} color="#fff" />
               </TouchableOpacity>
             )}
           </View>
 
           {/* Name / age / occupation overlaid at hero bottom */}
           <View style={[styles.heroInfo, { paddingBottom: 28 }]}>
-            {/* Quick stats row */}
-            <View style={styles.statsRow}>
-              <View style={styles.statChip}>
-                <Ionicons name="images-outline" size={12} color="rgba(255,255,255,0.7)" />
-                <Text style={styles.statText}>{statPhotos}</Text>
-              </View>
-              <View style={styles.statChip}>
-                <Ionicons name="pricetag-outline" size={12} color="rgba(255,255,255,0.7)" />
-                <Text style={styles.statText}>{statInterests}</Text>
-              </View>
-              {user?.is_verified && (
+            {/* Verified badge — shown only when account is verified */}
+            {user?.is_verified && (
+              <View style={styles.statsRow}>
                 <View style={[styles.statChip, styles.verifiedChip]}>
                   <Ionicons name="checkmark-circle" size={12} color="#000" />
                   <Text style={[styles.statText, { color: '#000' }]}>Verificado</Text>
                 </View>
-              )}
-            </View>
+              </View>
+            )}
 
             <Text style={styles.heroName} numberOfLines={1}>
               {user?.name ?? ''}
@@ -502,21 +490,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.35)',
     borderRadius: 20,
     paddingVertical: 3,
     paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
   },
   verifiedChip: {
     backgroundColor: BRAND,
-    borderColor: 'transparent',
   },
   statText: {
     fontSize: 11,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.85)',
   },
   heroName: {
     fontSize: 34,

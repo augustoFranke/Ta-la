@@ -1,29 +1,50 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../../src/theme';
 
 /**
- * iOS 26 "Liquid Glass" tab bar background.
- * BlurView uses the native UIBlurEffect material so content
- * visible through the tab bar is authentically blurred.
- * Android / web: undefined — their tab bar keeps a solid colour.
+ * iOS 26 "Liquid Glass" tab bar.
+ *
+ * KEY: `position: 'absolute'` is required so screen content scrolls
+ * *behind* the bar — that is what the BlurView actually blurs.
+ * Without it there is no content behind the bar and the blur renders
+ * over a solid background, which looks identical to a plain tinted View.
+ *
+ * Screens that scroll must add `paddingBottom` equal to the tab bar
+ * height so their last content item isn't hidden beneath the bar.
+ *
+ * Android / web: normal solid background, no absolute positioning.
  */
 function IosTabBarBackground() {
   const { isDark } = useTheme();
   return (
     <BlurView
       tint={isDark ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
-      intensity={90}
+      intensity={92}
       style={StyleSheet.absoluteFill}
-    />
+    >
+      {/* Specular glass-edge highlight — the top-border of a real glass surface */}
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: isDark
+            ? 'rgba(255,255,255,0.28)'
+            : 'rgba(255,255,255,0.9)',
+        }}
+      />
+    </BlurView>
   );
 }
 
 export default function TabsLayout() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <Tabs
@@ -31,18 +52,15 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        // ── iOS: transparent tab bar backed by native UIBlurEffect ──
         tabBarBackground:
           Platform.OS === 'ios' ? () => <IosTabBarBackground /> : undefined,
         tabBarStyle:
           Platform.OS === 'ios'
             ? {
-                // Must be transparent so the BlurView shows through
+                // transparent + absolute = content scrolls behind + BlurView blurs it
+                position: 'absolute',
                 backgroundColor: 'transparent',
-                borderTopWidth: StyleSheet.hairlineWidth,
-                borderTopColor: isDark
-                  ? 'rgba(255,255,255,0.12)'
-                  : 'rgba(0,0,0,0.08)',
+                borderTopWidth: 0, // replaced by the specular highlight inside BlurView
               }
             : {
                 backgroundColor: colors.background,
