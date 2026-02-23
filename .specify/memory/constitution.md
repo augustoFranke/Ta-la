@@ -26,7 +26,7 @@ src/
 
 - No emojis in UI or code — use icon libraries (`expo-vector-icons` or project icon components)
 - Prefer components from `src/components/ui/` when possible
-- Primary color: `#c1ff72`
+- Primary color: `#aeee5b`
 
 ## Localization
 
@@ -45,7 +45,7 @@ src/
 
 - Core features: drink offers, check-in, discovery of users at the same venue
 - Check-in must validate proximity (50–100 m) and confirm venue presence
-- No in-app chat/messaging in MVP
+- In-app chat/messaging IS in MVP scope (text, emoji, photo, voice) per Spec 007
 - Venue vibes and dating score are out of scope
 
 ## Commits
