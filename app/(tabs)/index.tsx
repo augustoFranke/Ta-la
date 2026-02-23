@@ -24,8 +24,10 @@ import { useAuth } from '../../src/hooks/useAuth';
 import { useVenues, useTrending } from '../../src/hooks/useVenues';
 import { useLocationStore } from '../../src/stores/locationStore';
 import { useCheckIn } from '../../src/hooks/useCheckIn';
+import { useProfile } from '../../src/hooks/useProfile';
 import { VenueCarousel } from '../../src/components/venue/VenueCarousel';
 import { CheckInModal } from '../../src/components/venue/CheckInModal';
+import { Avatar } from '../../src/components/ui/Avatar';
 import { useNotificationStore } from '../../src/stores/notificationStore';
 import { fetchNotifications } from '../../src/services/notifications';
 import type { VenueWithDistance } from '../../src/stores/venueStore';
@@ -53,6 +55,7 @@ export default function HomeScreen() {
   const { trending } = useTrending();
 
   const { activeCheckIn, checkInToPlace, checkOut, fetchActiveCheckIn, isLoading: isCheckInLoading } = useCheckIn();
+  const { primaryPhoto } = useProfile({ autoFetch: isAuthenticated });
 
   const [checkInVenue, setCheckInVenue] = useState<VenueWithDistance | null>(null);
 
@@ -90,9 +93,7 @@ export default function HomeScreen() {
     router.push('/(auth)/onboarding/photos');
   };
 
-  // Header avatar
   const firstName = user?.name?.split(' ')[0];
-  const avatarInitial = firstName ? firstName[0].toUpperCase() : null;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -100,41 +101,48 @@ export default function HomeScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: spacing.lg }]}>
-        <View style={styles.headerLeft}>
-          {/* Avatar: user photo or initials or generic icon */}
-          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-            {avatarInitial ? (
-              <Text style={[styles.avatarText, { color: colors.onPrimary }]}>
-                {avatarInitial}
-              </Text>
-            ) : (
-              <Ionicons name="person" size={22} color={colors.onPrimary} />
-            )}
-          </View>
-          <Text style={[styles.greeting, { color: colors.text }]}>
-            {firstName ? `Olá, ${firstName}!` : 'Olá!'}
-          </Text>
-        </View>
+        {/* Left: greeting */}
+        <Text style={[styles.greeting, { color: colors.text }]}>
+          {firstName ? `Olá, ${firstName}!` : 'Olá!'}
+        </Text>
 
-        <TouchableOpacity
-          style={[styles.notifButton, { backgroundColor: colors.card }]}
-          onPress={() => {
-            if (isGuest) {
-              handleGuestAction();
-            } else {
-              router.push('/notifications');
-            }
-          }}
-        >
-          <Ionicons name="notifications-outline" size={22} color={colors.text} />
-          {unreadCount > 0 && (
-            <View style={[styles.notifBadge, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.notifBadgeText, { color: colors.onPrimary }]}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        {/* Right: notification bell + profile avatar */}
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.notifButton, { backgroundColor: colors.card }]}
+            onPress={() => {
+              if (isGuest) {
+                handleGuestAction();
+              } else {
+                router.push('/notifications');
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Notificações"
+          >
+            <Ionicons name="notifications-outline" size={22} color={colors.text} />
+            {unreadCount > 0 && (
+              <View style={[styles.notifBadge, { backgroundColor: colors.primary }]}>
+                <Text style={[styles.notifBadgeText, { color: colors.onPrimary }]}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Profile photo — tappable, navigates to Perfil tab */}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/profile')}
+            accessibilityRole="button"
+            accessibilityLabel="Ver perfil"
+          >
+            <Avatar
+              url={isAuthenticated ? primaryPhoto?.url : null}
+              name={user?.name}
+              size={44}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Location permission banner (non-blocking) */}
@@ -255,21 +263,10 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
   },
-  headerLeft: {
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 18,
-    fontWeight: '700',
+    gap: 10,
   },
   greeting: {
     fontSize: 17,
