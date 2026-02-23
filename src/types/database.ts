@@ -288,7 +288,7 @@ export const NOTIFICATION_CATEGORIES: readonly { value: NotificationCategory; la
 ] as const;
 
 // Interaction types
-export type InteractionType = 'drink' | 'wave' | 'like';
+export type InteractionType = 'drink' | 'like';
 
 export interface Interaction {
   id: string;
@@ -310,7 +310,6 @@ export interface ReceivedInteraction {
 
 export const INTERACTION_LABELS: Record<InteractionType, string> = {
   drink: 'um drink',
-  wave: 'uma onda',
   like: 'uma curtida',
 };
 

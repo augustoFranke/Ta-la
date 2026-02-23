@@ -228,7 +228,7 @@ export const DATA_COLLECTED: readonly DataCollectedItem[] = [
   {
     category: 'Atividade',
     field: 'interactions',
-    description: 'Interacoes (drinks, likes, waves)',
+    description: 'Interacoes (drinks, likes)',
     purpose: 'Funcionalidades sociais do aplicativo',
     required: false,
     sensitive: false,

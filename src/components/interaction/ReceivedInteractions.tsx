@@ -17,7 +17,6 @@ interface ReceivedInteractionsProps {
 }
 
 const INTERACTION_ICON: Record<InteractionType, keyof typeof Ionicons.glyphMap> = {
-  wave: 'hand-left',
   like: 'heart',
   drink: 'beer',
 };

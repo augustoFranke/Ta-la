@@ -15,7 +15,6 @@ const BUTTON_CONFIG: {
   outlineIcon: keyof typeof Ionicons.glyphMap;
   filledIcon: keyof typeof Ionicons.glyphMap;
 }[] = [
-  { type: 'wave', outlineIcon: 'hand-left-outline', filledIcon: 'hand-left' },
   { type: 'like', outlineIcon: 'heart-outline', filledIcon: 'heart' },
   { type: 'drink', outlineIcon: 'beer-outline', filledIcon: 'beer' },
 ];
