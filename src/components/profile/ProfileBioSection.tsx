@@ -1,9 +1,15 @@
 /**
  * ProfileBioSection Component
- * Displays and allows editing of user bio and occupation
+ * Displays and allows editing of user bio and occupation.
+ *
+ * Supports two edit-mode patterns:
+ *  1. Global edit mode (editMode prop): all fields are editable at once,
+ *     no per-field Editar/Save buttons — the parent controls saving.
+ *  2. Legacy per-field mode (isEditable prop without editMode): each field
+ *     has its own Editar/Save/Cancel inline controls.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +23,13 @@ import { useTheme } from '../../theme';
 interface ProfileBioSectionProps {
   bio: string | null;
   occupation: string | null;
+  /** Global edit mode — parent controls when editing starts/ends. */
+  editMode?: boolean;
+  /** Called on each bio keystroke in global edit mode. */
+  onBioTextChange?: (bio: string) => void;
+  /** Called on each occupation keystroke in global edit mode. */
+  onOccupationTextChange?: (occupation: string) => void;
+  /** Legacy per-field editing (used when editMode is not provided). */
   isEditable?: boolean;
   onBioChange?: (bio: string) => Promise<{ success: boolean; error?: string }>;
   onOccupationChange?: (occupation: string) => Promise<{ success: boolean; error?: string }>;
@@ -26,6 +39,9 @@ interface ProfileBioSectionProps {
 export function ProfileBioSection({
   bio,
   occupation,
+  editMode,
+  onBioTextChange,
+  onOccupationTextChange,
   isEditable = false,
   onBioChange,
   onOccupationChange,
@@ -33,6 +49,94 @@ export function ProfileBioSection({
 }: ProfileBioSectionProps) {
   const { colors } = useTheme();
 
+  // Local buffer for global edit mode
+  const [localBio, setLocalBio] = useState(bio || '');
+  const [localOccupation, setLocalOccupation] = useState(occupation || '');
+
+  // Sync buffer when parent data or edit mode changes
+  useEffect(() => {
+    if (editMode) {
+      setLocalBio(bio || '');
+      setLocalOccupation(occupation || '');
+    }
+  }, [editMode, bio, occupation]);
+
+  if (editMode !== undefined) {
+    // ── Global edit mode ───────────────────────────────────────────
+    return (
+      <View style={styles.container}>
+        {/* Bio field */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            Sobre
+          </Text>
+          {editMode ? (
+            <TextInput
+              style={[
+                styles.textInput,
+                {
+                  backgroundColor: colors.background,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+              value={localBio}
+              onChangeText={(v) => {
+                setLocalBio(v);
+                onBioTextChange?.(v);
+              }}
+              placeholder="Conte um pouco sobre você..."
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              numberOfLines={4}
+              maxLength={500}
+              textAlignVertical="top"
+              accessibilityLabel="Bio"
+            />
+          ) : (
+            <Text style={[styles.bioText, { color: colors.text }]}>
+              {bio || 'Nenhuma bio adicionada'}
+            </Text>
+          )}
+        </View>
+
+        {/* Occupation field */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            Ocupação
+          </Text>
+          {editMode ? (
+            <TextInput
+              style={[
+                styles.textInput,
+                styles.singleLineInput,
+                {
+                  backgroundColor: colors.background,
+                  color: colors.text,
+                  borderColor: colors.border,
+                },
+              ]}
+              value={localOccupation}
+              onChangeText={(v) => {
+                setLocalOccupation(v);
+                onOccupationTextChange?.(v);
+              }}
+              placeholder="Sua ocupação..."
+              placeholderTextColor={colors.textSecondary}
+              maxLength={100}
+              accessibilityLabel="Ocupação"
+            />
+          ) : (
+            <Text style={[styles.bioText, { color: colors.text }]}>
+              {occupation || 'Nenhuma ocupação adicionada'}
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // ── Legacy per-field mode ──────────────────────────────────────
   return (
     <View style={styles.container}>
       <EditableField
@@ -58,6 +162,8 @@ export function ProfileBioSection({
     </View>
   );
 }
+
+// ─── Legacy per-field editable component ──────────────────────────────────────
 
 interface EditableFieldProps {
   label: string;
@@ -113,6 +219,8 @@ function EditableField({
           <TouchableOpacity
             onPress={() => setIsEditing(true)}
             disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityLabel={`Editar ${label}`}
           >
             <Text style={[styles.editButton, { color: colors.primary }]}>
               Editar
@@ -140,13 +248,15 @@ function EditableField({
             multiline={multiline}
             numberOfLines={multiline ? 4 : 1}
             maxLength={multiline ? 500 : 100}
-            textAlignVertical={multiline ? "top" : "center"}
+            textAlignVertical={multiline ? 'top' : 'center'}
           />
           <View style={styles.editActions}>
             <TouchableOpacity
               style={[styles.cancelButton, { borderColor: colors.border }]}
               onPress={handleCancel}
               disabled={isSaving}
+              accessibilityRole="button"
+              accessibilityLabel="Cancelar edição"
             >
               <Text style={[styles.cancelButtonText, { color: colors.text }]}>
                 Cancelar
@@ -156,6 +266,8 @@ function EditableField({
               style={[styles.saveButton, { backgroundColor: colors.primary }]}
               onPress={handleSave}
               disabled={isSaving}
+              accessibilityRole="button"
+              accessibilityLabel="Salvar"
             >
               <Text style={[styles.saveButtonText, { color: colors.onPrimary }]}>
                 {isSaving ? 'Salvando...' : 'Salvar'}
@@ -191,6 +303,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
+    marginBottom: 8,
   },
   editButton: {
     fontSize: 14,

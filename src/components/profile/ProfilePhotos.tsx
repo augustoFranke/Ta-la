@@ -31,6 +31,8 @@ export interface SelectedPhoto {
 interface ProfilePhotosProps {
   photos: Photo[];
   isEditable?: boolean;
+  /** Suppress the section-level "Editar" button (use when a parent global edit button is present). */
+  hideEditButton?: boolean;
   onPhotosChange?: (assets: (SelectedPhoto | string)[]) => Promise<{ success: boolean; error?: string }>;
   isLoading?: boolean;
 }
@@ -38,6 +40,7 @@ interface ProfilePhotosProps {
 export function ProfilePhotos({
   photos,
   isEditable = false,
+  hideEditButton = false,
   onPhotosChange,
   isLoading = false,
 }: ProfilePhotosProps) {
@@ -159,10 +162,12 @@ export function ProfilePhotos({
     <View style={[styles.container, { backgroundColor: colors.card }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.textSecondary }]}>Fotos</Text>
-        {isEditable && (
+        {isEditable && !hideEditButton && (
           <TouchableOpacity
             onPress={() => handleEditPhotos('replace')}
             disabled={isUploading || isLoading}
+            accessibilityRole="button"
+            accessibilityLabel="Editar fotos"
           >
             <Text style={[styles.editButton, { color: colors.primary }]}>
               {isUploading ? 'Salvando...' : 'Editar'}
