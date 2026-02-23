@@ -67,7 +67,7 @@
 - `profile/index.tsx` - Current user profile view/edit.
 - `profile/settings.tsx` - App/location/notification preferences.
 - `profile/dev-settings.tsx` - Dev tools (GPS override, simulated users).
-- `chat.tsx` - Placeholder.
+- `chat.tsx` - Chat list and conversation UI (Spec 007).
 - `partners.tsx` - Placeholder.
 
 ### Other routes
@@ -171,5 +171,5 @@ From `package.json`:
 ## 9. Current Gaps / Observations
 
 - No dedicated automated unit/integration test suite is present in the codebase yet.
-- `chat` and `partners` tab routes are placeholders.
+- `partners` tab route is a placeholder; chat is implemented per Spec 007.
 - Repository contains planning/spec directories (`.planning`, `specs`) that are not runtime app code.
