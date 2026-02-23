@@ -272,7 +272,7 @@ export default function ProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Editar perfil"
               >
-                <Ionicons name="create-sharp" size={17} color="#fff" />
+                <Ionicons name="pencil-sharp" size={17} color="#fff" />
               </TouchableOpacity>
             )}
           </View>
