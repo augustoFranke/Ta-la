@@ -43,7 +43,7 @@ Root routing entry:
 
 Route groups:
 - `app/(auth)/`: OTP login + onboarding flow.
-- `app/(tabs)/`: main app tabs (`index`, `discover`, `profile`, placeholders for `chat` and `partners`).
+- `app/(tabs)/`: main app tabs (`index`, `discover`, `profile`, `chat`; placeholder for `partners`).
 - `app/user/[id].tsx`: public profile route outside tabs.
 
 ### 3.3 State architecture (Zustand)
@@ -64,7 +64,6 @@ Primary services:
 - `places.ts`: Google Places nearby search + normalization/scoring/filtering.
 - `venueEnrichment.ts`: enriches venues with active user/open-to-meeting counts from Supabase.
 - `interactions.ts`: interaction RPC workflows (`send_interaction`, `get_received_interactions`).
-- `drinks.ts`: drink offer relation handling.
 - `moderation.ts`: block/report operations.
 - `notifications.ts`: notification preferences read/write.
 
@@ -145,16 +144,16 @@ Both use debounced callbacks and do not trust event payloads as the canonical so
   - Drink offers/interactions.
   - Venue check-in.
   - Discovery of users at the same venue.
+  - In-app chat/messaging (text, emoji, photo, voice) per Spec 007.
 - Check-in must enforce proximity/trust server-side (configured threshold in DB migrations).
 - Out-of-scope for MVP:
-  - In-app chat/messaging.
   - Venue vibes/dating score features.
 
 ### 6.3 UX/content constraints
 
 - All user-facing text must be pt-BR.
 - Use project UI patterns/components from `src/components/ui/` when possible.
-- Primary brand color: `#c1ff72`.
+- Primary brand color: `#aeee5b`.
 
 ## 7. Quality and Operational Constraints
 
@@ -164,6 +163,6 @@ Both use debounced callbacks and do not trust event payloads as the canonical so
 
 ## 8. Known Architectural Gaps
 
-- `chat` and `partners` tabs are placeholders.
+- `partners` tab is a placeholder; chat tab is implemented per Spec 007.
 - Testing maturity is currently lint/typecheck-focused, without full automated functional suites.
 - Some planning/spec directories exist outside runtime code and may diverge from implementation if not kept in sync.
