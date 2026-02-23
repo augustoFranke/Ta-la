@@ -14,7 +14,6 @@ import {
   Alert,
   ScrollView,
   Image,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -256,10 +255,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
-  // Extra paddingBottom accounts for the floating iOS glass tab bar (≈49 px)
-  // SafeAreaView already handles the bottom safe-area inset, so only the
-  // bar height itself needs to be added on iOS.
-  scrollContent: { paddingBottom: Platform.OS === 'ios' ? 84 : 32 },
+  scrollContent: { paddingBottom: 32 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

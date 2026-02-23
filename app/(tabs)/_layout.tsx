@@ -1,114 +1,54 @@
+import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/theme';
 
 /**
- * iOS-only custom glass tab bar.
+ * iOS: NativeTabs from expo-router/unstable-native-tabs
+ * Uses react-native-screens' BottomTabs (UITabBarController) which renders
+ * the native iOS 26 Liquid Glass tab bar automatically — no custom code needed.
  *
- * WHY a fully custom `tabBar` instead of `tabBarBackground` + transparent style:
- * The BlurView only blurs content that is rendered *behind* it in the same
- * compositing layer. `tabBarBackground` with a non-absolute tab bar still
- * renders the bar below the screen content, so the BlurView has nothing to
- * blur. By returning a View with `position: 'absolute'` here, React Navigation
- * measures 0 layout height for the bar, meaning screen content extends to the
- * bottom edge — and the floating bar blurs whatever is behind it via
- * UIBlurEffect (the iOS 26 "Liquid Glass" material).
+ * SF Symbols are used for native icons on iOS.
  *
- * Screens with scrollable content must manually add paddingBottom to avoid
- * their last item being obscured by the floating bar (already done).
+ * Android/web: Standard Tabs with solid background.
  */
-function GlassTabBar({ state, descriptors, navigation }: any) {
-  const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
 
-  // Only routes that have a tabBarIcon defined; href:null tabs don't define one.
-  const tabs = state.routes.filter(
-    (r: any) => descriptors[r.key]?.options?.tabBarIcon !== undefined
-  );
-
+function IOSLayout() {
+  const { colors } = useTheme();
   return (
-    <View style={[styles.tabBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-      {/* Native UIBlurEffect — iOS 26 Liquid Glass material */}
-      <BlurView
-        tint={isDark ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
-        intensity={90}
-        style={StyleSheet.absoluteFill}
-      />
+    <NativeTabs tintColor={colors.primary}>
+      <NativeTabs.Trigger name="index">
+        <Icon sf={{ default: 'house', selected: 'house.fill' }} />
+        <Label>Início</Label>
+      </NativeTabs.Trigger>
 
-      {/* Specular highlight — the bright glass edge at the top of the bar */}
-      <View
-        style={[
-          styles.glassEdge,
-          {
-            backgroundColor: isDark
-              ? 'rgba(255,255,255,0.22)'
-              : 'rgba(255,255,255,0.85)',
-          },
-        ]}
-      />
+      <NativeTabs.Trigger name="partners" hidden />
 
-      {/* Tab items */}
-      <View style={styles.tabsRow}>
-        {tabs.map((route: any) => {
-          const { options } = descriptors[route.key];
-          // Compare keys — state.index is the index into state.routes (includes hidden routes)
-          const focused = state.routes[state.index]?.key === route.key;
-          const color = focused ? colors.primary : colors.textSecondary;
+      <NativeTabs.Trigger name="chat">
+        <Icon sf={{ default: 'paperplane', selected: 'paperplane.fill' }} />
+        <Label>Chat</Label>
+      </NativeTabs.Trigger>
 
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-            if (!focused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
-            }
-          };
+      <NativeTabs.Trigger name="profile">
+        <Icon sf={{ default: 'person', selected: 'person.fill' }} />
+        <Label>Perfil</Label>
+      </NativeTabs.Trigger>
 
-          return (
-            <TouchableOpacity
-              key={route.key}
-              onPress={onPress}
-              style={styles.tab}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: focused }}
-              accessibilityLabel={(options.title as string | undefined) ?? route.name}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              {options.tabBarIcon?.({ focused, color, size: 24 })}
-              <Text style={[styles.tabLabel, { color }]} numberOfLines={1}>
-                {(options.title as string | undefined) ?? route.name}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
+      <NativeTabs.Trigger name="discover" hidden />
+    </NativeTabs>
   );
 }
 
-export default function TabsLayout() {
+function AndroidLayout() {
   const { colors } = useTheme();
-
   return (
     <Tabs
-      // iOS: fully custom glass bar (see above).
-      // Android / web: React Navigation default solid bar.
-      tabBar={Platform.OS === 'ios' ? (props) => <GlassTabBar {...props} /> : undefined}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        // Only used by the default bar on Android/web
-        tabBarStyle:
-          Platform.OS !== 'ios'
-            ? { backgroundColor: colors.background, borderTopColor: colors.border }
-            : undefined,
+        tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
       }}
     >
       <Tabs.Screen
@@ -120,12 +60,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="partners"
-        options={{
-          href: null,
-        }}
-      />
+      <Tabs.Screen name="partners" options={{ href: null }} />
       <Tabs.Screen
         name="chat"
         options={{
@@ -144,43 +79,11 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="discover"
-        options={{
-          href: null,
-        }}
-      />
+      <Tabs.Screen name="discover" options={{ href: null }} />
     </Tabs>
   );
 }
 
-const styles = StyleSheet.create({
-  tabBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  glassEdge: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: StyleSheet.hairlineWidth,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    height: 49,
-  },
-  tab: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 3,
-  },
-  tabLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    letterSpacing: 0.1,
-  },
-});
+export default function TabsLayout() {
+  return Platform.OS === 'ios' ? <IOSLayout /> : <AndroidLayout />;
+}

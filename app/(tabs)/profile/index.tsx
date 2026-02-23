@@ -219,7 +219,7 @@ export default function ProfileScreen() {
       {/* ── Main scrollable content ─────────────────────────────────────── */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 64 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
