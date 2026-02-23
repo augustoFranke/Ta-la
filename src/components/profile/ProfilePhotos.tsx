@@ -159,7 +159,7 @@ export function ProfilePhotos({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.card }]}>
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.textSecondary }]}>Fotos</Text>
         {isEditable && !hideEditButton && (
@@ -287,6 +287,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   header: {
     flexDirection: 'row',

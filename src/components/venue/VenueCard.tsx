@@ -16,6 +16,7 @@ import { useTheme } from '../../theme';
 import type { VenueWithDistance } from '../../stores/venueStore';
 
 const HERO_HEIGHT = 208;
+const CARD_HEIGHT = 360;
 
 interface VenueCardProps {
   venue: VenueWithDistance;
@@ -140,7 +141,7 @@ export function VenueCard({
   );
 
   return (
-    <View style={[styles.container, { width: cardWidth, backgroundColor: colors.card }]}>
+    <View style={[styles.container, { width: cardWidth, height: CARD_HEIGHT, backgroundColor: colors.card }]}>
       {/* Hero photo — top 65% */}
       {heroPhotoUrl ? (
         <ImageBackground
@@ -171,6 +172,8 @@ export function VenueCard({
             </Text>
           </View>
         )}
+
+        <View style={styles.spacer} />
 
         <TouchableOpacity
           style={[styles.checkInButton, { backgroundColor: buttonBackground, borderColor: buttonBorderColor, borderWidth: needsVerification ? 1.5 : 0 }]}
@@ -222,10 +225,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomContent: {
+    flex: 1,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 12,
     gap: 6,
+  },
+  spacer: {
+    flex: 1,
   },
   venueName: {
     fontSize: 17,
@@ -244,7 +251,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 8,
   },
   checkInButtonText: {
     fontSize: 16,

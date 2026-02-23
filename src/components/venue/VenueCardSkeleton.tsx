@@ -7,7 +7,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { useTheme } from '../../theme';
 
-const SKELETON_HEIGHT = 320;
+const SKELETON_HEIGHT = 360;
 
 interface VenueCardSkeletonProps {
   cardWidth?: number;

@@ -66,7 +66,7 @@ export function ProfileBioSection({
     return (
       <View style={styles.container}>
         {/* Bio field */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             Sobre
           </Text>
@@ -101,7 +101,7 @@ export function ProfileBioSection({
         </View>
 
         {/* Occupation field */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             Ocupação
           </Text>
@@ -210,7 +210,7 @@ function EditableField({
   };
 
   return (
-    <View style={[styles.section, { backgroundColor: colors.card }]}>
+    <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
           {label}
@@ -292,6 +292,7 @@ const styles = StyleSheet.create({
   section: {
     padding: 16,
     borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   sectionHeader: {
     flexDirection: 'row',

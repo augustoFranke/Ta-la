@@ -17,7 +17,7 @@ export function ProfileInterests({ interests }: ProfileInterestsProps) {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.card }]}>
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <Text style={[styles.title, { color: colors.textSecondary }]}>
         Interesses
       </Text>
@@ -42,6 +42,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   title: {
     fontSize: 12,

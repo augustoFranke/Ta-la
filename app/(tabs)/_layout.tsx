@@ -2,24 +2,28 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../../src/theme';
+
+/**
+ * iOS 26 "Liquid Glass" tab bar background.
+ * BlurView uses the native UIBlurEffect material so content
+ * visible through the tab bar is authentically blurred.
+ * Android / web: undefined — their tab bar keeps a solid colour.
+ */
+function IosTabBarBackground() {
+  const { isDark } = useTheme();
+  return (
+    <BlurView
+      tint={isDark ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'}
+      intensity={90}
+      style={StyleSheet.absoluteFill}
+    />
+  );
+}
 
 export default function TabsLayout() {
   const { colors, isDark } = useTheme();
-
-  // iOS 26 "Liquid Glass" tab bar: translucent, floats above content.
-  // Android/web keep solid background.
-  const iosTabBarStyle = {
-    position: 'absolute' as const,
-    backgroundColor: isDark ? 'rgba(18,18,18,0.78)' : 'rgba(255,255,255,0.78)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
-  };
-
-  const defaultTabBarStyle = {
-    backgroundColor: colors.background,
-    borderTopColor: colors.border,
-  };
 
   return (
     <Tabs
@@ -27,7 +31,23 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: Platform.OS === 'ios' ? iosTabBarStyle : defaultTabBarStyle,
+        // ── iOS: transparent tab bar backed by native UIBlurEffect ──
+        tabBarBackground:
+          Platform.OS === 'ios' ? () => <IosTabBarBackground /> : undefined,
+        tabBarStyle:
+          Platform.OS === 'ios'
+            ? {
+                // Must be transparent so the BlurView shows through
+                backgroundColor: 'transparent',
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: isDark
+                  ? 'rgba(255,255,255,0.12)'
+                  : 'rgba(0,0,0,0.08)',
+              }
+            : {
+                backgroundColor: colors.background,
+                borderTopColor: colors.border,
+              },
       }}
     >
       <Tabs.Screen
