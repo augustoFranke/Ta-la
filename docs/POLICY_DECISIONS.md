@@ -165,4 +165,17 @@ Spec 009 & 003: "must always maintain 1 main + 3 additional (4 total)."
 
 ---
 
+## 16. Dev mode bypass — rate limits and abuse prevention
+
+All client-side rate limits and abuse prevention throttles (e.g., check-in/out event throttling, cooldown enforcement) **MUST be bypassed when `__DEV__` is true**. This allows rapid testing of flows that involve repeated check-in/out cycles without artificial delays.
+
+**Decision:**
+- Guard every client-side throttle/rate-limit check with `if (!__DEV__)` so it is skipped entirely in development builds.
+- Server-side rate limits (Supabase RPC cooldowns) remain active in dev mode — they are bypassed separately via the existing dev GPS override mechanism when needed.
+- This applies to all current and future client-side abuse prevention: check-in throttle, checkout throttle, interaction rate limits, etc.
+
+**Rationale:** Dev/QA workflows require rapid iteration (check in → test → check out → repeat). Hitting "too many attempts" errors during testing wastes time and masks real bugs.
+
+---
+
 *Decisions marked TBD that are NOT in this document should be added here before implementation begins. Lower-tier agents (Sonnet/Haiku) encountering policy ambiguity must write a question here and stop.*

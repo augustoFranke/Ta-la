@@ -240,7 +240,8 @@ export function useCheckIn() {
       if (!current?.id) return;
 
       // Abuse prevention (only for manual checkout; auto/system checkouts bypass)
-      if (reason === 'manual') {
+      // In dev mode, skip throttle entirely to allow rapid testing
+      if (reason === 'manual' && !__DEV__) {
         const allowed = recordEvent();
         if (!allowed) {
           setDenialReason('throttled');
@@ -284,11 +285,13 @@ export function useCheckIn() {
         return { success: false as const, error: DENIAL_MESSAGES.not_authenticated };
       }
 
-      // Abuse prevention
-      const allowed = recordEvent();
-      if (!allowed) {
-        setDenialReason('throttled');
-        return { success: false as const, error: DENIAL_MESSAGES.throttled };
+      // Abuse prevention — skip in dev mode to allow rapid testing
+      if (!__DEV__) {
+        const allowed = recordEvent();
+        if (!allowed) {
+          setDenialReason('throttled');
+          return { success: false as const, error: DENIAL_MESSAGES.throttled };
+        }
       }
 
       setLoading(true);

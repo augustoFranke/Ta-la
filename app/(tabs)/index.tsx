@@ -101,36 +101,8 @@ export default function HomeScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: spacing.lg }]}>
-        {/* Left: greeting */}
-        <Text style={[styles.greeting, { color: colors.text }]}>
-          {firstName ? `Olá, ${firstName}!` : 'Olá!'}
-        </Text>
-
-        {/* Right: notification bell + profile avatar */}
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={[styles.notifButton, { backgroundColor: colors.card }]}
-            onPress={() => {
-              if (isGuest) {
-                handleGuestAction();
-              } else {
-                router.push('/notifications');
-              }
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Notificações"
-          >
-            <Ionicons name="notifications-outline" size={22} color={colors.text} />
-            {unreadCount > 0 && (
-              <View style={[styles.notifBadge, { backgroundColor: colors.primary }]}>
-                <Text style={[styles.notifBadgeText, { color: colors.onPrimary }]}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          {/* Profile photo — tappable, navigates to Perfil tab */}
+        {/* Left: profile avatar + greeting */}
+        <View style={styles.headerLeft}>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/profile')}
             accessibilityRole="button"
@@ -142,7 +114,33 @@ export default function HomeScreen() {
               size={44}
             />
           </TouchableOpacity>
+          <Text style={[styles.greeting, { color: colors.text }]}>
+            {firstName ? `Olá, ${firstName}!` : 'Olá!'}
+          </Text>
         </View>
+
+        {/* Right: notification bell */}
+        <TouchableOpacity
+          style={[styles.notifButton, { backgroundColor: colors.card }]}
+          onPress={() => {
+            if (isGuest) {
+              handleGuestAction();
+            } else {
+              router.push('/notifications');
+            }
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Notificações"
+        >
+          <Ionicons name="notifications-outline" size={22} color={colors.text} />
+          {unreadCount > 0 && (
+            <View style={[styles.notifBadge, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.notifBadgeText, { color: colors.onPrimary }]}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Location permission banner (non-blocking) */}
@@ -241,6 +239,7 @@ export default function HomeScreen() {
           });
           if (result.success) {
             setCheckInVenue(null);
+            router.push('/(tabs)/discover');
           } else {
             Alert.alert('Erro', result.error || 'Nao foi possivel fazer check-in.');
           }
@@ -263,7 +262,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
   },
-  headerRight: {
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,

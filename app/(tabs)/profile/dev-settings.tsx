@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { DevBypassGuard } from '../../../src/guards';
 import {
   View,
@@ -23,18 +24,22 @@ import { useTheme } from '../../../src/theme';
 import { useLocationStore } from '../../../src/stores/locationStore';
 import { useVenueStore } from '../../../src/stores/venueStore';
 import { useCheckInStore } from '../../../src/stores/checkInStore';
+import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/services/supabase';
 
 const PRESETS = [
+  { label: 'Minha localização atual', lat: -21.79991, lng: -54.54832 },
   { label: 'Dourados Centro', lat: -22.2233, lng: -54.8083 },
   { label: 'São Paulo - Vila Madalena', lat: -23.5534, lng: -46.6913 },
 ];
 
 function DevSettingsContent() {
+  const router = useRouter();
   const { colors, spacing, typography, isDark } = useTheme();
 
   const { devOverride, devLat, devLng, setDevOverride, clearDevOverride } = useLocationStore();
-  const { activeCheckIn } = useCheckInStore();
+  const { activeCheckIn, setActiveCheckIn } = useCheckInStore();
+  const { session } = useAuthStore();
 
   const [latInput, setLatInput] = useState(
     devOverride && devLat !== null ? String(devLat) : ''
@@ -45,6 +50,9 @@ function DevSettingsContent() {
 
   const [simVenueId, setSimVenueId] = useState('');
   const [simLoading, setSimLoading] = useState(false);
+
+  const [selfCheckInVenueId, setSelfCheckInVenueId] = useState('');
+  const [selfCheckInLoading, setSelfCheckInLoading] = useState(false);
 
   const handleActivate = () => {
     const lat = parseFloat(latInput);
@@ -162,6 +170,71 @@ function DevSettingsContent() {
       Alert.alert('Erro', err?.message || 'Erro inesperado');
     } finally {
       setSimLoading(false);
+    }
+  };
+
+  const handleSelfCheckIn = async () => {
+    const venueId = selfCheckInVenueId.trim();
+    if (!venueId) {
+      Alert.alert('Erro', 'Insira um Venue ID válido.');
+      return;
+    }
+
+    const userId = session?.user?.id;
+    if (!userId) {
+      Alert.alert('Erro', 'Nenhum usuário autenticado. Faça login primeiro.');
+      return;
+    }
+
+    setSelfCheckInLoading(true);
+    try {
+      // Mark any existing active check-in as inactive first
+      await supabase
+        .from('check_ins')
+        .update({ is_active: false, checked_out_at: new Date().toISOString(), checkout_reason: 'manual' })
+        .eq('user_id', userId)
+        .eq('is_active', true);
+
+      const now = new Date().toISOString();
+      const { data, error: insertError } = await supabase
+        .from('check_ins')
+        .insert({
+          user_id: userId,
+          venue_id: venueId,
+          is_active: true,
+          visibility: 'public',
+          checked_in_at: now,
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        Alert.alert('Erro ao fazer check-in', insertError.message);
+        return;
+      }
+
+      // Fetch venue name for display
+      const { data: venueData } = await supabase
+        .from('venues')
+        .select('name, google_place_id')
+        .eq('id', venueId)
+        .maybeSingle();
+
+      setActiveCheckIn({
+        id: data.id,
+        venue_id: venueId,
+        place_id: venueData?.google_place_id ?? null,
+        venue_name: venueData?.name ?? null,
+        checked_in_at: now,
+        lastConfirmedAt: null,
+      });
+
+      console.log(`[DEV] Self check-in: user=${userId} venue=${venueId}`);
+      router.push('/(tabs)/discover');
+    } catch (err: any) {
+      Alert.alert('Erro', err?.message || 'Erro inesperado');
+    } finally {
+      setSelfCheckInLoading(false);
     }
   };
 
@@ -348,6 +421,45 @@ function DevSettingsContent() {
             Segure para copiar o venue_id após fazer check-in.
           </Text>
         </View>
+
+        {/* Dev Self Check-In section */}
+        {__DEV__ && (
+          <View style={[styles.section, { paddingHorizontal: spacing.lg, paddingTop: spacing.lg }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+              Meu Check-in de Teste
+            </Text>
+            <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+              Faça check-in diretamente em um venue mockup pelo seu UUID (sem precisar aparecer no carousel).
+            </Text>
+
+            <View style={[styles.inputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                Venue ID (UUID do Supabase)
+              </Text>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                value={selfCheckInVenueId}
+                onChangeText={setSelfCheckInVenueId}
+                placeholder="ex: 3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                placeholderTextColor={colors.textSecondary}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.toggleButton, styles.activateButton, { backgroundColor: colors.primary }, selfCheckInLoading && styles.buttonDisabled]}
+              onPress={handleSelfCheckIn}
+              disabled={selfCheckInLoading}
+            >
+              {selfCheckInLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.toggleButtonText}>Fazer meu check-in</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Simular Usuario section */}
         {__DEV__ && (
